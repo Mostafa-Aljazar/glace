@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 25 25">
+  <g id="circleE" transform="translate(0.5 0.5)">
+    <g id="vuesax_linear_add-circle" data-name="vuesax/linear/add-circle">
+      <g id="add-circle">
+        <path id="Vector" d="M20,10A10,10,0,1,0,10,20,10.029,10.029,0,0,0,20,10Z" transform="translate(2 2)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke-dasharray="0 0"/>
+        <g id="Group_25381" data-name="Group 25381" transform="translate(12 6.343) rotate(45)">
+          <path id="Vector-2" data-name="Vector" d="M0,0H8" transform="translate(0 4)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke-dasharray="0 0"/>
+          <path id="Vector-3" data-name="Vector" d="M0,8V0" transform="translate(4)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke-dasharray="0 0"/>
+        </g>
+        <path id="Vector-4" data-name="Vector" d="M24,0V24H0V0Z" fill="none" stroke="#fff" stroke-width="1" opacity="0"/>
+      </g>
+    </g>
+  </g>
+</svg>

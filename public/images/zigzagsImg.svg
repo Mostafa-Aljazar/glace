@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="176.905" height="27.239" viewBox="0 0 176.905 27.239">
+  <defs>
+    <clipPath id="clip-path">
+      <rect id="Rectangle_6557" data-name="Rectangle 6557" width="176.905" height="27.239" fill="none"/>
+    </clipPath>
+    <clipPath id="clip-path-3">
+      <rect id="Rectangle_6554" data-name="Rectangle 6554" width="148.01" height="14.137" fill="none" stroke="#707070" stroke-width="5"/>
+    </clipPath>
+  </defs>
+  <g id="zigzagsImg" clip-path="url(#clip-path)">
+    <g id="Group_12233" data-name="Group 12233" transform="translate(0 0)">
+      <g id="Group_12232" data-name="Group 12232" clip-path="url(#clip-path)">
+        <g id="Group_12228" data-name="Group 12228" transform="translate(28.895 0)" style="mix-blend-mode: screen;isolation: isolate">
+          <g id="Group_12227" data-name="Group 12227" transform="translate(0 0)">
+            <g id="Group_12226" data-name="Group 12226" clip-path="url(#clip-path-3)">
+              <path id="Path_53992" data-name="Path 53992" d="M10.793.21l13.4,13L37.6.21l13.4,13L64.4.21l13.4,13L91.2.21l13.4,13,13.407-13,13.4,13,13.413-13,13.413,13" transform="translate(-10.508 0.358)" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="5"/>
+            </g>
+          </g>
+        </g>
+        <g id="Group_12231" data-name="Group 12231" transform="translate(0 13.102)" style="mix-blend-mode: screen;isolation: isolate">
+          <g id="Group_12230" data-name="Group 12230">
+            <g id="Group_12229" data-name="Group 12229" clip-path="url(#clip-path-3)">
+              <path id="Path_53993" data-name="Path 53993" d="M.105,5.056l13.4,13,13.4-13,13.4,13,13.4-13,13.4,13,13.4-13,13.4,13,13.407-13,13.4,13,13.413-13,13.413,13" transform="translate(0.179 -4.487)" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="5"/>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+  <g id="arrowS" transform="translate(85.825 -414.825) rotate(90)">
+    <rect id="Rectangle_51" data-name="Rectangle 51" width="20" height="20" rx="10" transform="translate(414.825 65.825)" fill="#61bed6"/>
+    <path id="Icon_ionic-ios-arrow-back" data-name="Icon ionic-ios-arrow-back" d="M14.039,9.683,11.4,7.044a.5.5,0,1,1,.707-.7L15.1,9.33a.5.5,0,0,1,.015.688l-3.005,3.011a.5.5,0,1,1-.707-.7Z" transform="translate(411.579 66.141)" fill="#fff"/>
+  </g>
+</svg>
