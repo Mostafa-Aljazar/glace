@@ -41,6 +41,7 @@ export default function LogoNav() {
 
   const cartCount = useCartStore((s) => s.items.length);
   const walletBalance = useWalletStore((s) => s.balance);
+  const isMenuPage = pathname === "/menu";
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -169,9 +170,11 @@ export default function LogoNav() {
       </div>
 
       {/* ── Main header bar ──────────────────────────────────────── */}
-      <header className="top-0 z-[9999999] absolute inset-x-0 px-4 pt-4 lg:pt-6 pb-2 w-full">
+      <header
+        className={`${isMenuPage ? "absolute top-4 inset-x-0" : "top-4 fixed inset-x-0"} z-[9999999] px-4 lg:px-6 w-full`}
+      >
         <div className="mx-auto max-w-[1100px]">
-          <div className="flex items-center gap-3 bg-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-xl px-4 py-2.5 border border-white/25 rounded-[24px]">
+          <div className="flex items-center gap-3 bg-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-xl px-4 py-2.5 border border-white/25 rounded-[24px] transition-all duration-200">
             {/* ── RIGHT: logo (first in DOM = right in RTL) ── */}
             <Link href="/" className="shrink-0">
               <Image
