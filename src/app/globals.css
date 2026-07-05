@@ -305,7 +305,6 @@
 /* Bottom nav clearance — mobile only */
 @media (max-width: 1023px) {
   body {
-    padding-bottom: 88px;
     background-color: #0e7490;
   }
 }

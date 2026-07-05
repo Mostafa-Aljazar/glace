@@ -9,7 +9,7 @@ export default function MainLayout({
   return (
     <>
       <LogoNav />
-      {children}
+      <div className="pb-14lg:pb-0">{children}</div>
       <BottomNav />
     </>
   );

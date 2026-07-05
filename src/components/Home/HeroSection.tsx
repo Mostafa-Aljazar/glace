@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useCallback } from "react";
+import { useHeroSlides } from "@/hooks/home/useHeroSlides";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, EffectFade } from "swiper/modules";
@@ -36,7 +37,7 @@ import {
   iceC,
   sunImg,
 } from "@/assets/images";
-import type { SlideData } from "@/types";
+import type { SlideData } from "@/types/home.types";
 
 const slides: SlideData[] = [
   {
@@ -108,14 +109,10 @@ const slides: SlideData[] = [
 ];
 
 interface HeroSectionProps {
-  activeHref?: string;
   onColorChange?: (color: string) => void;
 }
 
-export default function HeroSection({
-  activeHref = "/",
-  onColorChange,
-}: HeroSectionProps) {
+export default function HeroSection({ onColorChange }: HeroSectionProps) {
   const iceCRef = useRef<HTMLImageElement>(null);
   const bgImgRef = useRef<HTMLImageElement>(null);
   const headerTRef = useRef<HTMLDivElement>(null);
@@ -123,6 +120,8 @@ export default function HeroSection({
   const rotationDegreeRef = useRef(0);
   const rotationDegreeIceRef = useRef(0);
   const swiperRef = useRef<SwiperType | null>(null);
+
+  const { data: slidesData = slides } = useHeroSlides();
 
   const handleSlideChange = useCallback(
     (swiper: SwiperType) => {
@@ -143,7 +142,7 @@ export default function HeroSection({
 
       prevIndexRef.current = active;
 
-      const slide = slides[swiper.realIndex];
+      const slide = slidesData[swiper.realIndex];
 
       if (bgImgRef.current) {
         bgImgRef.current.style.transform = `rotate(${rotationDegreeRef.current}deg) scale(3)`;
@@ -172,8 +171,6 @@ export default function HeroSection({
           style={{ transform: "scale(3)" }}
         />
       </div>
-
-      
 
       {/* .imageHeaderT */}
       <div
@@ -206,7 +203,7 @@ export default function HeroSection({
           onSlideChange={handleSlideChange}
           className="w-full h-full"
         >
-          {slides.map((slide, i) => (
+          {slidesData.map((slide: SlideData, i: number) => (
             <SwiperSlide key={i}>
               <div className="flex items-center w-full h-full overflow-hidden">
                 {/* .centerImageH */}
@@ -216,6 +213,7 @@ export default function HeroSection({
                     src={sunImg}
                     alt=""
                     width={170}
+                    height={170}
                     className="top-[-25px] sm:top-0 right-[55px] sm:right-auto left-auto md:left-[-170px] lg:left-[-170px] z-[1099] absolute w-[80px] sm:w-[95px] md:w-[120px] lg:w-[140px] 2xl:w-[150px]"
                     style={{
                       animation: "rotateS 20s normal linear infinite",
@@ -227,6 +225,7 @@ export default function HeroSection({
                     src={happinessExpertsImg}
                     alt=""
                     width={200}
+                    height={160}
                     className="top-[55px] sm:top-[50px] md:top-[35px] lg:top-[50px] 2xl:top-[55px] xl:top-[50px] right-[-30px] sm:right-[-66px] md:right-[-80px] lg:right-[-107px] 2xl:right-[-110px] xl:right-[-107px] z-[1099] absolute w-[104px] sm:w-[120px] md:w-[130px] lg:w-[145px] 2xl:w-[160px] xl:w-[150px] hover:rotate-2 transition-transform duration-300"
                   />
 
@@ -235,6 +234,7 @@ export default function HeroSection({
                     src={slide.manImg}
                     alt=""
                     width={260}
+                    height={200}
                     className="flex mb-[-5px] w-full h-[150px] md:h-[150px] lg:h-[170px] 2xl:h-[200px] xl:h-[180px] object-bottom-left object-contain"
                   />
 
@@ -273,6 +273,7 @@ export default function HeroSection({
                     src={slide.zigzagsImg}
                     alt=""
                     width={230}
+                    height={40}
                     className="mt-[10px] mr-1 sm:-mr-[50px] w-[140px] lg:w-[230px] h-[15px] lg:h-[25px] object-contain"
                   />
 
@@ -281,6 +282,7 @@ export default function HeroSection({
                     src={slide.pieceImg}
                     alt=""
                     width={155}
+                    height={155}
                     className="right-[-10px] sm:right-[-79px] md:right-[-123px] lg:right-[-230px] 2xl:right-[-230px] absolute w-[75px] sm:w-[80px] md:w-[85px] lg:w-[120px] 2xl:w-[130px] h-[75px] sm:h-[80px] md:h-[85px] lg:h-[120px] 2xl:h-[130px] object-contain hover:scale-105 transition-transform translate-y-[39px] sm:-translate-y-[10px] md:-translate-y-[25px] lg:-translate-y-[50px] 2xl:-translate-y-[25px] duration-[1500ms]"
                   />
 
@@ -289,6 +291,7 @@ export default function HeroSection({
                     src={squarePointsImg}
                     alt=""
                     width={85}
+                    height={85}
                     className="flex mt-[5px] mr-auto ml-[10px] sm:-ml-[20px] w-[50px] lg:w-[80px] 2xl:w-[85px] h-[50px] lg:h-[80px] 2xl:h-[85px] object-contain"
                     style={{
                       animation: "rotateS 45s normal linear infinite",
@@ -300,6 +303,7 @@ export default function HeroSection({
                     src={wrigglingArrow}
                     alt=""
                     width={100}
+                    height={140}
                     className="top-[291px] sm:top-[287px] lg:top-[200px] left-1/2 absolute h-[140px] sm:h-[189px] lg:h-[400px] 2xl:h-[250px] -rotate-[15deg] sm:-rotate-[30deg] -translate-x-1/2"
                   />
 
@@ -317,7 +321,7 @@ export default function HeroSection({
                           className="z-10 relative mb-0 text-[#f4e451] text-[30px] lg:text-[34px] 2xl:text-[38px]"
                           style={{ textShadow: "1px 1px #00000071" }}
                         >
-                          تصفح المنيو
+                          اطلب الان
                         </h2>
                       </div>
                     </div>
@@ -328,6 +332,7 @@ export default function HeroSection({
                     src={strawberryImg}
                     alt=""
                     width={50}
+                    height={50}
                     className="bottom-[10px] sm:bottom-0 2xl:bottom-[10px] left-[56%] sm:left-[70%] 2xl:left-[75%] absolute w-[27px] sm:w-[30px] md:w-[35px] 2xl:w-[40px]"
                   />
 
@@ -336,6 +341,7 @@ export default function HeroSection({
                     src={iceImg1}
                     alt=""
                     width={70}
+                    height={70}
                     className="bottom-[-84px] lg:bottom-[-60px] left-[-4px] lg:left-[-138px] absolute w-[32px] lg:w-[54px] 2xl:w-[60px]"
                     style={{
                       animation: "rotateU 15s normal linear infinite",
@@ -347,6 +353,7 @@ export default function HeroSection({
                     src={iceImg2}
                     alt=""
                     width={110}
+                    height={110}
                     className="hidden sm:block top-[171px] lg:top-[140px] 2xl:top-[220px] xl:top-[180px] right-[-125px] lg:right-[-250px] 2xl:right-[-290px] xl:right-[-250px] sm:absolute w-[55px] lg:w-[70px] 2xl:w-[85px] xl:w-[75px]"
                     style={{
                       animation: "rotateU 15s normal linear infinite",

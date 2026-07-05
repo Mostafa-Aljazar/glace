@@ -1,21 +1,12 @@
 import type { StaticIMG } from "@/assets/images";
+import type React from "react";
 
 export interface NavItem {
   label: string;
   href: string;
+  icon?: React.ElementType;
 }
-
-export interface SlideData {
-  manImg: StaticIMG;
-  pieceImg: StaticIMG;
-  zigzagsImg: StaticIMG;
-  titleH1: string;
-  titleH2: string;
-  bgColor: string;
-  headerBgColor: string;
-  h1BgColor: string;
-  h2BgColor: string;
-}
+export type { SlideData } from "./home.types";
 
 export interface EventCard {
   id: number;

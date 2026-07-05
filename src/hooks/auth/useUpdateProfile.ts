@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/axios";
+import { userApi } from "@/lib/axios";
 import { useAuthStore } from "@/store/authStore";
 import type { AuthUser } from "@/store/authStore";
 
@@ -15,7 +15,7 @@ export function useUpdateProfile() {
 
   return useMutation({
     mutationFn: (data: UpdateProfilePayload) =>
-      api.put<{ user: AuthUser }>("/auth/profile", data).then((r) => r.data.user),
+      userApi.put<{ user: AuthUser }>("/auth/profile", data).then((r) => r.data.user),
     onSuccess: (user) => {
       setUser(user);
       queryClient.setQueryData(["me"], user);

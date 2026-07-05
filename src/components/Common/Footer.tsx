@@ -104,7 +104,7 @@ export default function Footer({ withBg = true }: FooterProps) {
       {/* <div className="z-[1] absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 18%, rgba(14,55,74,0.92) 42%, rgba(10,42,58,0.97) 100%)" }} /> */}
 
       {/* Content */}
-      <div className="z-10 relative flex flex-col items-center mx-auto px-4 pt-12 sm:pt-16 pb-24 lg:pb-6 w-[90%] max-w-4xl text-white">
+      <div className="z-10 relative flex flex-col items-center mx-auto px-4 pt-24 sm:pt-20 pb-5 lg:pb-6 w-[90%] max-w-4xl text-white">
         {/* Logo */}
         <Image
           src={logo}

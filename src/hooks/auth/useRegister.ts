@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import api from "@/lib/axios";
+import { userApi } from "@/lib/axios";
 import { useAuthStore } from "@/store/authStore";
 import type { AuthUser } from "@/store/authStore";
 
@@ -23,7 +23,7 @@ export function useRegister() {
 
   return useMutation({
     mutationFn: (data: RegisterPayload) =>
-      api.post<RegisterResponse>("/auth/register", data).then((r) => r.data),
+      userApi.post<RegisterResponse>("/auth/register", data).then((r) => r.data),
     onSuccess: ({ token, user }) => {
       setAuth(token, user);
       router.push("/my-account");

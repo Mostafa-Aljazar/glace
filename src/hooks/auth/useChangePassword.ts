@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import api from "@/lib/axios";
+import { userApi } from "@/lib/axios";
 
 interface ChangePasswordPayload {
   current_password: string;
@@ -10,6 +10,6 @@ interface ChangePasswordPayload {
 export function useChangePassword() {
   return useMutation({
     mutationFn: (data: ChangePasswordPayload) =>
-      api.put("/auth/password", data).then((r) => r.data),
+      userApi.put("/auth/password", data).then((r) => r.data),
   });
 }
