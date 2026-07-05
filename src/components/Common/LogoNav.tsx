@@ -26,6 +26,7 @@ import {
   ORDER_OPEN_MENU,
   ORDER_PROTECTED_LINK_CLICK,
   ORDER_BEFORE_BACK_REQUEST,
+  ORDER_MENU_OPEN_REQUEST,
 } from "@/hooks/order/useLeavePageGuard";
 import type { NavItem } from "@/types";
 
