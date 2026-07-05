@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   ChevronRight,
@@ -22,6 +22,11 @@ import {
 import { logo } from "@/assets/images";
 import { useCartStore } from "@/store/cartStore";
 import { useWalletStore } from "@/store/walletStore";
+import {
+  ORDER_OPEN_MENU,
+  ORDER_PROTECTED_LINK_CLICK,
+  ORDER_BEFORE_BACK_REQUEST,
+} from "@/hooks/order/useLeavePageGuard";
 import type { NavItem } from "@/types";
 
 const navItems: NavItem[] = [
@@ -43,10 +48,36 @@ export default function LogoNav() {
   const walletBalance = useWalletStore((s) => s.balance);
   const isMenuPage = pathname === "/menu";
 
+  useEffect(() => {
+    const handleProtectedLink = () => setDrawerOpen(false);
+    document.addEventListener(ORDER_PROTECTED_LINK_CLICK, handleProtectedLink);
+    return () =>
+      document.removeEventListener(
+        ORDER_PROTECTED_LINK_CLICK,
+        handleProtectedLink,
+      );
+  }, []);
+
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
     return pathname === href || pathname.startsWith(href + "/");
   }
+
+  useEffect(() => {
+    const handleOpenMenu = () => setDrawerOpen(true);
+    document.addEventListener(ORDER_OPEN_MENU, handleOpenMenu);
+    return () => document.removeEventListener(ORDER_OPEN_MENU, handleOpenMenu);
+  }, []);
+
+  const handleMobileMenuClick = () => {
+    const event = new CustomEvent(ORDER_MENU_OPEN_REQUEST, {
+      cancelable: true,
+    });
+    const allowed = document.dispatchEvent(event);
+    if (allowed) {
+      setDrawerOpen(true);
+    }
+  };
 
   return (
     <>
@@ -212,8 +243,8 @@ export default function LogoNav() {
               {/* Mobile hamburger to open drawer */}
               <button
                 type="button"
-                onClick={() => setDrawerOpen(true)}
-                className="lg:hidden flex justify-center items-center bg-white/10 hover:bg-white/20 mr-1 p-2 border border-white/10 rounded-full text-white/85"
+                onClick={handleMobileMenuClick}
+                className="lg:hidden flex justify-center items-center bg-white/10 hover:bg-white/20 mr-1 p-2 border border-white/10 rounded-full text-white/85 pointer-events-auto"
                 aria-label="فتح القائمة"
               >
                 <Menu size={18} />
@@ -268,7 +299,15 @@ export default function LogoNav() {
               {showBack && (
                 <button
                   type="button"
-                  onClick={() => router.back()}
+                  onClick={() => {
+                    const event = new CustomEvent(ORDER_BEFORE_BACK_REQUEST, {
+                      cancelable: true,
+                    });
+                    const allowed = document.dispatchEvent(event);
+                    if (allowed) {
+                      router.back();
+                    }
+                  }}
                   className="hidden lg:flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2.5 lg:px-3 py-1.5 border border-white/15 rounded-full text-white/80 hover:text-white transition-all cursor-pointer"
                 >
                   <span className="hidden lg:inline font-medium text-[13px]">

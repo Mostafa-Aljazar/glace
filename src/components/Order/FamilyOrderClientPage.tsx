@@ -1,12 +1,15 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import { CheckCircle2, Minus, Plus, X } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import CartBar from "@/components/Order/CartBar";
+import BackButton from "@/components/Order/BackButton";
 import AddToCartButton from "@/components/Order/AddToCartButton";
 import FlavorBall from "@/components/Order/FlavorBall";
+import OrderLeaveConfirmationDialog from "@/components/Order/OrderLeaveConfirmationDialog";
+import { useLeavePageGuard } from "@/hooks/order";
 import { familyIceCream, emptyPop } from "@/assets/images";
 import { CLASSIC_FLAVORS, SPECIAL_FLAVORS } from "@/data/OrderData";
 import { useCartStore } from "@/store/cartStore";
@@ -123,6 +126,28 @@ export default function FamilyOrderClientPage() {
   const [addedToCart, setAddedToCart] = useState(false);
   const [validationMsg, setValidationMsg] = useState("");
 
+  const hasPendingSelections =
+    containerType !== "" ||
+    familySize !== "" ||
+    flavorType !== "" ||
+    selectedBalls.length > 0 ||
+    quantity !== 1;
+
+  const clearSelections = useCallback(() => {
+    setContainerType("");
+    setFamilySize("");
+    setFlavorType("");
+    setSelectedBalls([]);
+    setQuantity(1);
+  }, []);
+
+  const {
+    showCloseConfirm,
+    handleCancelLeave,
+    handleConfirmLeave,
+    handleBeforeBack,
+  } = useLeavePageGuard(hasPendingSelections, clearSelections);
+
   function changeContainerType(ct: ContainerType) {
     setContainerType(ct);
     setFamilySize("");
@@ -213,10 +238,12 @@ export default function FamilyOrderClientPage() {
 
   function handleAddToCart() {
     if (!containerType) return showValidation("اختر نوع العبوة أولاً");
-    if (!familySize)    return showValidation("اختر الحجم أولاً");
-    if (!flavorType)    return showValidation("اختر نوع الأيس كريم أولاً");
+    if (!familySize) return showValidation("اختر الحجم أولاً");
+    if (!flavorType) return showValidation("اختر نوع الأيس كريم أولاً");
     if (maxBalls === 0 || selectedBalls.length < maxBalls)
-      return showValidation(`أكمل اختيار الأطعمة (${selectedBalls.length}/${maxBalls})`);
+      return showValidation(
+        `أكمل اختيار الأطعمة (${selectedBalls.length}/${maxBalls})`,
+      );
 
     const flavorNames = selectedBalls
       .map((id) => allFlavors.find((f) => f.id === id)?.name ?? "")
@@ -242,10 +269,10 @@ export default function FamilyOrderClientPage() {
 
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
-      
       <EventsBackground />
 
       <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-36 max-w-3xl">
+        <BackButton onBeforeBack={handleBeforeBack} />
         {/* Page header + price table */}
         <div className="bg-white/17 backdrop-blur-[15px] mb-6 rounded-[28px] overflow-hidden">
           <div className="flex md:flex-row flex-col gap-5 p-5 w-full">
@@ -272,9 +299,15 @@ export default function FamilyOrderClientPage() {
               {/* Flavor examples */}
               <div className="bg-white/8 p-4 rounded-[18px] text-[13px] text-white leading-relaxed">
                 <p className="mb-1 font-semibold text-glace-yellow">كلاسيك</p>
-                <p className="text-white/75">شوكولاتة · فانيلا · فراولة · كراميل · نسكافيه · ...</p>
-                <p className="mt-3 mb-1 font-semibold text-glace-yellow">سبيشل</p>
-                <p className="text-white/75">عربية · نوتيلا · أوريو · كت كات · لوتس · ...</p>
+                <p className="text-white/75">
+                  شوكولاتة · فانيلا · فراولة · كراميل · نسكافيه · ...
+                </p>
+                <p className="mt-3 mb-1 font-semibold text-glace-yellow">
+                  سبيشل
+                </p>
+                <p className="text-white/75">
+                  عربية · نوتيلا · أوريو · كت كات · لوتس · ...
+                </p>
               </div>
             </div>
 
@@ -287,25 +320,50 @@ export default function FamilyOrderClientPage() {
                 <table className="w-full text-white">
                   <thead>
                     <tr className="border-white/20 border-b text-[13px] text-white/60">
-                      <th className="px-2 py-1.5 font-medium text-start">الحجم</th>
-                      <th className="px-2 py-1.5 font-medium text-center">كرات</th>
-                      <th className="px-2 py-1.5 font-medium text-center">كلاسيك</th>
-                      <th className="px-2 py-1.5 font-medium text-center">سبيشل</th>
+                      <th className="px-2 py-1.5 font-medium text-start">
+                        الحجم
+                      </th>
+                      <th className="px-2 py-1.5 font-medium text-center">
+                        كرات
+                      </th>
+                      <th className="px-2 py-1.5 font-medium text-center">
+                        كلاسيك
+                      </th>
+                      <th className="px-2 py-1.5 font-medium text-center">
+                        سبيشل
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {[...CLASSIC_SIZES, ...FLIN_SIZES].map(
                       ({ label, classic, special, balls }) => (
-                        <tr key={label} className="border-white/15 last:border-0 border-b">
-                          <td className="px-2 py-2 font-medium text-[14px] text-start">{label}</td>
+                        <tr
+                          key={label}
+                          className="border-white/15 last:border-0 border-b"
+                        >
+                          <td className="px-2 py-2 font-medium text-[14px] text-start">
+                            {label}
+                          </td>
                           <td className="px-2 py-2 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <span className="text-glace-yellow font-bold text-[13px]">{balls}×</span>
-                              <Image src={emptyPop} alt="" width={20} height={20} className="w-5 h-5 object-contain opacity-80" />
+                            <div className="flex justify-center items-center gap-1">
+                              <span className="font-bold text-[13px] text-glace-yellow">
+                                {balls}×
+                              </span>
+                              <Image
+                                src={emptyPop}
+                                alt=""
+                                width={20}
+                                height={20}
+                                className="opacity-80 w-5 h-5 object-contain"
+                              />
                             </div>
                           </td>
-                          <td className="px-2 py-2 text-[14px] text-center">{classic} ₪</td>
-                          <td className="px-2 py-2 text-[14px] text-center">{special} ₪</td>
+                          <td className="px-2 py-2 text-[14px] text-center">
+                            {classic} ₪
+                          </td>
+                          <td className="px-2 py-2 text-[14px] text-center">
+                            {special} ₪
+                          </td>
                         </tr>
                       ),
                     )}
@@ -450,7 +508,9 @@ export default function FamilyOrderClientPage() {
                   </p>
                   <div className="flex flex-wrap gap-4">
                     {CLASSIC_FLAVORS.map((f) => {
-                      const count = classicBalls.filter((id) => id === f.id).length;
+                      const count = classicBalls.filter(
+                        (id) => id === f.id,
+                      ).length;
                       const full = classicBalls.length >= halfBalls;
                       return (
                         <FlavorBall
@@ -459,7 +519,10 @@ export default function FamilyOrderClientPage() {
                           count={count}
                           isFull={full}
                           onAdd={() => addBall(f.id, "classic")}
-                          onRemove={(e) => { e.stopPropagation(); removeBallByFlavor(f.id); }}
+                          onRemove={(e) => {
+                            e.stopPropagation();
+                            removeBallByFlavor(f.id);
+                          }}
                         />
                       );
                     })}
@@ -475,7 +538,9 @@ export default function FamilyOrderClientPage() {
                   </p>
                   <div className="flex flex-wrap gap-4">
                     {SPECIAL_FLAVORS.map((f) => {
-                      const count = specialBalls.filter((id) => id === f.id).length;
+                      const count = specialBalls.filter(
+                        (id) => id === f.id,
+                      ).length;
                       const full = specialBalls.length >= halfBalls;
                       return (
                         <FlavorBall
@@ -484,7 +549,10 @@ export default function FamilyOrderClientPage() {
                           count={count}
                           isFull={full}
                           onAdd={() => addBall(f.id, "special")}
-                          onRemove={(e) => { e.stopPropagation(); removeBallByFlavor(f.id); }}
+                          onRemove={(e) => {
+                            e.stopPropagation();
+                            removeBallByFlavor(f.id);
+                          }}
                         />
                       );
                     })}
@@ -494,7 +562,9 @@ export default function FamilyOrderClientPage() {
             ) : (
               <div className="flex flex-wrap gap-4">
                 {flavors.map((f) => {
-                  const count = selectedBalls.filter((id) => id === f.id).length;
+                  const count = selectedBalls.filter(
+                    (id) => id === f.id,
+                  ).length;
                   const full = selectedBalls.length >= maxBalls;
                   return (
                     <FlavorBall
@@ -503,7 +573,10 @@ export default function FamilyOrderClientPage() {
                       count={count}
                       isFull={full}
                       onAdd={() => addBall(f.id)}
-                      onRemove={(e) => { e.stopPropagation(); removeBallByFlavor(f.id); }}
+                      onRemove={(e) => {
+                        e.stopPropagation();
+                        removeBallByFlavor(f.id);
+                      }}
                     />
                   );
                 })}
@@ -555,6 +628,11 @@ export default function FamilyOrderClientPage() {
         </div>
       </div>
 
+      <OrderLeaveConfirmationDialog
+        open={showCloseConfirm}
+        onClose={handleCancelLeave}
+        onConfirm={handleConfirmLeave}
+      />
       <CartBar />
     </div>
   );

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Minus, Plus, X } from "lucide-react";
@@ -9,6 +9,8 @@ import CartBar from "@/components/Order/CartBar";
 import AddToCartButton from "@/components/Order/AddToCartButton";
 import FlavorBall from "@/components/Order/FlavorBall";
 import BackButton from "@/components/Order/BackButton";
+import OrderLeaveConfirmationDialog from "@/components/Order/OrderLeaveConfirmationDialog";
+import { useLeavePageGuard } from "@/hooks/order";
 import { iceCreamCup, biscuitIceCream, emptyPop } from "@/assets/images";
 import {
   CLASSIC_FLAVORS,
@@ -111,8 +113,10 @@ function Pill({
 export default function CupOrderClientPage() {
   const searchParams = useSearchParams();
   const addItem = useCartStore((s) => s.addItem);
+  const initialVariant =
+    searchParams.get("type") === "بسكوت" ? "بسكوت" : "كاسة";
 
-  const [variant, setVariant] = useState<CupVariant>("كاسة");
+  const [variant, setVariant] = useState<CupVariant>(initialVariant);
   const [size, setSize] = useState<string>("");
   const [flavorType, setFlavorType] = useState<FlavorType | "">("");
   const [selectedBalls, setSelectedBalls] = useState<number[]>([]);
@@ -121,9 +125,28 @@ export default function CupOrderClientPage() {
   const [addedToCart, setAddedToCart] = useState(false);
   const [validationMsg, setValidationMsg] = useState("");
 
-  useEffect(() => {
-    if (searchParams.get("type") === "بسكوت") setVariant("بسكوت");
-  }, [searchParams]);
+  const hasPendingSelections =
+    size !== "" ||
+    flavorType !== "" ||
+    selectedBalls.length > 0 ||
+    selectedAddons.length > 0 ||
+    quantity !== 1;
+
+  const clearSelections = useCallback(() => {
+    setVariant("كاسة");
+    setSize("");
+    setFlavorType("");
+    setSelectedBalls([]);
+    setSelectedAddons([]);
+    setQuantity(1);
+  }, []);
+
+  const {
+    showCloseConfirm,
+    handleCancelLeave,
+    handleConfirmLeave,
+    handleBeforeBack,
+  } = useLeavePageGuard(hasPendingSelections, clearSelections);
 
   function changeVariant(v: CupVariant) {
     setVariant(v);
@@ -145,26 +168,36 @@ export default function CupOrderClientPage() {
   const sizes = variant === "كاسة" ? CUP_SIZES : BISC_SIZES;
   const maxBalls = size ? (SIZE_MAX_BALLS[size] ?? 1) : 0;
   const flavors: Flavor[] =
-    flavorType === "سبيشل" ? SPECIAL_FLAVORS
-    : flavorType === "مكس" ? [...CLASSIC_FLAVORS, ...SPECIAL_FLAVORS]
-    : CLASSIC_FLAVORS;
+    flavorType === "سبيشل"
+      ? SPECIAL_FLAVORS
+      : flavorType === "مكس"
+        ? [...CLASSIC_FLAVORS, ...SPECIAL_FLAVORS]
+        : CLASSIC_FLAVORS;
   const allFlavors = [...CLASSIC_FLAVORS, ...SPECIAL_FLAVORS];
 
   const halfBalls = Math.floor(maxBalls / 2);
-  const classicBalls = selectedBalls.filter((id) => CLASSIC_FLAVORS.some((f) => f.id === id));
-  const specialBalls = selectedBalls.filter((id) => SPECIAL_FLAVORS.some((f) => f.id === id));
+  const classicBalls = selectedBalls.filter((id) =>
+    CLASSIC_FLAVORS.some((f) => f.id === id),
+  );
+  const specialBalls = selectedBalls.filter((id) =>
+    SPECIAL_FLAVORS.some((f) => f.id === id),
+  );
 
   function addBall(flavorId: number, group?: "classic" | "special") {
     setSelectedBalls((prev) => {
       if (prev.length >= maxBalls) return prev;
       if (flavorType === "مكس" && group) {
-        const otherGroupHasBalls = group === "classic"
-          ? prev.some((id) => SPECIAL_FLAVORS.some((f) => f.id === id))
-          : prev.some((id) => CLASSIC_FLAVORS.some((f) => f.id === id));
+        const otherGroupHasBalls =
+          group === "classic"
+            ? prev.some((id) => SPECIAL_FLAVORS.some((f) => f.id === id))
+            : prev.some((id) => CLASSIC_FLAVORS.some((f) => f.id === id));
         const remainingSlots = maxBalls - prev.length;
-        const sameGroupCount = group === "classic"
-          ? prev.filter((id) => CLASSIC_FLAVORS.some((f) => f.id === id)).length
-          : prev.filter((id) => SPECIAL_FLAVORS.some((f) => f.id === id)).length;
+        const sameGroupCount =
+          group === "classic"
+            ? prev.filter((id) => CLASSIC_FLAVORS.some((f) => f.id === id))
+                .length
+            : prev.filter((id) => SPECIAL_FLAVORS.some((f) => f.id === id))
+                .length;
         if (!otherGroupHasBalls && remainingSlots === 1) return prev;
         if (sameGroupCount >= maxBalls - 1) return prev;
       }
@@ -183,9 +216,14 @@ export default function CupOrderClientPage() {
     );
   }
 
-  const basePrice = flavorType === "مكس"
-    ? Math.round(((ICE_PRICES[`${size}.كلاسيك`] ?? 0) + (ICE_PRICES[`${size}.سبيشال`] ?? 0)) / 2)
-    : ICE_PRICES[`${size}.${flavorType}`] ?? 0;
+  const basePrice =
+    flavorType === "مكس"
+      ? Math.round(
+          ((ICE_PRICES[`${size}.كلاسيك`] ?? 0) +
+            (ICE_PRICES[`${size}.سبيشال`] ?? 0)) /
+            2,
+        )
+      : (ICE_PRICES[`${size}.${flavorType}`] ?? 0);
   const addonSum = selectedAddons.reduce(
     (s, id) => s + (ADDONS.find((a) => a.id === id)?.price ?? 0),
     0,
@@ -241,6 +279,7 @@ export default function CupOrderClientPage() {
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
+      <BackButton onBeforeBack={handleBeforeBack} />
 
       <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-36 max-w-3xl">
         {/* Page header + price table */}
@@ -351,7 +390,9 @@ export default function CupOrderClientPage() {
                             {(() => {
                               const c = ICE_PRICES[`${key}.كلاسيك`];
                               const s = ICE_PRICES[`${key}.سبيشال`];
-                              return c !== undefined && s !== undefined ? `${Math.round((c + s) / 2)} ₪` : "—";
+                              return c !== undefined && s !== undefined
+                                ? `${Math.round((c + s) / 2)} ₪`
+                                : "—";
                             })()}
                           </td>
                           <td className="px-2 py-2 text-[15px] text-center">
@@ -418,9 +459,11 @@ export default function CupOrderClientPage() {
                     key={ft}
                     label={ft}
                     sublabel={
-                      ft === "كلاسيك" ? "أطعمة كلاسيكية"
-                      : ft === "سبيشل" ? "أطعمة سبيشل"
-                      : "كلاسيك + سبيشل"
+                      ft === "كلاسيك"
+                        ? "أطعمة كلاسيكية"
+                        : ft === "سبيشل"
+                          ? "أطعمة سبيشل"
+                          : "كلاسيك + سبيشل"
                     }
                     active={flavorType === ft}
                     disabled={isDisabled}
@@ -490,34 +533,62 @@ export default function CupOrderClientPage() {
             {flavorType === "مكس" ? (
               <div className="flex flex-col gap-5">
                 <div>
-                  <p className="mb-3 pb-1.5 border-b border-white/15 text-[13px] font-semibold text-white/60">
-                    كلاسيك <span className="font-normal text-white/40">({classicBalls.length})</span>
+                  <p className="mb-3 pb-1.5 border-white/15 border-b font-semibold text-[13px] text-white/60">
+                    كلاسيك{" "}
+                    <span className="font-normal text-white/40">
+                      ({classicBalls.length})
+                    </span>
                   </p>
                   <div className="flex flex-wrap gap-4">
                     {CLASSIC_FLAVORS.map((flavor) => {
-                      const count = classicBalls.filter((id) => id === flavor.id).length;
+                      const count = classicBalls.filter(
+                        (id) => id === flavor.id,
+                      ).length;
                       return (
-                        <FlavorBall key={flavor.id} flavor={flavor} count={count}
-                          isFull={selectedBalls.length >= maxBalls || classicBalls.length >= maxBalls - 1}
+                        <FlavorBall
+                          key={flavor.id}
+                          flavor={flavor}
+                          count={count}
+                          isFull={
+                            selectedBalls.length >= maxBalls ||
+                            classicBalls.length >= maxBalls - 1
+                          }
                           onAdd={() => addBall(flavor.id, "classic")}
-                          onRemove={(e) => { e.stopPropagation(); removeBallByFlavor(flavor.id); }}
+                          onRemove={(e) => {
+                            e.stopPropagation();
+                            removeBallByFlavor(flavor.id);
+                          }}
                         />
                       );
                     })}
                   </div>
                 </div>
                 <div>
-                  <p className="mb-3 pb-1.5 border-b border-white/15 text-[13px] font-semibold text-white/60">
-                    سبيشل <span className="font-normal text-white/40">({specialBalls.length})</span>
+                  <p className="mb-3 pb-1.5 border-white/15 border-b font-semibold text-[13px] text-white/60">
+                    سبيشل{" "}
+                    <span className="font-normal text-white/40">
+                      ({specialBalls.length})
+                    </span>
                   </p>
                   <div className="flex flex-wrap gap-4">
                     {SPECIAL_FLAVORS.map((flavor) => {
-                      const count = specialBalls.filter((id) => id === flavor.id).length;
+                      const count = specialBalls.filter(
+                        (id) => id === flavor.id,
+                      ).length;
                       return (
-                        <FlavorBall key={flavor.id} flavor={flavor} count={count}
-                          isFull={selectedBalls.length >= maxBalls || specialBalls.length >= maxBalls - 1}
+                        <FlavorBall
+                          key={flavor.id}
+                          flavor={flavor}
+                          count={count}
+                          isFull={
+                            selectedBalls.length >= maxBalls ||
+                            specialBalls.length >= maxBalls - 1
+                          }
                           onAdd={() => addBall(flavor.id, "special")}
-                          onRemove={(e) => { e.stopPropagation(); removeBallByFlavor(flavor.id); }}
+                          onRemove={(e) => {
+                            e.stopPropagation();
+                            removeBallByFlavor(flavor.id);
+                          }}
                         />
                       );
                     })}
@@ -527,12 +598,20 @@ export default function CupOrderClientPage() {
             ) : (
               <div className="flex flex-wrap gap-4">
                 {flavors.map((flavor) => {
-                  const count = selectedBalls.filter((id) => id === flavor.id).length;
+                  const count = selectedBalls.filter(
+                    (id) => id === flavor.id,
+                  ).length;
                   return (
-                    <FlavorBall key={flavor.id} flavor={flavor} count={count}
+                    <FlavorBall
+                      key={flavor.id}
+                      flavor={flavor}
+                      count={count}
                       isFull={selectedBalls.length >= maxBalls}
                       onAdd={() => addBall(flavor.id)}
-                      onRemove={(e) => { e.stopPropagation(); removeBallByFlavor(flavor.id); }}
+                      onRemove={(e) => {
+                        e.stopPropagation();
+                        removeBallByFlavor(flavor.id);
+                      }}
                     />
                   );
                 })}
@@ -618,6 +697,11 @@ export default function CupOrderClientPage() {
         </div>
       </div>
 
+      <OrderLeaveConfirmationDialog
+        open={showCloseConfirm}
+        onClose={handleCancelLeave}
+        onConfirm={handleConfirmLeave}
+      />
       <CartBar />
     </div>
   );

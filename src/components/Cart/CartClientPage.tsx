@@ -59,6 +59,12 @@ function ItemCard({ item }: { item: CartItem }) {
               ))}
             </div>
           )}
+          {item.notes && (
+            <div className="mt-2 p-2.5 bg-white/8 border border-white/15 rounded-[12px]">
+              <p className="text-[11px] text-white/50 mb-1">ملاحظة:</p>
+              <p className="text-[12px] text-white/80 leading-relaxed">{item.notes}</p>
+            </div>
+          )}
         </div>
 
         {/* Unit price */}
