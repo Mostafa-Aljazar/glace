@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import MenuClientPage from "@/components/Menu/MenuClientPage";
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function MenuPage() {
-  return <MenuClientPage />;
+  return (
+    <Suspense fallback={null}>
+      <MenuClientPage />
+    </Suspense>
+  );
 }
