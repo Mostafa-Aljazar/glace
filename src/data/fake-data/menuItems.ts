@@ -267,7 +267,7 @@ export const allMenuItems: MenuItem[] = [
       { label: "لقيمات مكس (نوتيلا+لوتس)", price: 12 },
       { label: "لقيمات سوبر مكس (نوتيلا+لوتس+بيستاشيو)", price: 15 },
     ],
-    orderHref: "/menu/order-desserts?type=luqaimat",
+    orderHref: "/menu/order-loqaimat",
   },
   {
     id: "molten",

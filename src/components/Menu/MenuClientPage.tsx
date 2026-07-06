@@ -21,6 +21,7 @@ import {
   iceCream,
   milkshake,
   iceCreamKunafa,
+  luqaimat,
   coldDrinks,
   naturalJuices,
 } from "@/assets/images";
@@ -44,6 +45,7 @@ const CATEGORY_ICONS: Record<string, typeof IceCream> = {
   "brad-boza": GlassWater,
   milkshake: Milk,
   kunafa: Cake,
+  loqaimat: Cake,
   "cold-drinks": CupSoda,
   juices: Apple,
   desserts: Cake,
@@ -55,6 +57,7 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   "brad-boza": "from-[#f4a851]/30 to-[#c97d2a]/30",
   milkshake: "from-[#f4519f]/20 to-[#b02f74]/20",
   kunafa: "from-[#f4a851]/20 to-[#c97d2a]/20",
+  loqaimat: "from-[#f4a851]/20 to-[#c97d2a]/20",
   "cold-drinks": "from-[#51b4f4]/20 to-[#2a6eb0]/20",
   juices: "from-[#3fbd59]/20 to-[#2a8540]/20",
   desserts: "from-[#da51f4]/20 to-[#9a2fb0]/20",
@@ -66,6 +69,7 @@ const CATEGORY_ACCENT: Record<string, string> = {
   "brad-boza": "#f4a851",
   milkshake: "#f4519f",
   kunafa: "#f4a851",
+  loqaimat: "#f4a851",
   "cold-drinks": "#51b4f4",
   juices: "#3fbd59",
   desserts: "#da51f4",
@@ -94,6 +98,11 @@ const DIRECT_ORDER_CARDS: Record<
     image: iceCreamKunafa,
     sublabel: "عربية · لوتس · نوتيلا · بلوبيري",
     href: "/menu/order-kunafa",
+  },
+  loqaimat: {
+    image: luqaimat,
+    sublabel: "عربية · لوتس · نوتيلا · مكسات",
+    href: "/menu/order-loqaimat",
   },
   "cold-drinks": {
     image: coldDrinks,

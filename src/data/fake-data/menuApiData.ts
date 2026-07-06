@@ -14,7 +14,7 @@ import {
 export interface ApiMenuCategory {
   id: string;
   label: string;
-  slug: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "cold-drinks" | "juices" | "desserts";
+  slug: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "loqaimat" | "cold-drinks" | "juices" | "desserts";
 }
 
 export interface ApiFlavorCard {
@@ -35,7 +35,7 @@ export interface ApiMenuItem {
   name: string;
   image: typeof iceCreamCup;
   modalType: "table" | "flavors" | "confirmation";
-  category: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "cold-drinks" | "juices" | "desserts";
+  category: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "loqaimat" | "cold-drinks" | "juices" | "desserts";
   tableHeaders?: string[];
   priceRows?: ApiPriceRow[];
   flavors?: ApiFlavorCard[];
@@ -51,6 +51,7 @@ export const FAKE_CATEGORIES: ApiMenuCategory[] = [
   { id: "brad-boza",   label: "براد مع بوظة",    slug: "brad-boza"   },
   { id: "milkshake",   label: "ميلك شيك",         slug: "milkshake"   },
   { id: "kunafa",      label: "كنافة آيس كريم",  slug: "kunafa"      },
+  { id: "loqaimat",    label: "لقيمات",           slug: "loqaimat"    },
   { id: "cold-drinks", label: "مشروبات باردة",    slug: "cold-drinks" },
   { id: "juices",      label: "عصائر طبيعية",     slug: "juices"      },
   { id: "desserts",    label: "حلويات",            slug: "desserts"    },
