@@ -4,6 +4,9 @@ import {
   nescafeIce, coconutIce, mangoIce, bananaIce, grapeIce,
   bazookaIce, marioIce, lemonIce, arabianIce, nutellaIce,
   oreoIce, kitKatIce, floraIce, kinderBuenoIce, lotusIce, pistachioIce,
+  blueberryIce, energyIce,
+  luqaimat, pancake, waffle, crepe, glassyPizza, iceCreamKunafa, moltenCake,
+  coldDrinks, naturalJuices,
 } from "@/assets/images";
 
 export interface Flavor {
@@ -134,3 +137,269 @@ export function getIceItemPrice(item: IceItem): number {
 export function getLuqaimatItemPrice(item: LuqaimatItem): number {
   return (LUQAIMAT_PRICES[item.type] ?? 0) * item.quantity;
 }
+
+export interface SimpleMenuItem {
+  label: string;
+  price: number;
+  description?: string;
+  image?: StaticIMG;
+  available?: boolean;
+}
+
+export interface MixConfig {
+  label: string;
+  pick: number;
+  price: number;
+  options: string[];
+  optionImages?: Partial<Record<string, StaticIMG>>;
+}
+
+export interface DessertCategoryConfig {
+  id: string;
+  label: string;
+  image: StaticIMG;
+  items: SimpleMenuItem[];
+  mixes?: MixConfig[];
+  hasAddons?: boolean;
+  hasNotes?: boolean;
+}
+
+export const DESSERT_CATEGORIES_V2: DessertCategoryConfig[] = [
+  {
+    id: "luqaimat",
+    label: "لقيمات",
+    image: luqaimat,
+    items: [
+      { label: "نوتيلا", price: 10, image: nutellaIce },
+      { label: "لوتس", price: 12, image: lotusIce },
+      { label: "بستاشيو", price: 15, image: pistachioIce, available: false },
+    ],
+    mixes: [
+      {
+        label: "مكس (نوتيلا+لوتس)",
+        pick: 2,
+        price: 12,
+        options: ["نوتيلا", "لوتس"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+        },
+      },
+      {
+        label: "سوبر مكس (نوتيلا+لوتس+بيستاشيو)",
+        pick: 3,
+        price: 15,
+        options: ["نوتيلا", "لوتس", "بستاشيو"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+          "بستاشيو": pistachioIce,
+        },
+      },
+    ],
+    hasAddons: true,
+    hasNotes: true,
+  },
+  {
+    id: "pancake",
+    label: "بان كيك",
+    image: pancake,
+    items: [
+      { label: "نوتيلا", price: 11, image: nutellaIce },
+      { label: "لوتس", price: 13, image: lotusIce },
+      { label: "بيستاشيو", price: 17, image: pistachioIce },
+    ],
+    mixes: [
+      {
+        label: "مكس (نوتيلا+لوتس)",
+        pick: 2,
+        price: 15,
+        options: ["نوتيلا", "لوتس"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+        },
+      },
+      {
+        label: "سوبر مكس",
+        pick: 3,
+        price: 18,
+        options: ["نوتيلا", "لوتس", "بيستاشيو"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+          "بيستاشيو": pistachioIce,
+        },
+      },
+    ],
+    hasAddons: true,
+    hasNotes: true,
+  },
+  {
+    id: "waffle",
+    label: "وافل",
+    image: waffle,
+    items: [
+      { label: "نوتيلا", price: 10, image: nutellaIce },
+      { label: "لوتس", price: 12, image: lotusIce },
+      { label: "بيستاشيو", price: 14, image: pistachioIce },
+    ],
+    mixes: [
+      {
+        label: "مكس (نوتيلا+لوتس)",
+        pick: 2,
+        price: 13,
+        options: ["نوتيلا", "لوتس"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+        },
+      },
+      {
+        label: "سوبر مكس",
+        pick: 3,
+        price: 16,
+        options: ["نوتيلا", "لوتس", "بيستاشيو"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+          "بيستاشيو": pistachioIce,
+        },
+      },
+    ],
+    hasAddons: true,
+    hasNotes: true,
+  },
+  {
+    id: "crepe",
+    label: "كريب",
+    image: crepe,
+    items: [
+      { label: "نوتيلا", price: 9, image: nutellaIce },
+      { label: "لوتس", price: 11, image: lotusIce },
+      { label: "بيستاشيو", price: 13, image: pistachioIce },
+    ],
+    mixes: [
+      {
+        label: "مكس (نوتيلا+لوتس)",
+        pick: 2,
+        price: 12,
+        options: ["نوتيلا", "لوتس"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+        },
+      },
+      {
+        label: "سوبر مكس",
+        pick: 3,
+        price: 15,
+        options: ["نوتيلا", "لوتس", "بيستاشيو"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+          "بيستاشيو": pistachioIce,
+        },
+      },
+    ],
+    hasAddons: true,
+    hasNotes: true,
+  },
+  {
+    id: "pizza",
+    label: "بيتزا جلاسيه",
+    image: glassyPizza,
+    items: [
+      { label: "نوتيلا", price: 12, image: nutellaIce },
+      { label: "لوتس", price: 14, image: lotusIce },
+      { label: "بيستاشيو", price: 16, image: pistachioIce },
+    ],
+    mixes: [
+      {
+        label: "مكس (نوتيلا+لوتس)",
+        pick: 2,
+        price: 15,
+        options: ["نوتيلا", "لوتس"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+        },
+      },
+      {
+        label: "سوبر مكس",
+        pick: 3,
+        price: 18,
+        options: ["نوتيلا", "لوتس", "بيستاشيو"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+          "بيستاشيو": pistachioIce,
+        },
+      },
+    ],
+    hasAddons: true,
+    hasNotes: true,
+  },
+  {
+    id: "molten",
+    label: "مولتن كيك",
+    image: moltenCake,
+    items: [
+      { label: "نوتيلا", price: 8, image: nutellaIce, description: "كيك شوكولاتة دافئ بقلب سائل مع بوظة فانيلا" },
+      { label: "لوتس", price: 12, image: lotusIce, description: "كيك شوكولاتة دافئ بقلب سائل مع بوظة لوتس" },
+      { label: "بستاشيو", price: 12, image: pistachioIce, description: "كيك شوكولاتة دافئ بقلب سائل مع بوظة بستاشيو" },
+    ],
+    mixes: [
+      {
+        label: "مكس (نوتيلا+لوتس)",
+        pick: 2,
+        price: 14,
+        options: ["نوتيلا", "لوتس", "بستاشيو"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+          "بستاشيو": pistachioIce,
+        },
+      },
+      {
+        label: "سوبر مكس",
+        pick: 3,
+        price: 17,
+        options: ["نوتيلا", "لوتس", "بستاشيو"],
+        optionImages: {
+          "نوتيلا": nutellaIce,
+          "لوتس": lotusIce,
+          "بستاشيو": pistachioIce,
+        },
+      },
+    ],
+    hasAddons: false,
+    hasNotes: true,
+  },
+  {
+    id: "cold-drinks",
+    label: "مشروبات باردة",
+    image: coldDrinks,
+    items: [
+      { label: "آيس كوفي كراميل", price: 8, image: caramelIce },
+      { label: "آيس موكا", price: 8, image: nescafeIce },
+      { label: "سبانش لاتيه كراميل", price: 10, image: caramelIce },
+      { label: "بوبا شيك كوفي/فراولة", price: 12, image: chocolateIce },
+      { label: "مياه صغيرة", price: 1, image: coconutIce },
+    ],
+    hasAddons: false,
+    hasNotes: true,
+  },
+  {
+    id: "juices",
+    label: "عصائر طبيعية",
+    image: naturalJuices,
+    items: [
+      { label: "فراولة", price: 5, image: strawberryIce },
+      { label: "بلوليمونادا", price: 6, image: lemonIce },
+      { label: "مانجا", price: 7, image: mangoIce },
+    ],
+    hasAddons: false,
+    hasNotes: true,
+  },
+];

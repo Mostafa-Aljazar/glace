@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useState } from "react";
 import Image from "next/image";
@@ -9,7 +9,8 @@ import AddToCartButton from "@/components/Order/AddToCartButton";
 import BackButton from "@/components/Order/BackButton";
 import OrderLeaveConfirmationDialog from "@/components/Order/OrderLeaveConfirmationDialog";
 import { useLeavePageGuard } from "@/hooks/order";
-import { ADDONS, DESSERT_CATEGORIES_V2 } from "@/data/OrderData";
+import { ADDONS, type SimpleMenuItem } from "@/data/OrderData";
+import { iceCreamKunafa, arabianIce, lotusIce, nutellaIce, blueberryIce, pistachioIce, energyIce } from "@/assets/images";
 import { useCartStore } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 
@@ -20,19 +21,56 @@ interface MixSelection {
   selectedFlavors: string[];
 }
 
-export default function DessertsOrderClientPage({
-  initialType = "luqaimat",
-}: {
-  initialType?: string;
-}) {
-  const defaultCategory =
-    DESSERT_CATEGORIES_V2.find((c) => c.id === initialType) ??
-    DESSERT_CATEGORIES_V2[0];
+const KUNAFA_CONFIG: {
+  id: string;
+  label: string;
+  image: typeof iceCreamKunafa;
+  items: SimpleMenuItem[];
+  mixes: any[];
+  hasAddons: boolean;
+  hasNotes: boolean;
+} = {
+  id: "kunafa",
+  label: "كنافة آيس كريم",
+  image: iceCreamKunafa,
+  items: [
+    { label: "كنافة عربية", price: 8, image: arabianIce },
+    { label: "كنافة لوتس", price: 8, image: lotusIce },
+    { label: "كنافة نوتيلا", price: 8, image: nutellaIce },
+    { label: "كنافة بلوبيري", price: 8, image: blueberryIce, available: false },
+    { label: "كنافة دوندورما بيستاشيو", price: 12, image: pistachioIce },
+    { label: "كنافة طاقة (كل خميس)", price: 12, image: energyIce, available: false },
+  ],
+  mixes: [
+    {
+      label: "مكس (اختر طعمين)",
+      pick: 2,
+      price: 10,
+      options: [
+        "كنافة عربية",
+        "كنافة لوتس",
+        "كنافة نوتيلا",
+        "كنافة بلوبيري",
+        "كنافة دوندورما بيستاشيو",
+        "كنافة طاقة (كل خميس)",
+      ],
+      optionImages: {
+        "كنافة عربية": arabianIce,
+        "كنافة لوتس": lotusIce,
+        "كنافة نوتيلا": nutellaIce,
+        "كنافة بلوبيري": blueberryIce,
+        "كنافة دوندورما بيستاشيو": pistachioIce,
+        "كنافة طاقة (كل خميس)": energyIce,
+      },
+    },
+  ],
+  hasAddons: false,
+  hasNotes: true,
+};
 
-  const [activeCategory] = useState(defaultCategory);
+export default function KunafahOrderClientPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [mixSelections, setMixSelections] = useState<MixSelection[]>([]);
-  const [selectedAddons, setSelectedAddons] = useState<number[]>([]);
   const [notes, setNotes] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
   const [validationMsg, setValidationMsg] = useState("");
@@ -42,13 +80,11 @@ export default function DessertsOrderClientPage({
   const hasPendingSelections =
     totalItems > 0 ||
     mixItems > 0 ||
-    selectedAddons.length > 0 ||
     notes.trim().length > 0;
 
   const clearSelections = useCallback(() => {
     setCounts({});
     setMixSelections([]);
-    setSelectedAddons([]);
     setNotes("");
   }, []);
 
@@ -61,7 +97,6 @@ export default function DessertsOrderClientPage({
 
   const addItem = useCartStore((s) => s.addItem);
   const { toggle: toggleFavorite, isFavorite } = useFavoritesStore();
-
 
   function increment(itemLabel: string) {
     setCounts((prev) => ({ ...prev, [itemLabel]: (prev[itemLabel] ?? 0) + 1 }));
@@ -86,7 +121,7 @@ export default function DessertsOrderClientPage({
       if (mixIdx === -1) return prev;
 
       const mix = prev[mixIdx];
-      const mixConfig = activeCategory.mixes?.find((m) => m.label === mix.mixLabel);
+      const mixConfig = KUNAFA_CONFIG.mixes?.find((m) => m.label === mix.mixLabel);
       if (!mixConfig) return prev;
 
       const updated = [...prev];
@@ -137,12 +172,6 @@ export default function DessertsOrderClientPage({
     setMixSelections((prev) => prev.filter((m) => m.id !== mixId));
   }
 
-  function toggleAddon(id: number) {
-    setSelectedAddons((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
-    );
-  }
-
   function showValidation(msg: string) {
     setValidationMsg(msg);
     setTimeout(() => setValidationMsg(""), 3000);
@@ -153,24 +182,16 @@ export default function DessertsOrderClientPage({
       return showValidation("اختر منتج واحد على الأقل");
     }
 
-    const addonNames = selectedAddons
-      .map((id) => ADDONS.find((a) => a.id === id)?.name ?? "")
-      .filter(Boolean);
-    const addonTotal = selectedAddons.reduce(
-      (sum, id) => sum + (ADDONS.find((a) => a.id === id)?.price ?? 0),
-      0,
-    );
-
     Object.entries(counts).forEach(([label, qty]) => {
       if (qty > 0) {
-        const item = activeCategory.items.find((i) => i.label === label);
+        const item = KUNAFA_CONFIG.items.find((i) => i.label === label);
         if (item) {
           addItem({
-            productId: activeCategory.id,
-            name: `${activeCategory.label} — ${label}`,
+            productId: KUNAFA_CONFIG.id,
+            name: `${KUNAFA_CONFIG.label} — ${label}`,
             type: label,
-            addons: addonNames,
-            addonTotal,
+            addons: [],
+            addonTotal: 0,
             unitPrice: item.price,
             quantity: qty,
             notes: notes || undefined,
@@ -181,15 +202,15 @@ export default function DessertsOrderClientPage({
 
     mixSelections.forEach((mix) => {
       if (mix.count > 0) {
-        const mixConfig = activeCategory.mixes?.find((m) => m.label === mix.mixLabel);
+        const mixConfig = KUNAFA_CONFIG.mixes?.find((m) => m.label === mix.mixLabel);
         if (mixConfig) {
           addItem({
-            productId: activeCategory.id,
-            name: `${activeCategory.label} — ${mix.mixLabel}`,
+            productId: KUNAFA_CONFIG.id,
+            name: `${KUNAFA_CONFIG.label} — ${mix.mixLabel}`,
             type: mix.mixLabel,
             flavors: mix.selectedFlavors,
-            addons: addonNames,
-            addonTotal,
+            addons: [],
+            addonTotal: 0,
             unitPrice: mixConfig.price,
             quantity: mix.count,
             notes: notes || undefined,
@@ -209,17 +230,13 @@ export default function DessertsOrderClientPage({
   }
 
   const totalPrice = Object.entries(counts).reduce((sum, [label, qty]) => {
-    const item = activeCategory.items.find((i) => i.label === label);
+    const item = KUNAFA_CONFIG.items.find((i) => i.label === label);
     return sum + (item?.price ?? 0) * qty;
   }, 0) +
   mixSelections.reduce((sum, mix) => {
-    const mixConfig = activeCategory.mixes?.find((m) => m.label === mix.mixLabel);
+    const mixConfig = KUNAFA_CONFIG.mixes?.find((m) => m.label === mix.mixLabel);
     return sum + (mixConfig?.price ?? 0) * mix.count;
-  }, 0) +
-  selectedAddons.reduce(
-    (sum, id) => sum + (ADDONS.find((a) => a.id === id)?.price ?? 0),
-    0,
-  );
+  }, 0);
 
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
@@ -237,15 +254,15 @@ export default function DessertsOrderClientPage({
             <div className="flex flex-col items-center gap-6 text-center">
               <div>
                 <h1 className="font-bold text-[28px] text-white sm:text-[34px] leading-tight">
-                  {activeCategory.label}
+                  {KUNAFA_CONFIG.label}
                 </h1>
                 <p className="text-[14px] text-white/55">
                   خصّص طلبك خطوة بخطوة
                 </p>
               </div>
               <Image
-                src={activeCategory.image}
-                alt={activeCategory.label}
+                src={KUNAFA_CONFIG.image}
+                alt={KUNAFA_CONFIG.label}
                 width={200}
                 height={200}
                 className="drop-shadow-xl w-40 sm:w-48 h-40 sm:h-48 object-contain"
@@ -271,7 +288,7 @@ export default function DessertsOrderClientPage({
 
             {/* Flat items */}
             <div className="flex flex-col gap-3 mb-6">
-              {activeCategory.items.map((item) => {
+              {KUNAFA_CONFIG.items.map((item) => {
                 const count = counts[item.label] ?? 0;
                 const isUnavailable = item.available === false;
                 return (
@@ -304,23 +321,18 @@ export default function DessertsOrderClientPage({
                           {item.price} ₪
                         </p>
                       </div>
-                      {item.description && (
-                        <p className="text-[12px] text-white/60 leading-tight">
-                          {item.description}
-                        </p>
-                      )}
                     </div>
 
                     {!isUnavailable && (
                       <button
                         type="button"
-                        onClick={() => toggleFavorite(`${activeCategory.id}-${item.label}`)}
+                        onClick={() => toggleFavorite(`kunafa-${item.label}`)}
                         className="transition-colors shrink-0"
                       >
                         <Heart
                           size={20}
                           className={
-                            isFavorite(`${activeCategory.id}-${item.label}`)
+                            isFavorite(`kunafa-${item.label}`)
                               ? "fill-red-500 text-red-500"
                               : "text-white/50 hover:text-white"
                           }
@@ -366,9 +378,9 @@ export default function DessertsOrderClientPage({
             </div>
 
             {/* Mix sections */}
-            {activeCategory.mixes && activeCategory.mixes.length > 0 && (
+            {KUNAFA_CONFIG.mixes && KUNAFA_CONFIG.mixes.length > 0 && (
               <div className="border-t border-white/15 pt-6">
-                {activeCategory.mixes.map((mixConfig) => {
+                {KUNAFA_CONFIG.mixes.map((mixConfig) => {
                   const mixInstancesForThisConfig = mixSelections.filter(
                     (m) => m.mixLabel === mixConfig.label
                   );
@@ -493,7 +505,7 @@ export default function DessertsOrderClientPage({
 
                               {/* Flavor chips with images */}
                               <div className="flex flex-wrap gap-3">
-                                {mixConfig.options.map((flavor) => {
+                                {mixConfig.options.map((flavor: string) => {
                                   const selected = editingInstance?.selectedFlavors.includes(flavor);
                                   const isFull = editingInstance
                                     ? editingInstance.selectedFlavors.length >= mixConfig.pick
@@ -502,7 +514,7 @@ export default function DessertsOrderClientPage({
                                     ? mixConfig.optionImages[flavor as keyof typeof mixConfig.optionImages]
                                     : undefined;
                                   // Check if this flavor's item is unavailable
-                                  const flavorItem = activeCategory.items.find((item) => item.label === flavor);
+                                  const flavorItem = KUNAFA_CONFIG.items.find((item) => item.label === flavor);
                                   const isFlavorUnavailable = flavorItem?.available === false;
 
                                   return (
@@ -557,34 +569,8 @@ export default function DessertsOrderClientPage({
               </div>
             )}
 
-            {/* Addons section */}
-            {activeCategory.hasAddons && (
-              <div className="border-t border-white/15 pt-6 mt-6">
-                <h3 className="mb-3 font-bold text-[16px] text-white">
-                  الإضافات (اختياري)
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {ADDONS.map((addon) => (
-                    <button
-                      key={addon.id}
-                      type="button"
-                      onClick={() => toggleAddon(addon.id)}
-                      className={`px-3 py-1.5 rounded-lg border text-[13px] cursor-pointer transition-all ${
-                        selectedAddons.includes(addon.id)
-                          ? "bg-glace-yellow border-glace-yellow text-[#1e6a7f] font-bold"
-                          : "bg-white/10 border-white/25 text-white hover:bg-white/20"
-                      }`}
-                    >
-                      {addon.name}
-                      <span className="text-[11px] ml-1">+{addon.price} ₪</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Notes section */}
-            {activeCategory.hasNotes && (
+            {KUNAFA_CONFIG.hasNotes && (
               <div className="mt-6 pt-6 border-white/15 border-t">
                 <label className="block mb-2 font-medium text-[14px] text-white">
                   إذا حبيت تضيف ملاحظة:

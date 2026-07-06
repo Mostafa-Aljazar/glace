@@ -20,6 +20,7 @@ import {
   refrigerator,
   iceCream,
   milkshake,
+  iceCreamKunafa,
   coldDrinks,
   naturalJuices,
 } from "@/assets/images";
@@ -42,6 +43,7 @@ const CATEGORY_ICONS: Record<string, typeof IceCream> = {
   brad: GlassWater,
   "brad-boza": GlassWater,
   milkshake: Milk,
+  kunafa: Cake,
   "cold-drinks": CupSoda,
   juices: Apple,
   desserts: Cake,
@@ -52,6 +54,7 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   brad: "from-[#f4a851]/30 to-[#c97d2a]/30",
   "brad-boza": "from-[#f4a851]/30 to-[#c97d2a]/30",
   milkshake: "from-[#f4519f]/20 to-[#b02f74]/20",
+  kunafa: "from-[#f4a851]/20 to-[#c97d2a]/20",
   "cold-drinks": "from-[#51b4f4]/20 to-[#2a6eb0]/20",
   juices: "from-[#3fbd59]/20 to-[#2a8540]/20",
   desserts: "from-[#da51f4]/20 to-[#9a2fb0]/20",
@@ -62,6 +65,7 @@ const CATEGORY_ACCENT: Record<string, string> = {
   brad: "#f4a851",
   "brad-boza": "#f4a851",
   milkshake: "#f4519f",
+  kunafa: "#f4a851",
   "cold-drinks": "#51b4f4",
   juices: "#3fbd59",
   desserts: "#da51f4",
@@ -86,15 +90,20 @@ const DIRECT_ORDER_CARDS: Record<
     sublabel: "كلاسيك · سبيشل · أطعمة خاصة",
     href: "/menu/order-milkshake",
   },
+  kunafa: {
+    image: iceCreamKunafa,
+    sublabel: "عربية · لوتس · نوتيلا · بلوبيري",
+    href: "/menu/order-kunafa",
+  },
   "cold-drinks": {
     image: coldDrinks,
     sublabel: "آيس كوفي · موكا · بوبا شيك",
-    href: "/menu/order-drinks?type=cold",
+    href: "/menu/order-desserts?type=cold-drinks",
   },
   juices: {
     image: naturalJuices,
     sublabel: "فراولة · بلوليمونادا · مانجا",
-    href: "/menu/order-drinks?type=juices",
+    href: "/menu/order-desserts?type=juices",
   },
 };
 
