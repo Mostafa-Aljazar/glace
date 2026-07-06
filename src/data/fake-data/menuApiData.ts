@@ -14,7 +14,7 @@ import {
 export interface ApiMenuCategory {
   id: string;
   label: string;
-  slug: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "loqaimat" | "cold-drinks" | "juices" | "desserts";
+  slug: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "loqaimat" | "pancake" | "waffle" | "crepe" | "pizza" | "molten" | "cold-drinks" | "juices" | "desserts";
 }
 
 export interface ApiFlavorCard {
@@ -35,7 +35,7 @@ export interface ApiMenuItem {
   name: string;
   image: typeof iceCreamCup;
   modalType: "table" | "flavors" | "confirmation";
-  category: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "loqaimat" | "cold-drinks" | "juices" | "desserts";
+  category: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "loqaimat" | "pancake" | "waffle" | "crepe" | "pizza" | "molten" | "cold-drinks" | "juices" | "desserts";
   tableHeaders?: string[];
   priceRows?: ApiPriceRow[];
   flavors?: ApiFlavorCard[];
@@ -52,6 +52,11 @@ export const FAKE_CATEGORIES: ApiMenuCategory[] = [
   { id: "milkshake",   label: "ميلك شيك",         slug: "milkshake"   },
   { id: "kunafa",      label: "كنافة آيس كريم",  slug: "kunafa"      },
   { id: "loqaimat",    label: "لقيمات",           slug: "loqaimat"    },
+  { id: "pancake",     label: "بان كيك",          slug: "pancake"     },
+  { id: "waffle",      label: "وافل",             slug: "waffle"      },
+  { id: "crepe",       label: "كريب",             slug: "crepe"       },
+  { id: "pizza",       label: "بيتزا جلاسيه",     slug: "pizza"       },
+  { id: "molten",      label: "مولتن كيك",        slug: "molten"      },
   { id: "cold-drinks", label: "مشروبات باردة",    slug: "cold-drinks" },
   { id: "juices",      label: "عصائر طبيعية",     slug: "juices"      },
   { id: "desserts",    label: "حلويات",            slug: "desserts"    },
@@ -273,75 +278,36 @@ export const FAKE_MENU_ITEMS: ApiMenuItem[] = [
 
   // ── DESSERTS ──────────────────────────────────────────────────────
   {
-    id: "luqaimat",
-    name: "لقيمات",
-    image: luqaimat,
-    modalType: "table",
-    category: "desserts",
-    priceRows: [
-      { label: "نوتيلا", price: 10 },
-      { label: "لوتس", price: 12 },
-      { label: "بستاشيو", price: 15 },
-      { label: "مكس", price: 12 },
-      { label: "سوبر مكس", price: 15 },
-    ],
-    orderHref: "/menu/order-desserts?type=luqaimat",
-  },
-  {
     id: "pancake",
     name: "بان كيك",
     image: pancake,
-    modalType: "table",
-    category: "desserts",
-    priceRows: [
-      { label: "نوتيلا", price: 11 },
-      { label: "لوتس", price: 13 },
-      { label: "بيستاشيو", price: 17 },
-      { label: "مكس", price: 15 },
-    ],
-    orderHref: "/menu/order-desserts?type=pancake",
+    modalType: "confirmation",
+    category: "pancake",
+    orderHref: "/menu/order/pancake",
   },
   {
     id: "waffle",
     name: "وافل",
     image: waffle,
-    modalType: "table",
-    category: "desserts",
-    priceRows: [
-      { label: "نوتيلا", price: 10 },
-      { label: "لوتس", price: 12 },
-      { label: "بيستاشيو", price: 14 },
-      { label: "مكس", price: 13 },
-    ],
-    orderHref: "/menu/order-desserts?type=waffle",
+    modalType: "confirmation",
+    category: "waffle",
+    orderHref: "/menu/order/waffle",
   },
   {
     id: "crepe",
     name: "كريب",
     image: crepe,
-    modalType: "table",
-    category: "desserts",
-    priceRows: [
-      { label: "نوتيلا", price: 9 },
-      { label: "لوتس", price: 11 },
-      { label: "بيستاشيو", price: 13 },
-      { label: "مكس", price: 12 },
-    ],
-    orderHref: "/menu/order-desserts?type=crepe",
+    modalType: "confirmation",
+    category: "crepe",
+    orderHref: "/menu/order/crepe",
   },
   {
     id: "pizza",
     name: "بيتزا جلاسيه",
     image: glassyPizza,
-    modalType: "table",
-    category: "desserts",
-    priceRows: [
-      { label: "نوتيلا", price: 12 },
-      { label: "لوتس", price: 14 },
-      { label: "بيستاشيو", price: 16 },
-      { label: "مكس", price: 15 },
-    ],
-    orderHref: "/menu/order-desserts?type=pizza",
+    modalType: "confirmation",
+    category: "pizza",
+    orderHref: "/menu/order/pizza",
   },
   {
     id: "kunafa",
@@ -364,15 +330,9 @@ export const FAKE_MENU_ITEMS: ApiMenuItem[] = [
     id: "molten",
     name: "مولتن كيك",
     image: moltenCake,
-    modalType: "table",
-    category: "desserts",
-    priceRows: [
-      { label: "نوتيلا", price: 8 },
-      { label: "لوتس", price: 12 },
-      { label: "بستاشيو", price: 12 },
-      { label: "مكس", price: 14 },
-    ],
-    orderHref: "/menu/order-desserts?type=molten",
+    modalType: "confirmation",
+    category: "molten",
+    orderHref: "/menu/order/molten",
   },
   {
     id: "brownie",

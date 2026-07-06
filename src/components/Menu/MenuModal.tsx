@@ -171,7 +171,7 @@ export default function MenuModal({ item, onClose, onConfirm }: MenuModalProps) 
                     إلغاء
                   </button>
                   <Link
-                    href="/menu/order-cup"
+                    href={item.orderHref || "/menu/order-cup"}
                     onClick={onClose}
                     className="relative flex justify-center items-center w-[130px] h-[46px]"
                   >

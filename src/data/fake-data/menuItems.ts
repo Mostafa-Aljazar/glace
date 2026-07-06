@@ -48,10 +48,10 @@ export const categories: {
   label: string;
   icon: typeof IceCream;
 }[] = [
-  { value: "ice-cream", label: "آيس كريم", icon: IceCream },
-  { value: "drinks", label: "مشروبات وعصائر", icon: CupSoda },
-  { value: "desserts", label: "حلويات", icon: Cake },
-];
+    { value: "ice-cream", label: "آيس كريم", icon: IceCream },
+    { value: "drinks", label: "مشروبات وعصائر", icon: CupSoda },
+    { value: "desserts", label: "حلويات", icon: Cake },
+  ];
 
 export const allMenuItems: MenuItem[] = [
   {
@@ -267,7 +267,7 @@ export const allMenuItems: MenuItem[] = [
       { label: "لقيمات مكس (نوتيلا+لوتس)", price: 12 },
       { label: "لقيمات سوبر مكس (نوتيلا+لوتس+بيستاشيو)", price: 15 },
     ],
-    orderHref: "/menu/order-loqaimat",
+    orderHref: "/menu/order/loqaimat",
   },
   {
     id: "molten",

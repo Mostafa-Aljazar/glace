@@ -166,41 +166,6 @@ export interface DessertCategoryConfig {
 
 export const DESSERT_CATEGORIES_V2: DessertCategoryConfig[] = [
   {
-    id: "luqaimat",
-    label: "لقيمات",
-    image: luqaimat,
-    items: [
-      { label: "نوتيلا", price: 10, image: nutellaIce },
-      { label: "لوتس", price: 12, image: lotusIce },
-      { label: "بستاشيو", price: 15, image: pistachioIce, available: false },
-    ],
-    mixes: [
-      {
-        label: "مكس (نوتيلا+لوتس)",
-        pick: 2,
-        price: 12,
-        options: ["نوتيلا", "لوتس"],
-        optionImages: {
-          "نوتيلا": nutellaIce,
-          "لوتس": lotusIce,
-        },
-      },
-      {
-        label: "سوبر مكس (نوتيلا+لوتس+بيستاشيو)",
-        pick: 3,
-        price: 15,
-        options: ["نوتيلا", "لوتس", "بستاشيو"],
-        optionImages: {
-          "نوتيلا": nutellaIce,
-          "لوتس": lotusIce,
-          "بستاشيو": pistachioIce,
-        },
-      },
-    ],
-    hasAddons: true,
-    hasNotes: true,
-  },
-  {
     id: "pancake",
     label: "بان كيك",
     image: pancake,

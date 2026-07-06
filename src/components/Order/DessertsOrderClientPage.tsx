@@ -21,7 +21,7 @@ interface MixSelection {
 }
 
 export default function DessertsOrderClientPage({
-  initialType = "luqaimat",
+  initialType = "pancake",
 }: {
   initialType?: string;
 }) {
@@ -32,7 +32,8 @@ export default function DessertsOrderClientPage({
   const [activeCategory] = useState(defaultCategory);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [mixSelections, setMixSelections] = useState<MixSelection[]>([]);
-  const [selectedAddons, setSelectedAddons] = useState<number[]>([]);
+  const [selectedBiscuitAddon, setSelectedBiscuitAddon] = useState<string | null>(null);
+  const [selectedOptionalAddons, setSelectedOptionalAddons] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
   const [validationMsg, setValidationMsg] = useState("");
@@ -42,13 +43,15 @@ export default function DessertsOrderClientPage({
   const hasPendingSelections =
     totalItems > 0 ||
     mixItems > 0 ||
-    selectedAddons.length > 0 ||
+    selectedBiscuitAddon !== null ||
+    selectedOptionalAddons.length > 0 ||
     notes.trim().length > 0;
 
   const clearSelections = useCallback(() => {
     setCounts({});
     setMixSelections([]);
-    setSelectedAddons([]);
+    setSelectedBiscuitAddon(null);
+    setSelectedOptionalAddons([]);
     setNotes("");
   }, []);
 
@@ -137,10 +140,18 @@ export default function DessertsOrderClientPage({
     setMixSelections((prev) => prev.filter((m) => m.id !== mixId));
   }
 
-  function toggleAddon(id: number) {
-    setSelectedAddons((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
-    );
+  function toggleBiscuitAddon(addonId: string) {
+    setSelectedBiscuitAddon((prev) => (prev === addonId ? null : addonId));
+  }
+
+  function toggleOptionalAddon(addonId: string) {
+    setSelectedOptionalAddons((prev) => {
+      if (prev.includes(addonId)) {
+        return prev.filter((id) => id !== addonId);
+      } else {
+        return [...prev, addonId];
+      }
+    });
   }
 
   function showValidation(msg: string) {
@@ -148,18 +159,30 @@ export default function DessertsOrderClientPage({
     setTimeout(() => setValidationMsg(""), 3000);
   }
 
+  const addonTotal = (() => {
+    let total = 0;
+    if (selectedBiscuitAddon) {
+      const addon = ADDONS.find((a) => a.id?.toString() === selectedBiscuitAddon);
+      total += addon?.price ?? 0;
+    }
+    selectedOptionalAddons.forEach((addonId) => {
+      const addon = ADDONS.find((a) => a.id?.toString() === addonId);
+      total += addon?.price ?? 0;
+    });
+    return total;
+  })();
+
   function handleAddToCart() {
     if (totalItems === 0 && mixItems === 0) {
       return showValidation("اختر منتج واحد على الأقل");
     }
 
-    const addonNames = selectedAddons
-      .map((id) => ADDONS.find((a) => a.id === id)?.name ?? "")
+    const allAddons = selectedBiscuitAddon
+      ? [selectedBiscuitAddon, ...selectedOptionalAddons]
+      : selectedOptionalAddons;
+    const addonNames = allAddons
+      .map((id) => ADDONS.find((a) => a.id?.toString() === id)?.name ?? "")
       .filter(Boolean);
-    const addonTotal = selectedAddons.reduce(
-      (sum, id) => sum + (ADDONS.find((a) => a.id === id)?.price ?? 0),
-      0,
-    );
 
     Object.entries(counts).forEach(([label, qty]) => {
       if (qty > 0) {
@@ -216,10 +239,7 @@ export default function DessertsOrderClientPage({
     const mixConfig = activeCategory.mixes?.find((m) => m.label === mix.mixLabel);
     return sum + (mixConfig?.price ?? 0) * mix.count;
   }, 0) +
-  selectedAddons.reduce(
-    (sum, id) => sum + (ADDONS.find((a) => a.id === id)?.price ?? 0),
-    0,
-  );
+  (totalItems + mixItems) * addonTotal;
 
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
@@ -559,26 +579,119 @@ export default function DessertsOrderClientPage({
 
             {/* Addons section */}
             {activeCategory.hasAddons && (
-              <div className="border-t border-white/15 pt-6 mt-6">
-                <h3 className="mb-3 font-bold text-[16px] text-white">
-                  الإضافات (اختياري)
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {ADDONS.map((addon) => (
-                    <button
-                      key={addon.id}
-                      type="button"
-                      onClick={() => toggleAddon(addon.id)}
-                      className={`px-3 py-1.5 rounded-lg border text-[13px] cursor-pointer transition-all ${
-                        selectedAddons.includes(addon.id)
-                          ? "bg-glace-yellow border-glace-yellow text-[#1e6a7f] font-bold"
-                          : "bg-white/10 border-white/25 text-white hover:bg-white/20"
-                      }`}
-                    >
-                      {addon.name}
-                      <span className="text-[11px] ml-1">+{addon.price} ₪</span>
-                    </button>
-                  ))}
+              <div className="mt-6 pt-6 border-white/15 border-t">
+                <div className="mb-5 pb-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-bold text-[16px] text-white">
+                      إضافات اختيارية
+                    </h3>
+                    <div className="inline-flex items-center gap-1.5 bg-white/10 px-2.5 py-1 border border-white/20 rounded-full">
+                      <span className="text-[11px] text-white/70">اختياري</span>
+                    </div>
+                  </div>
+                  <p className="text-[12px] text-white/60">
+                    أضف لمسات إضافية لتحسين طعم منتجك
+                  </p>
+                </div>
+
+                {/* Biscuit packs section */}
+                <div className="mb-5">
+                  <p className="text-[12px] font-medium text-white/70 mb-3">
+                    اختر بكيت بسكوت (اختياري):
+                  </p>
+                  <div className="space-y-2.5">
+                    {ADDONS.filter((a) => a.name.includes("بكيت بسكوت")).map((addon) => {
+                      const isSelected = selectedBiscuitAddon === addon.id.toString();
+                      return (
+                        <button
+                          key={addon.id}
+                          type="button"
+                          onClick={() => toggleBiscuitAddon(addon.id.toString())}
+                          className={`w-full flex items-center gap-3 px-4 py-4 rounded-[16px] border transition-all duration-200 group ${
+                            isSelected
+                              ? "bg-glace-yellow/15 border-glace-yellow/50 shadow-[0_4px_12px_rgba(244,228,81,0.15)]"
+                              : "bg-white/8 border-white/10 hover:bg-white/12 hover:border-white/20"
+                          }`}
+                        >
+                          {/* Custom radio button */}
+                          <div className={`flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-all ${
+                            isSelected
+                              ? "bg-glace-yellow border-glace-yellow shadow-[0_2px_8px_rgba(244,228,81,0.3)]"
+                              : "border-white/40 group-hover:border-white/60"
+                          }`}>
+                            {isSelected && (
+                              <div className="w-2 h-2 bg-[#1e6a7f] rounded-full"></div>
+                            )}
+                          </div>
+
+                          {/* Addon info */}
+                          <div className="flex-1 text-right min-w-0">
+                            <p className="font-medium text-[14px] text-white leading-snug">
+                              {addon.name}
+                            </p>
+                          </div>
+
+                          {/* Price */}
+                          <p className={`font-bold text-[14px] whitespace-nowrap transition-colors ${
+                            isSelected ? "text-glace-yellow" : "text-white/70"
+                          }`}>
+                            +{addon.price} ₪
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Optional addons section */}
+                <div>
+                  <p className="text-[12px] font-medium text-white/70 mb-3">
+                    إضافات أخرى (متعددة):
+                  </p>
+                  <div className="space-y-2.5">
+                    {ADDONS.filter((a) => !a.name.includes("بكيت بسكوت")).map((addon) => {
+                      const isSelected = selectedOptionalAddons.includes(addon.id.toString());
+                      return (
+                        <button
+                          key={addon.id}
+                          type="button"
+                          onClick={() => toggleOptionalAddon(addon.id.toString())}
+                          className={`w-full flex items-center gap-3 px-4 py-4 rounded-[16px] border transition-all duration-200 group ${
+                            isSelected
+                              ? "bg-glace-yellow/15 border-glace-yellow/50 shadow-[0_4px_12px_rgba(244,228,81,0.15)]"
+                              : "bg-white/8 border-white/10 hover:bg-white/12 hover:border-white/20"
+                          }`}
+                        >
+                          {/* Custom checkbox */}
+                          <div className={`flex items-center justify-center w-5 h-5 rounded-md border-2 shrink-0 transition-all ${
+                            isSelected
+                              ? "bg-glace-yellow border-glace-yellow shadow-[0_2px_8px_rgba(244,228,81,0.3)]"
+                              : "border-white/40 group-hover:border-white/60"
+                          }`}>
+                            {isSelected && (
+                              <svg className="w-3 h-3 text-[#1e6a7f]" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+
+                          {/* Addon info */}
+                          <div className="flex-1 text-right min-w-0">
+                            <p className="font-medium text-[14px] text-white leading-snug">
+                              {addon.name}
+                            </p>
+                          </div>
+
+                          {/* Price */}
+                          <p className={`font-bold text-[14px] whitespace-nowrap transition-colors ${
+                            isSelected ? "text-glace-yellow" : "text-white/70"
+                          }`}>
+                            +{addon.price} ₪
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
