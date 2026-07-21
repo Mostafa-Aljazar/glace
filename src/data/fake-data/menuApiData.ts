@@ -14,7 +14,7 @@ import {
 export interface ApiMenuCategory {
   id: string;
   label: string;
-  slug: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "loqaimat" | "pancake" | "waffle" | "crepe" | "pizza" | "molten" | "cold-drinks" | "juices" | "desserts";
+  slug: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "loqaimat" | "pancake" | "waffle" | "crepe" | "pizza" | "molten" | "cold-drinks" | "juices" | "desserts" | "hot-drinks" | "corn" | "other-addons" | "new";
 }
 
 export interface ApiFlavorCard {
@@ -35,7 +35,7 @@ export interface ApiMenuItem {
   name: string;
   image: typeof iceCreamCup;
   modalType: "table" | "flavors" | "confirmation";
-  category: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "loqaimat" | "pancake" | "waffle" | "crepe" | "pizza" | "molten" | "cold-drinks" | "juices" | "desserts";
+  category: "ice-cream" | "brad" | "brad-boza" | "milkshake" | "kunafa" | "loqaimat" | "pancake" | "waffle" | "crepe" | "pizza" | "molten" | "cold-drinks" | "juices" | "desserts" | "hot-drinks" | "corn" | "other-addons" | "new";
   tableHeaders?: string[];
   priceRows?: ApiPriceRow[];
   flavors?: ApiFlavorCard[];
@@ -60,6 +60,10 @@ export const FAKE_CATEGORIES: ApiMenuCategory[] = [
   { id: "cold-drinks", label: "مشروبات باردة",    slug: "cold-drinks" },
   { id: "juices",      label: "عصائر طبيعية",     slug: "juices"      },
   { id: "desserts",    label: "حلويات",            slug: "desserts"    },
+  { id: "hot-drinks",  label: "مشروبات ساخنة",    slug: "hot-drinks"  },
+  { id: "corn",        label: "ذرة",               slug: "corn"        },
+  { id: "other-addons", label: "اضافات اخرى",     slug: "other-addons" },
+  { id: "new",         label: "جديدنا",            slug: "new"         },
 ];
 
 export const FAKE_MENU_ITEMS: ApiMenuItem[] = [
@@ -374,5 +378,59 @@ export const FAKE_MENU_ITEMS: ApiMenuItem[] = [
       { label: "تشيز كيك مكس",        price: 14 },
     ],
     orderHref: "/menu/order-other-desserts?type=cheesecake",
+  },
+
+  // ── HOT DRINKS ────────────────────────────────────────────────────
+  {
+    id: "hot-drinks",
+    name: "مشروبات ساخنة",
+    image: milkshake,
+    modalType: "table",
+    category: "hot-drinks",
+    priceRows: [
+      { label: "قهوة عربية", price: 3 },
+      { label: "قهوة تركية", price: 4 },
+      { label: "شاي", price: 2 },
+      { label: "كاكاو ساخن", price: 5 },
+      { label: "نسكافيه ساخن", price: 4 },
+    ],
+  },
+
+  // ── CORN ───────────────────────────────────────────────────────────
+  {
+    id: "corn",
+    name: "ذرة",
+    image: naturalJuices,
+    modalType: "table",
+    category: "corn",
+    priceRows: [
+      { label: "ذرة مشوية", price: 5 },
+      { label: "ذرة مع زبدة", price: 6 },
+      { label: "ذرة مع جبنة", price: 7 },
+    ],
+  },
+
+  // ── OTHER ADDONS ───────────────────────────────────────────────────
+  {
+    id: "other-addons",
+    name: "اضافات اخرى",
+    image: moltenCake,
+    modalType: "table",
+    category: "other-addons",
+    priceRows: [
+      { label: "صوص الشوكولاتة", price: 1 },
+      { label: "صوص الفراولة", price: 1 },
+      { label: "مكسرات متنوعة", price: 2 },
+      { label: "توبينج الأوريو", price: 2 },
+    ],
+  },
+
+  // ── NEW ITEMS ──────────────────────────────────────────────────────
+  {
+    id: "new-items",
+    name: "جديدنا",
+    image: specialIceCream,
+    modalType: "confirmation",
+    category: "new",
   },
 ];

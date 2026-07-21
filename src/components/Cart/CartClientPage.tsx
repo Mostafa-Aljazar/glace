@@ -141,6 +141,7 @@ export default function CartClientPage() {
   const discount       = useCartStore((s) => s.discount);
   const coupon         = useCartStore((s) => s.coupon);
   const applyCoupon    = useCartStore((s) => s.applyCoupon);
+  const clearCart      = useCartStore((s) => s.clearCart);
 
   const [couponInput, setCouponInput] = useState(coupon);
   const couponApplied  = discount > 0;
@@ -188,7 +189,14 @@ export default function CartClientPage() {
                 {/* Column header */}
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="text-white text-[20px] font-bold">المنتجات</h2>
-                  <span className="text-white/40 text-[13px]">{items.length} عناصر</span>
+                  <button
+                    type="button"
+                    onClick={clearCart}
+                    className="inline-flex items-center gap-1.5 text-white/40 hover:text-red-300 text-[13px] transition-colors cursor-pointer"
+                  >
+                    <Trash2 size={14} />
+                    حذف الكل
+                  </button>
                 </div>
 
                 <div className="flex flex-col gap-3">
