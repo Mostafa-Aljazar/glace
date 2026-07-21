@@ -14,7 +14,7 @@ import { refrigerator, iceCream } from "@/assets/images";
 import { CLASSIC_FLAVORS, SPECIAL_FLAVORS } from "@/data/OrderData";
 import { useCartStore } from "@/store/cartStore";
 
-type BradSize = "small" | "medium" | "large" | "half-liter" | "liter";
+type BradSize = "small" | "medium" | "large";
 type BradFlavor = "lemon" | "mango" | "mix";
 type IceType = "classic" | "special" | "mix";
 
@@ -22,8 +22,6 @@ const BRAD_SIZES: { value: BradSize; label: string; price: number }[] = [
   { value: "small", label: "صغير", price: 1 },
   { value: "medium", label: "وسط", price: 2 },
   { value: "large", label: "كبير", price: 3 },
-  { value: "half-liter", label: "نص لتر", price: 3 },
-  { value: "liter", label: "لتر", price: 6 },
 ];
 
 const BRAD_FLAVORS: { value: BradFlavor; label: string }[] = [

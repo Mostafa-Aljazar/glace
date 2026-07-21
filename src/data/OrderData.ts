@@ -125,6 +125,9 @@ export const ADDONS: Addon[] = [
   { id: 5, name: "إضافة مكسرات", price: 7 },
 ];
 
+export const BISCUIT_PACK_ADDONS = ADDONS.filter((a) => a.id <= 3);
+export const EXTRA_BISCUIT_UNIT_PRICE = 1;
+
 export function getIceItemPrice(item: IceItem): number {
   const base = ICE_PRICES[`${item.size}.${item.type}`] ?? 0;
   const addonTotal = item.addonIds.reduce((sum, addonId) => {
@@ -313,30 +316,6 @@ export const DESSERT_CATEGORIES_V2: DessertCategoryConfig[] = [
       { label: "نوتيلا", price: 8, image: nutellaIce, description: "كيك شوكولاتة دافئ بقلب سائل مع بوظة فانيلا" },
       { label: "لوتس", price: 12, image: lotusIce, description: "كيك شوكولاتة دافئ بقلب سائل مع بوظة لوتس" },
       { label: "بستاشيو", price: 12, image: pistachioIce, description: "كيك شوكولاتة دافئ بقلب سائل مع بوظة بستاشيو" },
-    ],
-    mixes: [
-      {
-        label: "مكس (نوتيلا+لوتس)",
-        pick: 2,
-        price: 14,
-        options: ["نوتيلا", "لوتس", "بستاشيو"],
-        optionImages: {
-          "نوتيلا": nutellaIce,
-          "لوتس": lotusIce,
-          "بستاشيو": pistachioIce,
-        },
-      },
-      {
-        label: "سوبر مكس",
-        pick: 3,
-        price: 17,
-        options: ["نوتيلا", "لوتس", "بستاشيو"],
-        optionImages: {
-          "نوتيلا": nutellaIce,
-          "لوتس": lotusIce,
-          "بستاشيو": pistachioIce,
-        },
-      },
     ],
     hasAddons: false,
     hasNotes: true,

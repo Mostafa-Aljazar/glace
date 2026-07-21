@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useState } from "react";
 import Image from "next/image";
@@ -11,32 +11,43 @@ import FlavorBall from "@/components/Order/FlavorBall";
 import OrderLeaveConfirmationDialog from "@/components/Order/OrderLeaveConfirmationDialog";
 import { useLeavePageGuard } from "@/hooks/order";
 import { familyIceCream, emptyPop } from "@/assets/images";
-import { CLASSIC_FLAVORS, SPECIAL_FLAVORS } from "@/data/OrderData";
+import { CLASSIC_FLAVORS, SPECIAL_FLAVORS, EXTRA_BISCUIT_UNIT_PRICE } from "@/data/OrderData";
 import { useCartStore } from "@/store/cartStore";
+import { ExtraBiscuitCounter } from "@/components/Order/BiscuitAddons";
 
 type ContainerType = "كلاسيكس" | "فلين";
-type FamilySize = "علبة نص لتر" | "علبة لتر" | "فلين نص لتر" | "فلين لتر";
+type FamilySize = "1/2 لتر" | "1 لتر";
 type FlavorType = "كلاسيك" | "سبيشل" | "مكس";
 
 const CLASSIC_SIZES: {
   label: FamilySize;
+  container: ContainerType;
   classic: number;
   special: number;
   balls: number;
 }[] = [
-  { label: "علبة نص لتر", classic: 14, special: 18, balls: 8 },
-  { label: "علبة لتر", classic: 28, special: 35, balls: 12 },
+  {
+    label: "1/2 لتر",
+    container: "كلاسيكس",
+    classic: 14,
+    special: 18,
+    balls: 8,
+  },
+  { label: "1 لتر", container: "كلاسيكس", classic: 28, special: 35, balls: 12 },
 ];
 
 const FLIN_SIZES: {
   label: FamilySize;
+  container: ContainerType;
   classic: number;
   special: number;
   balls: number;
 }[] = [
-  { label: "فلين نص لتر", classic: 16, special: 20, balls: 8 },
-  { label: "فلين لتر", classic: 31, special: 38, balls: 12 },
+  { label: "1/2 لتر", container: "فلين", classic: 16, special: 20, balls: 8 },
+  { label: "1 لتر", container: "فلين", classic: 31, special: 38, balls: 12 },
 ];
+
+const FLIN_CONTAINER_AVAILABLE = false;
 
 // ── StepCard ─────────────────────────────────────────────────────────
 function StepCard({
@@ -84,31 +95,43 @@ function Pill({
   label,
   sublabel,
   active,
+  unavailable = false,
   onClick,
 }: {
   label: string;
   sublabel?: string;
   active: boolean;
+  unavailable?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-xl border text-[15px] sm:text-[16px] font-medium transition-all duration-150 cursor-pointer
+      onClick={unavailable ? undefined : onClick}
+      disabled={unavailable}
+      className={`relative flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-xl border text-[15px] sm:text-[16px] font-medium transition-all duration-150 min-w-[100px]
         ${
-          active
-            ? "bg-glace-yellow border-glace-yellow text-[#1e6a7f] font-bold shadow-[0_4px_16px_rgba(244,228,81,0.4)]"
-            : "bg-white/10 border-white/25 text-white hover:bg-white/20 hover:border-white/50"
+          unavailable
+            ? "bg-white/5 border-white/10 cursor-not-allowed"
+            : active
+              ? "bg-glace-yellow border-glace-yellow text-[#1e6a7f] font-bold shadow-[0_4px_16px_rgba(244,228,81,0.4)] cursor-pointer"
+              : "bg-white/10 border-white/25 text-white hover:bg-white/20 hover:border-white/50 cursor-pointer"
         }`}
     >
-      <span>{label}</span>
+      <span className={unavailable ? "text-white/40" : ""}>{label}</span>
       {sublabel && (
         <span
-          className={`text-[11px] ${active ? "text-[#1e6a7f]/70" : "text-white/50"}`}
+          className={`text-[11px] ${unavailable ? "text-white/30" : active ? "text-[#1e6a7f]/70" : "text-white/50"}`}
         >
           {sublabel}
         </span>
+      )}
+      {unavailable && (
+        <div className="-top-4 left-1/2 z-10 absolute -translate-x-1/2">
+          <span className="bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full font-bold text-[8px] text-white whitespace-nowrap">
+            غير متوفر
+          </span>
+        </div>
       )}
     </button>
   );
@@ -122,6 +145,7 @@ export default function FamilyOrderClientPage() {
   const [familySize, setFamilySize] = useState<FamilySize | "">("");
   const [flavorType, setFlavorType] = useState<FlavorType | "">("");
   const [selectedBalls, setSelectedBalls] = useState<number[]>([]);
+  const [extraBiscuitCount, setExtraBiscuitCount] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   const [validationMsg, setValidationMsg] = useState("");
@@ -131,6 +155,7 @@ export default function FamilyOrderClientPage() {
     familySize !== "" ||
     flavorType !== "" ||
     selectedBalls.length > 0 ||
+    extraBiscuitCount > 0 ||
     quantity !== 1;
 
   const clearSelections = useCallback(() => {
@@ -138,6 +163,7 @@ export default function FamilyOrderClientPage() {
     setFamilySize("");
     setFlavorType("");
     setSelectedBalls([]);
+    setExtraBiscuitCount(0);
     setQuantity(1);
   }, []);
 
@@ -149,6 +175,7 @@ export default function FamilyOrderClientPage() {
   } = useLeavePageGuard(hasPendingSelections, clearSelections);
 
   function changeContainerType(ct: ContainerType) {
+    if (ct === "فلين" && !FLIN_CONTAINER_AVAILABLE) return;
     setContainerType(ct);
     setFamilySize("");
     setFlavorType("");
@@ -170,8 +197,7 @@ export default function FamilyOrderClientPage() {
       : containerType === "فلين"
         ? FLIN_SIZES
         : [];
-  const allSizes = [...CLASSIC_SIZES, ...FLIN_SIZES];
-  const sizeData = allSizes.find((s) => s.label === familySize);
+  const sizeData = sizes.find((s) => s.label === familySize);
   const allFlavors = [...CLASSIC_FLAVORS, ...SPECIAL_FLAVORS];
 
   const flavors =
@@ -213,6 +239,8 @@ export default function FamilyOrderClientPage() {
     setSelectedBalls((prev) => prev.filter((id) => id !== flavorId));
   }
 
+  const addonSum = extraBiscuitCount * EXTRA_BISCUIT_UNIT_PRICE;
+
   const unitPrice = sizeData
     ? flavorType === "مكس"
       ? Math.round((sizeData.classic + sizeData.special) / 2)
@@ -221,7 +249,7 @@ export default function FamilyOrderClientPage() {
         : sizeData.classic
     : 0;
 
-  const total = unitPrice * quantity;
+  const total = (unitPrice + addonSum) * quantity;
   const s1Done = !!containerType;
   const s2Done = !!familySize;
   const s3Done = !!flavorType;
@@ -248,14 +276,16 @@ export default function FamilyOrderClientPage() {
     const flavorNames = selectedBalls
       .map((id) => allFlavors.find((f) => f.id === id)?.name ?? "")
       .filter(Boolean);
+    const addonNames =
+      extraBiscuitCount > 0 ? [`بسكوت إضافي ×${extraBiscuitCount}`] : [];
     addItem({
       productId: "family",
       name: "بوظة عائلي",
-      size: familySize || undefined,
+      size: familySize ? `${containerType} · ${familySize}` : undefined,
       type: flavorType || undefined,
       flavors: flavorNames,
-      addons: [],
-      addonTotal: 0,
+      addons: addonNames,
+      addonTotal: addonSum,
       unitPrice,
       quantity,
     });
@@ -264,6 +294,7 @@ export default function FamilyOrderClientPage() {
     setFamilySize("");
     setFlavorType("");
     setSelectedBalls([]);
+    setExtraBiscuitCount(0);
     setQuantity(1);
   }
 
@@ -330,19 +361,22 @@ export default function FamilyOrderClientPage() {
                         كلاسيك
                       </th>
                       <th className="px-2 py-1.5 font-medium text-center">
+                        مكس
+                      </th>
+                      <th className="px-2 py-1.5 font-medium text-center">
                         سبيشل
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {[...CLASSIC_SIZES, ...FLIN_SIZES].map(
-                      ({ label, classic, special, balls }) => (
+                      ({ label, container, classic, special, balls }) => (
                         <tr
-                          key={label}
+                          key={`${container}-${label}`}
                           className="border-white/15 last:border-0 border-b"
                         >
                           <td className="px-2 py-2 font-medium text-[14px] text-start">
-                            {label}
+                            {container} · {label}
                           </td>
                           <td className="px-2 py-2 text-center">
                             <div className="flex justify-center items-center gap-1">
@@ -360,6 +394,9 @@ export default function FamilyOrderClientPage() {
                           </td>
                           <td className="px-2 py-2 text-[14px] text-center">
                             {classic} ₪
+                          </td>
+                          <td className="px-2 py-2 text-[14px] text-center">
+                            {Math.round((classic + special) / 2)} ₪
                           </td>
                           <td className="px-2 py-2 text-[14px] text-center">
                             {special} ₪
@@ -384,6 +421,7 @@ export default function FamilyOrderClientPage() {
                   label={ct}
                   sublabel={ct === "كلاسيكس" ? "علب بلاستيك" : "علب فلين"}
                   active={containerType === ct}
+                  unavailable={ct === "فلين" && !FLIN_CONTAINER_AVAILABLE}
                   onClick={() => changeContainerType(ct)}
                 />
               ))}
@@ -582,6 +620,19 @@ export default function FamilyOrderClientPage() {
                 })}
               </div>
             )}
+          </StepCard>
+
+          <StepCard
+            step={5}
+            title="إضافة بسكوت (اختياري)"
+            active={s4Done}
+            done={extraBiscuitCount > 0}
+          >
+            <ExtraBiscuitCounter
+              count={extraBiscuitCount}
+              unitPrice={EXTRA_BISCUIT_UNIT_PRICE}
+              onChange={setExtraBiscuitCount}
+            />
           </StepCard>
         </div>
       </div>

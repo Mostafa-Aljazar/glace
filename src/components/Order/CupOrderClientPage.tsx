@@ -15,12 +15,13 @@ import { iceCreamCup, biscuitIceCream, emptyPop } from "@/assets/images";
 import {
   CLASSIC_FLAVORS,
   SPECIAL_FLAVORS,
-  ADDONS,
+  EXTRA_BISCUIT_UNIT_PRICE,
   ICE_PRICES,
   SIZE_MAX_BALLS,
 } from "@/data/OrderData";
 import type { Flavor } from "@/data/OrderData";
 import { useCartStore } from "@/store/cartStore";
+import { ExtraBiscuitCounter } from "@/components/Order/BiscuitAddons";
 
 type CupVariant = "كاسة" | "بسكوت";
 type FlavorType = "كلاسيك" | "سبيشل" | "مكس";
@@ -120,7 +121,7 @@ export default function CupOrderClientPage() {
   const [size, setSize] = useState<string>("");
   const [flavorType, setFlavorType] = useState<FlavorType | "">("");
   const [selectedBalls, setSelectedBalls] = useState<number[]>([]);
-  const [selectedAddons, setSelectedAddons] = useState<number[]>([]);
+  const [extraBiscuitCount, setExtraBiscuitCount] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   const [validationMsg, setValidationMsg] = useState("");
@@ -129,7 +130,7 @@ export default function CupOrderClientPage() {
     size !== "" ||
     flavorType !== "" ||
     selectedBalls.length > 0 ||
-    selectedAddons.length > 0 ||
+    extraBiscuitCount > 0 ||
     quantity !== 1;
 
   const clearSelections = useCallback(() => {
@@ -137,7 +138,7 @@ export default function CupOrderClientPage() {
     setSize("");
     setFlavorType("");
     setSelectedBalls([]);
-    setSelectedAddons([]);
+    setExtraBiscuitCount(0);
     setQuantity(1);
   }, []);
 
@@ -153,7 +154,7 @@ export default function CupOrderClientPage() {
     setSize("");
     setFlavorType("");
     setSelectedBalls([]);
-    setSelectedAddons([]);
+    setExtraBiscuitCount(0);
   }
   function changeSize(s: string) {
     setSize(s);
@@ -210,24 +211,11 @@ export default function CupOrderClientPage() {
   function removeBallByFlavor(flavorId: number) {
     setSelectedBalls((prev) => prev.filter((id) => id !== flavorId));
   }
-  function toggleAddon(id: number) {
-    setSelectedAddons((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
-    );
-  }
-
   const basePrice =
     flavorType === "مكس"
-      ? Math.round(
-          ((ICE_PRICES[`${size}.كلاسيك`] ?? 0) +
-            (ICE_PRICES[`${size}.سبيشال`] ?? 0)) /
-            2,
-        )
+      ? (ICE_PRICES[`${size}.سبيشال`] ?? 0)
       : (ICE_PRICES[`${size}.${flavorType}`] ?? 0);
-  const addonSum = selectedAddons.reduce(
-    (s, id) => s + (ADDONS.find((a) => a.id === id)?.price ?? 0),
-    0,
-  );
+  const addonSum = extraBiscuitCount * EXTRA_BISCUIT_UNIT_PRICE;
   const total = (basePrice + addonSum) * quantity;
 
   const s1Done = !!variant;
@@ -253,9 +241,8 @@ export default function CupOrderClientPage() {
     const flavorNames = selectedBalls
       .map((id) => allFlavors.find((f) => f.id === id)?.name ?? "")
       .filter(Boolean);
-    const addonNames = selectedAddons
-      .map((id) => ADDONS.find((a) => a.id === id)?.name ?? "")
-      .filter(Boolean);
+    const addonNames =
+      extraBiscuitCount > 0 ? [`بسكوت إضافي ×${extraBiscuitCount}`] : [];
     addItem({
       productId: variant === "كاسة" ? "cup" : "biscuit",
       name: variant === "كاسة" ? "بوظة كاسة" : "بوظة بسكوت",
@@ -272,7 +259,7 @@ export default function CupOrderClientPage() {
     setSize("");
     setFlavorType("");
     setSelectedBalls([]);
-    setSelectedAddons([]);
+    setExtraBiscuitCount(0);
     setQuantity(1);
   }
 
@@ -339,9 +326,6 @@ export default function CupOrderClientPage() {
                         كلاسيك
                       </th>
                       <th className="px-2 py-1 font-normal text-[13px] text-white/60 text-center">
-                        مكس
-                      </th>
-                      <th className="px-2 py-1 font-normal text-[13px] text-white/60 text-center">
                         سبيشل
                       </th>
                     </tr>
@@ -385,15 +369,6 @@ export default function CupOrderClientPage() {
                           </td>
                           <td className="px-2 py-2 text-[15px] text-center">
                             {ICE_PRICES[`${key}.كلاسيك`] ?? "—"} ₪
-                          </td>
-                          <td className="px-2 py-2 text-[15px] text-center">
-                            {(() => {
-                              const c = ICE_PRICES[`${key}.كلاسيك`];
-                              const s = ICE_PRICES[`${key}.سبيشال`];
-                              return c !== undefined && s !== undefined
-                                ? `${Math.round((c + s) / 2)} ₪`
-                                : "—";
-                            })()}
                           </td>
                           <td className="px-2 py-2 text-[15px] text-center">
                             {ICE_PRICES[`${key}.سبيشال`] ?? "—"} ₪
@@ -622,35 +597,15 @@ export default function CupOrderClientPage() {
           {/* Step 5 — الإضافات (optional) */}
           <StepCard
             step={5}
-            title="الإضافات (اختياري)"
+            title="إضافة بسكوت (اختياري)"
             active={s4Done}
-            done={selectedAddons.length > 0}
+            done={extraBiscuitCount > 0}
           >
-            <div className="gap-3 grid grid-cols-1 sm:grid-cols-2">
-              {ADDONS.map((addon) => {
-                const checked = selectedAddons.includes(addon.id);
-                return (
-                  <button
-                    key={addon.id}
-                    type="button"
-                    onClick={() => toggleAddon(addon.id)}
-                    className={`flex items-center justify-between gap-3 px-4 py-3 rounded-[14px] border text-right transition-all cursor-pointer
-                      ${
-                        checked
-                          ? "bg-glace-yellow/15 border-glace-yellow/50 text-white"
-                          : "bg-white/10 border-white/20 text-white/75 hover:border-white/40"
-                      }`}
-                  >
-                    <span className="text-[14px]">{addon.name}</span>
-                    <span
-                      className={`text-[13px] font-bold shrink-0 ${checked ? "text-glace-yellow" : "text-white/50"}`}
-                    >
-                      +{addon.price} ₪
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <ExtraBiscuitCounter
+              count={extraBiscuitCount}
+              unitPrice={EXTRA_BISCUIT_UNIT_PRICE}
+              onChange={setExtraBiscuitCount}
+            />
           </StepCard>
         </div>
       </div>

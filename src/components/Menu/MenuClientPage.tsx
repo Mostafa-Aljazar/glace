@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
@@ -113,7 +113,7 @@ const DIRECT_ORDER_CARDS: Record<
 > = {
   brad: {
     image: refrigerator,
-    sublabel: "صغير · وسط · كبير · نص لتر · لتر",
+    sublabel: "صغير · وسط · كبير",
     href: "/menu/order-brad",
   },
   "brad-boza": {
@@ -158,7 +158,7 @@ const DIRECT_ORDER_CARDS: Record<
   },
   molten: {
     image: moltenCake,
-    sublabel: "نوتيلا · لوتس · بيستاشيو · مكسات",
+    sublabel: "نوتيلا · لوتس · بيستاشيو",
     href: "/menu/order/molten",
   },
   "cold-drinks": {

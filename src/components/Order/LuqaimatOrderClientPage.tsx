@@ -198,14 +198,14 @@ export default function LuqaimatOrderClientPage() {
                     <table className="w-full min-w-[440px] text-white">
                       <thead>
                         <tr className="border-white/30 border-b">
-                          <td className="p-[10px] font-['Almarai',sans-serif] text-[16px]" />
-                          <td className="p-[10px] w-[120px] font-['Almarai',sans-serif] text-[16px]">
+                          <td className="p-[10px] text-[16px]" />
+                          <td className="p-[10px] w-[120px] text-[16px]">
                             إختر النوع
                           </td>
-                          <td className="p-[10px] font-['Almarai',sans-serif] text-[16px]">
+                          <td className="p-[10px] text-[16px]">
                             العدد
                           </td>
-                          <td className="p-[10px] font-['Almarai',sans-serif] text-[16px]">
+                          <td className="p-[10px] text-[16px]">
                             السعر
                           </td>
                         </tr>
@@ -243,7 +243,7 @@ export default function LuqaimatOrderClientPage() {
                                     onChange={(e) =>
                                       changeType(item.id, e.target.value)
                                     }
-                                    className="bg-transparent border-0 outline-none min-w-[130px] font-['Almarai',sans-serif] text-[16px] text-white cursor-pointer"
+                                    className="bg-transparent border-0 outline-none min-w-[130px] text-[16px] text-white cursor-pointer"
                                   >
                                     {LUQAIMAT_TYPES.map((t) => (
                                       <option
@@ -256,7 +256,7 @@ export default function LuqaimatOrderClientPage() {
                                     ))}
                                   </select>
                                 ) : (
-                                  <span className="font-['Almarai',sans-serif] text-[16px]">
+                                  <span className="text-[16px]">
                                     {item.type}
                                   </span>
                                 )}
@@ -271,7 +271,7 @@ export default function LuqaimatOrderClientPage() {
                                   >
                                     <i className="bx bx-minus" />
                                   </button>
-                                  <span className="min-w-[22px] font-['Almarai',sans-serif] text-[22px] text-center">
+                                  <span className="min-w-[22px] text-[22px] text-center">
                                     {item.quantity}
                                   </span>
                                   <button
@@ -285,7 +285,7 @@ export default function LuqaimatOrderClientPage() {
                               </td>
                               {/* Price */}
                               <td className="p-[10px]">
-                                <span className="font-['Almarai',sans-serif] text-[16px]">
+                                <span className="text-[16px]">
                                   {price.toFixed(2)}
                                 </span>
                               </td>
@@ -309,7 +309,7 @@ export default function LuqaimatOrderClientPage() {
                       height={25}
                       className="w-[25px] h-[25px] object-contain"
                     />
-                    <span className="font-['Almarai',sans-serif] text-[16px]">
+                    <span className="text-[16px]">
                       إضافة عنصر جديد
                     </span>
                   </button>
@@ -318,9 +318,9 @@ export default function LuqaimatOrderClientPage() {
                 {/* Total + submit */}
                 <div className="flex flex-wrap justify-between items-baseline gap-[10px] px-4 text-white">
                   <div className="mr-[20px] max-[768px]:mr-0">
-                    <h3 className="font-['Almarai',sans-serif] text-[20px] max-[991px]:text-[18px]">
+                    <h3 className="text-[20px] max-[991px]:text-[18px]">
                       الإجمالي :{" "}
-                      <span className="font-['Almarai',sans-serif] text-[30px] max-[991px]:text-[26px]">
+                      <span className="text-[30px] max-[991px]:text-[26px]">
                         {totalPrice.toFixed(2)}
                       </span>{" "}
                       شيكل
