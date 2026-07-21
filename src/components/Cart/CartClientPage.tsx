@@ -9,105 +9,115 @@ import type { CartItem } from "@/store/cartStore";
 
 function ItemCard({ item }: { item: CartItem }) {
   const updateQuantity = useCartStore((s) => s.updateQuantity);
+  const updateNotes    = useCartStore((s) => s.updateNotes);
   const removeItem     = useCartStore((s) => s.removeItem);
   const linePrice      = (item.unitPrice + item.addonTotal) * item.quantity;
 
   return (
-    <div className="flex items-start gap-4 bg-white/[.08] hover:bg-white/[.11] border border-white/10 rounded-[20px] p-4 sm:p-5 transition-colors">
+    <div className="flex flex-col gap-3 bg-white/[.08] hover:bg-white/[.11] border border-white/10 rounded-[20px] p-4 sm:p-5 transition-colors">
+      <div className="flex items-start gap-4">
+        {/* Icon placeholder */}
+        <div className="flex items-center justify-center shrink-0 size-12 rounded-[14px] bg-white/10 border border-white/15 text-white/50">
+          <ShoppingCart size={20} strokeWidth={1.5} />
+        </div>
 
-      {/* Icon placeholder */}
-      <div className="flex items-center justify-center shrink-0 size-12 rounded-[14px] bg-white/10 border border-white/15 text-white/50">
-        <ShoppingCart size={20} strokeWidth={1.5} />
-      </div>
-
-      {/* Details */}
-      <div className="flex-1 min-w-0">
-        <p className="text-white font-bold text-[16px] sm:text-[17px] leading-snug mb-1 truncate">
-          {item.name}
-        </p>
-        <div className="flex flex-col gap-1.5 mt-1">
-          <div className="flex flex-wrap gap-2">
-            {item.size && (
-              <span className="inline-flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-white/70">
-                <span className="text-white/40">الحجم</span> {item.size}
-              </span>
+        {/* Details */}
+        <div className="flex-1 min-w-0">
+          <p className="text-white font-bold text-[16px] sm:text-[17px] leading-snug mb-1 truncate">
+            {item.name}
+          </p>
+          <div className="flex flex-col gap-1.5 mt-1">
+            <div className="flex flex-wrap gap-2">
+              {item.size && (
+                <span className="inline-flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-white/70">
+                  <span className="text-white/40">الحجم</span> {item.size}
+                </span>
+              )}
+              {item.type && (
+                <span className="inline-flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-white/70">
+                  <span className="text-white/40">النوع</span> {item.type}
+                </span>
+              )}
+            </div>
+            {item.flavors && item.flavors.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {Object.entries(
+                  item.flavors.reduce<Record<string, number>>((acc, f) => ({ ...acc, [f]: (acc[f] ?? 0) + 1 }), {})
+                ).map(([name, count]) => (
+                  <span key={name} className="inline-flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-white/80">
+                    {name}
+                    {count > 1 && <span className="bg-glace-yellow text-[#1e6a7f] font-bold rounded-full px-1.5 py-px text-[10px] leading-none">×{count}</span>}
+                  </span>
+                ))}
+              </div>
             )}
-            {item.type && (
-              <span className="inline-flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-white/70">
-                <span className="text-white/40">النوع</span> {item.type}
-              </span>
+            {item.addons && item.addons.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {item.addons.map((a) => (
+                  <span key={a} className="inline-flex items-center bg-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-white/70">
+                    {a}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
-          {item.flavors && item.flavors.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {Object.entries(
-                item.flavors.reduce<Record<string, number>>((acc, f) => ({ ...acc, [f]: (acc[f] ?? 0) + 1 }), {})
-              ).map(([name, count]) => (
-                <span key={name} className="inline-flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-white/80">
-                  {name}
-                  {count > 1 && <span className="bg-glace-yellow text-[#1e6a7f] font-bold rounded-full px-1.5 py-px text-[10px] leading-none">×{count}</span>}
-                </span>
-              ))}
-            </div>
-          )}
-          {item.addons && item.addons.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {item.addons.map((a) => (
-                <span key={a} className="inline-flex items-center bg-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-white/70">
-                  {a}
-                </span>
-              ))}
-            </div>
-          )}
-          {item.notes && (
-            <div className="mt-2 p-2.5 bg-white/8 border border-white/15 rounded-[12px]">
-              <p className="text-[11px] text-white/50 mb-1">ملاحظة:</p>
-              <p className="text-[12px] text-white/80 leading-relaxed">{item.notes}</p>
-            </div>
-          )}
+
+          {/* Unit price */}
+          <p className="text-white/40 text-[12px] mt-1.5">
+            {(item.unitPrice + item.addonTotal).toFixed(2)} ₪ × {item.quantity}
+          </p>
         </div>
 
-        {/* Unit price */}
-        <p className="text-white/40 text-[12px] mt-1.5">
-          {(item.unitPrice + item.addonTotal).toFixed(2)} ₪ × {item.quantity}
-        </p>
+        {/* Qty + total + delete */}
+        <div className="flex flex-col items-end gap-3 shrink-0">
+          {/* Line total */}
+          <p className="text-white font-bold text-[17px]">{linePrice.toFixed(2)} ₪</p>
+
+          {/* Quantity controls */}
+          <div className="flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-2 py-1">
+            <button
+              type="button"
+              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+              className="flex items-center justify-center size-6 rounded-full hover:bg-white/15 text-white transition-colors cursor-pointer"
+            >
+              <Minus size={12} />
+            </button>
+            <span className="text-white text-[14px] font-bold min-w-[18px] text-center">
+              {item.quantity}
+            </span>
+            <button
+              type="button"
+              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+              className="flex items-center justify-center size-6 rounded-full hover:bg-white/15 text-white transition-colors cursor-pointer"
+            >
+              <Plus size={12} />
+            </button>
+          </div>
+
+          {/* Delete */}
+          <button
+            type="button"
+            onClick={() => removeItem(item.id)}
+            className="flex items-center gap-1 text-white/35 hover:text-red-300 text-[12px] transition-colors cursor-pointer"
+          >
+            <Trash2 size={13} />
+            حذف
+          </button>
+        </div>
       </div>
 
-      {/* Qty + total + delete */}
-      <div className="flex flex-col items-end gap-3 shrink-0">
-        {/* Line total */}
-        <p className="text-white font-bold text-[17px]">{linePrice.toFixed(2)} ₪</p>
-
-        {/* Quantity controls */}
-        <div className="flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-2 py-1">
-          <button
-            type="button"
-            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-            className="flex items-center justify-center size-6 rounded-full hover:bg-white/15 text-white transition-colors cursor-pointer"
-          >
-            <Minus size={12} />
-          </button>
-          <span className="text-white text-[14px] font-bold min-w-[18px] text-center">
-            {item.quantity}
-          </span>
-          <button
-            type="button"
-            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-            className="flex items-center justify-center size-6 rounded-full hover:bg-white/15 text-white transition-colors cursor-pointer"
-          >
-            <Plus size={12} />
-          </button>
-        </div>
-
-        {/* Delete */}
-        <button
-          type="button"
-          onClick={() => removeItem(item.id)}
-          className="flex items-center gap-1 text-white/35 hover:text-red-300 text-[12px] transition-colors cursor-pointer"
-        >
-          <Trash2 size={13} />
-          حذف
-        </button>
+      {/* Notes — editable on cart */}
+      <div>
+        <label className="block mb-1.5 text-[12px] text-white/50">
+          ملاحظة (اختياري)
+        </label>
+        <textarea
+          value={item.notes ?? ""}
+          onChange={(e) => updateNotes(item.id, e.target.value)}
+          placeholder="أضف ملاحظة لهذا المنتج..."
+          rows={2}
+          className="w-full bg-white/8 border border-white/15 focus:border-white/35 rounded-[14px] px-3.5 py-2.5 text-[13px] text-white placeholder:text-white/30 outline-none resize-none transition-colors"
+        />
       </div>
     </div>
   );

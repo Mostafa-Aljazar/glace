@@ -182,63 +182,77 @@ function MenuItemCard({
   item: ApiMenuItem;
   onOpen: (item: ApiMenuItem) => void;
 }) {
+  const cardInner = (
+    <div
+      className={`relative w-full bg-white/14 hover:bg-white/22 backdrop-blur-md rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.25)] border ${item.orderHref ? "border-glace-yellow/80 hover:border-glace-yellow" : "border-white/20 hover:border-white/40"}`}
+    >
+      {/* Image area */}
+      <div className="relative flex justify-center items-center bg-white/8 px-4 pt-6 pb-2 overflow-hidden">
+        <div className="absolute inset-0 bg-radial-[ellipse_at_50%_60%] from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+        <Image
+          src={item.image}
+          alt={item.name}
+          width={160}
+          height={140}
+          className="z-10 relative drop-shadow-lg w-full max-w-32.5 sm:max-w-38.75 h-27.5 sm:h-32.5 object-contain group-hover:scale-105 transition-transform duration-300"
+        />
+      </div>
+
+      {/* Text area */}
+      <div className="px-3 pt-3 pb-5">
+        <h2 className="mb-1 font-bold text-[18px] sm:text-[20px] line-clamp-2 leading-snug">
+          {item.name}
+        </h2>
+
+        {item.priceRows && item.priceRows.length > 0 && (
+          <p className="mb-3 text-[13px] text-white/60">
+            {item.priceRows[0].price !== undefined
+              ? `يبدأ من ${item.priceRows[0].price} ₪`
+              : item.priceRows[0].classic !== undefined
+                ? `يبدأ من ${item.priceRows[0].classic} ₪`
+                : null}
+          </p>
+        )}
+        {item.flavors && (
+          <p className="mb-3 text-[13px] text-white/60">
+            {item.flavors.length} طعم متاح
+          </p>
+        )}
+
+        <div className="flex justify-center">
+          {item.orderHref ? (
+            <span className="inline-flex items-center gap-1.5 bg-glace-yellow/90 group-hover:bg-glace-yellow px-4 py-1.5 border border-glace-yellow/80 rounded-xl font-bold text-[#1e6a7f] text-[14px] transition-all duration-200">
+              <ShoppingCart size={13} />
+              اطلب الآن
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 bg-white/15 group-hover:bg-white/25 px-4 py-1.5 border border-white/25 group-hover:border-white/50 rounded-xl text-[14px] transition-all duration-200">
+              اعرف أكثر
+              <ChevronLeft size={13} className="opacity-70" />
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (item.orderHref) {
+    return (
+      <Link
+        href={item.orderHref}
+        className="group relative flex flex-col items-center text-white text-center cursor-pointer select-none"
+      >
+        {cardInner}
+      </Link>
+    );
+  }
+
   return (
     <div
       onClick={() => onOpen(item)}
       className="group relative flex flex-col items-center text-white text-center cursor-pointer select-none"
     >
-      {/* Card body */}
-      <div
-        className={`relative w-full bg-white/14 hover:bg-white/22 backdrop-blur-md rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.25)] border ${item.orderHref ? "border-glace-yellow/80 hover:border-glace-yellow" : "border-white/20 hover:border-white/40"}`}
-      >
-        {/* Image area */}
-        <div className="relative flex justify-center items-center bg-white/8 px-4 pt-6 pb-2 overflow-hidden">
-          <div className="absolute inset-0 bg-radial-[ellipse_at_50%_60%] from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-          <Image
-            src={item.image}
-            alt={item.name}
-            width={160}
-            height={140}
-            className="z-10 relative drop-shadow-lg w-full max-w-32.5 sm:max-w-38.75 h-27.5 sm:h-32.5 object-contain group-hover:scale-105 transition-transform duration-300"
-          />
-        </div>
-
-        {/* Text area */}
-        <div className="px-3 pt-3 pb-5">
-          <h2 className="mb-1 font-bold text-[18px] sm:text-[20px] line-clamp-2 leading-snug">
-            {item.name}
-          </h2>
-
-          {item.priceRows && item.priceRows.length > 0 && (
-            <p className="mb-3 text-[13px] text-white/60">
-              {item.priceRows[0].price !== undefined
-                ? `يبدأ من ${item.priceRows[0].price} ₪`
-                : item.priceRows[0].classic !== undefined
-                  ? `يبدأ من ${item.priceRows[0].classic} ₪`
-                  : null}
-            </p>
-          )}
-          {item.flavors && (
-            <p className="mb-3 text-[13px] text-white/60">
-              {item.flavors.length} طعم متاح
-            </p>
-          )}
-
-          <div className="flex justify-center">
-            {item.orderHref ? (
-              <span className="inline-flex items-center gap-1.5 bg-glace-yellow/90 group-hover:bg-glace-yellow px-4 py-1.5 border border-glace-yellow/80 rounded-xl font-bold text-[#1e6a7f] text-[14px] transition-all duration-200">
-                <ShoppingCart size={13} />
-                اطلب الآن
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 bg-white/15 group-hover:bg-white/25 px-4 py-1.5 border border-white/25 group-hover:border-white/50 rounded-xl text-[14px] transition-all duration-200">
-                اعرف أكثر
-                <ChevronLeft size={13} className="opacity-70" />
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+      {cardInner}
     </div>
   );
 }

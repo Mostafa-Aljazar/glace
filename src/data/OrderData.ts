@@ -152,9 +152,26 @@ export interface SimpleMenuItem {
 export interface MixConfig {
   label: string;
   pick: number;
+  /** Base total when all picked flavors use the regular flavor price */
   price: number;
+  /** Price of each regular flavor inside the mix */
+  flavorPrice: number;
+  /** Special price for pistachio / بستاشيو flavors inside the mix */
+  pistachioPrice: number;
   options: string[];
   optionImages?: Partial<Record<string, StaticIMG>>;
+}
+
+export function isPistachioFlavor(label: string): boolean {
+  return label.includes("بيستاشيو") || label.includes("بستاشيو");
+}
+
+export function getMixFlavorPrice(mix: MixConfig, flavor: string): number {
+  return isPistachioFlavor(flavor) ? mix.pistachioPrice : mix.flavorPrice;
+}
+
+export function getMixSelectionPrice(mix: MixConfig, flavors: string[]): number {
+  return flavors.reduce((sum, flavor) => sum + getMixFlavorPrice(mix, flavor), 0);
 }
 
 export interface DessertCategoryConfig {
@@ -179,19 +196,24 @@ export const DESSERT_CATEGORIES_V2: DessertCategoryConfig[] = [
     ],
     mixes: [
       {
-        label: "مكس (نوتيلا+لوتس)",
+        label: "مكس",
         pick: 2,
-        price: 15,
-        options: ["نوتيلا", "لوتس"],
+        price: 14,
+        flavorPrice: 7,
+        pistachioPrice: 11,
+        options: ["نوتيلا", "لوتس", "بيستاشيو"],
         optionImages: {
           "نوتيلا": nutellaIce,
           "لوتس": lotusIce,
+          "بيستاشيو": pistachioIce,
         },
       },
       {
         label: "سوبر مكس",
         pick: 3,
         price: 18,
+        flavorPrice: 6,
+        pistachioPrice: 10,
         options: ["نوتيلا", "لوتس", "بيستاشيو"],
         optionImages: {
           "نوتيلا": nutellaIce,
@@ -214,19 +236,24 @@ export const DESSERT_CATEGORIES_V2: DessertCategoryConfig[] = [
     ],
     mixes: [
       {
-        label: "مكس (نوتيلا+لوتس)",
+        label: "مكس",
         pick: 2,
-        price: 13,
-        options: ["نوتيلا", "لوتس"],
+        price: 14,
+        flavorPrice: 7,
+        pistachioPrice: 11,
+        options: ["نوتيلا", "لوتس", "بيستاشيو"],
         optionImages: {
           "نوتيلا": nutellaIce,
           "لوتس": lotusIce,
+          "بيستاشيو": pistachioIce,
         },
       },
       {
         label: "سوبر مكس",
         pick: 3,
-        price: 16,
+        price: 15,
+        flavorPrice: 5,
+        pistachioPrice: 9,
         options: ["نوتيلا", "لوتس", "بيستاشيو"],
         optionImages: {
           "نوتيلا": nutellaIce,
@@ -249,19 +276,24 @@ export const DESSERT_CATEGORIES_V2: DessertCategoryConfig[] = [
     ],
     mixes: [
       {
-        label: "مكس (نوتيلا+لوتس)",
+        label: "مكس",
         pick: 2,
         price: 12,
-        options: ["نوتيلا", "لوتس"],
+        flavorPrice: 6,
+        pistachioPrice: 10,
+        options: ["نوتيلا", "لوتس", "بيستاشيو"],
         optionImages: {
           "نوتيلا": nutellaIce,
           "لوتس": lotusIce,
+          "بيستاشيو": pistachioIce,
         },
       },
       {
         label: "سوبر مكس",
         pick: 3,
         price: 15,
+        flavorPrice: 5,
+        pistachioPrice: 9,
         options: ["نوتيلا", "لوتس", "بيستاشيو"],
         optionImages: {
           "نوتيلا": nutellaIce,
@@ -284,19 +316,24 @@ export const DESSERT_CATEGORIES_V2: DessertCategoryConfig[] = [
     ],
     mixes: [
       {
-        label: "مكس (نوتيلا+لوتس)",
+        label: "مكس",
         pick: 2,
-        price: 15,
-        options: ["نوتيلا", "لوتس"],
+        price: 16,
+        flavorPrice: 8,
+        pistachioPrice: 12,
+        options: ["نوتيلا", "لوتس", "بيستاشيو"],
         optionImages: {
           "نوتيلا": nutellaIce,
           "لوتس": lotusIce,
+          "بيستاشيو": pistachioIce,
         },
       },
       {
         label: "سوبر مكس",
         pick: 3,
         price: 18,
+        flavorPrice: 6,
+        pistachioPrice: 10,
         options: ["نوتيلا", "لوتس", "بيستاشيو"],
         optionImages: {
           "نوتيلا": nutellaIce,

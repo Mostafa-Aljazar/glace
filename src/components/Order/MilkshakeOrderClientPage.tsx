@@ -165,7 +165,6 @@ const SPECIAL_FLAVORS: SpecialFlavor[] = [
 
 export default function MilkshakeOrderClientPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const [notes, setNotes] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
   const [validationMsg, setValidationMsg] = useState("");
   const [zoomedImageId, setZoomedImageId] = useState<string | null>(null);
@@ -175,11 +174,10 @@ export default function MilkshakeOrderClientPage() {
 
   const clearSelections = useCallback(() => {
     setCounts({});
-    setNotes("");
   }, []);
 
   const totalItems = Object.values(counts).reduce((s, c) => s + c, 0);
-  const hasPendingSelections = totalItems > 0 || notes.trim().length > 0;
+  const hasPendingSelections = totalItems > 0;
 
   const {
     showCloseConfirm,
@@ -234,7 +232,6 @@ export default function MilkshakeOrderClientPage() {
             addonTotal: 0,
             unitPrice: item.price,
             quantity: qty,
-            notes: notes || undefined,
           });
         }
       }
@@ -501,20 +498,6 @@ export default function MilkshakeOrderClientPage() {
                   </div>
                 );
               })}
-            </div>
-
-            {/* Notes textarea */}
-            <div className="mt-6 pt-6 border-white/15 border-t">
-              <label className="block mb-2 font-medium text-[14px] text-white">
-                إذا حبيت تضيف ملاحظة:
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="أضف ملاحظتك هنا..."
-                className="bg-[#4397ae] px-5 py-3 border border-white/20 focus:border-white/40 rounded-full focus:outline-none w-full text-[14px] text-white transition-all resize-none placeholder-white/40"
-                rows={3}
-              />
             </div>
           </div>
         </div>

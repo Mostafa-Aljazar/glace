@@ -22,6 +22,7 @@ interface CartState {
   addItem: (item: Omit<CartItem, "id">) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, qty: number) => void;
+  updateNotes: (id: string, notes: string) => void;
   applyCoupon: (code: string) => void;
   clearCart: () => void;
   subtotal: () => number;
@@ -59,6 +60,13 @@ export const useCartStore = create<CartState>()(
             qty <= 0
               ? state.items.filter((i) => i.id !== id)
               : state.items.map((i) => (i.id === id ? { ...i, quantity: qty } : i)),
+        })),
+
+      updateNotes: (id, notes) =>
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.id === id ? { ...i, notes: notes.trim() || undefined } : i,
+          ),
         })),
 
       applyCoupon: (code) => {

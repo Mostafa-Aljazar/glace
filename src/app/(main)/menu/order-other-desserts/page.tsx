@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import OtherDessertsOrderClientPage from "@/components/Order/OtherDessertsOrderClientPage";
 
 export const metadata: Metadata = {
-  title: "طلب حلويات أخرى | جلاسيه الأمير",
+  title: "طلب حلويات | جلاسيه الأمير",
 };
 
 interface Props {
@@ -11,5 +11,5 @@ interface Props {
 
 export default async function OrderOtherDessertsPage({ searchParams }: Props) {
   const params = await searchParams;
-  return <OtherDessertsOrderClientPage initialType={params.type ?? "kunafa"} />;
+  return <OtherDessertsOrderClientPage initialType={params.type ?? "brownie"} />;
 }

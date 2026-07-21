@@ -1,0 +1,190 @@
+"use client";
+
+import { useState, type Dispatch, type SetStateAction } from "react";
+import { Minus, Plus, Sparkles, X } from "lucide-react";
+import MixFlavorModal from "@/components/Order/MixFlavorModal";
+import type { MixConfig, SimpleMenuItem } from "@/data/OrderData";
+
+export interface MixSelection {
+  id: string;
+  mixLabel: string;
+  count: number;
+  selectedFlavors: string[];
+  unitPrice: number;
+}
+
+interface MixOrderSectionProps {
+  mixes: MixConfig[];
+  items: SimpleMenuItem[];
+  mixSelections: MixSelection[];
+  setMixSelections: Dispatch<SetStateAction<MixSelection[]>>;
+}
+
+export default function MixOrderSection({
+  mixes,
+  items,
+  mixSelections,
+  setMixSelections,
+}: MixOrderSectionProps) {
+  const [activeMix, setActiveMix] = useState<MixConfig | null>(null);
+
+  function incrementMix(mixId: string) {
+    setMixSelections((prev) =>
+      prev.map((m) => (m.id === mixId ? { ...m, count: m.count + 1 } : m)),
+    );
+  }
+
+  function decrementMix(mixId: string) {
+    setMixSelections((prev) => {
+      const mix = prev.find((m) => m.id === mixId);
+      if (!mix) return prev;
+      if (mix.count <= 1) return prev.filter((m) => m.id !== mixId);
+      return prev.map((m) =>
+        m.id === mixId ? { ...m, count: m.count - 1 } : m,
+      );
+    });
+  }
+
+  function removeMixSelection(mixId: string) {
+    setMixSelections((prev) => prev.filter((m) => m.id !== mixId));
+  }
+
+  function handleConfirm(flavors: string[], unitPrice: number) {
+    if (!activeMix) return;
+    const newId = `${activeMix.label}_${Date.now()}_${Math.random()}`;
+    setMixSelections((prev) => [
+      ...prev,
+      {
+        id: newId,
+        mixLabel: activeMix.label,
+        count: 1,
+        selectedFlavors: flavors,
+        unitPrice,
+      },
+    ]);
+    setActiveMix(null);
+  }
+
+  if (!mixes.length) return null;
+
+  return (
+    <div className="border-t border-white/15 pt-6">
+      <div className="mb-5">
+        <h3 className="font-bold text-[16px] text-white">المكسات</h3>
+        <p className="mt-1 text-[12px] text-white/55">
+          اختر أطعمتك من المودال — البستاشيو بسعر خاص
+        </p>
+      </div>
+
+      <div className="space-y-5">
+        {mixes.map((mixConfig) => {
+          const mixInstances = mixSelections.filter(
+            (m) => m.mixLabel === mixConfig.label && m.count > 0,
+          );
+
+          return (
+            <div key={mixConfig.label}>
+              <button
+                type="button"
+                onClick={() => setActiveMix(mixConfig)}
+                className="group w-full flex items-center gap-3.5 px-4 py-3.5 rounded-[20px] border border-white/15 bg-white/8 hover:bg-white/12 hover:border-glace-yellow/40 transition-all duration-200"
+              >
+                <div className="flex justify-center items-center shrink-0 bg-glace-yellow/15 group-hover:bg-glace-yellow/25 rounded-2xl w-12 h-12 text-glace-yellow transition">
+                  <Sparkles size={20} />
+                </div>
+                <div className="flex-1 text-right min-w-0">
+                  <p className="font-bold text-[15px] text-white leading-snug">
+                    {mixConfig.label}
+                  </p>
+                  <p className="mt-0.5 text-[12px] text-white/50">
+                    {mixConfig.pick}{" "}
+                    {mixConfig.pick === 2 ? "طعمين" : "أطعمة"} · من{" "}
+                    {mixConfig.price} ₪
+                  </p>
+                </div>
+                <span className="shrink-0 bg-glace-yellow group-hover:brightness-105 shadow-md px-4 py-2 rounded-full font-bold text-[13px] text-[#1e6a7f] transition">
+                  اختر
+                </span>
+              </button>
+
+              {mixInstances.length > 0 && (
+                <div className="space-y-2.5 mt-3">
+                  {mixInstances.map((mix, idx) => (
+                    <div
+                      key={mix.id}
+                      className="bg-white/8 border border-glace-yellow/25 rounded-[18px] overflow-hidden"
+                    >
+                      <div className="flex items-start gap-3 px-3.5 pt-3.5 pb-2.5">
+                        <div className="flex justify-center items-center shrink-0 bg-glace-yellow/20 rounded-full w-8 h-8 font-bold text-[12px] text-glace-yellow">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="mb-1.5 font-bold text-[13px] text-white">
+                            {mixConfig.label}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {mix.selectedFlavors.map((flavor, flavorIdx) => (
+                              <span
+                                key={`${flavor}-${flavorIdx}`}
+                                className="bg-white/10 border border-white/10 px-2 py-0.5 rounded-full text-[11px] text-white/80"
+                              >
+                                {flavor}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeMixSelection(mix.id)}
+                          className="flex justify-center items-center shrink-0 bg-white/8 hover:bg-white/15 rounded-full w-7 h-7 text-white/50 hover:text-white transition"
+                          aria-label="حذف"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 border-t border-white/8 bg-white/3">
+                        <p className="font-bold text-[14px] text-glace-yellow tabular-nums">
+                          {mix.unitPrice} ₪
+                        </p>
+                        <div className="flex items-center gap-1.5 bg-white/10 px-2 py-1 border border-white/15 rounded-full">
+                          <button
+                            type="button"
+                            onClick={() => decrementMix(mix.id)}
+                            className="flex justify-center items-center hover:bg-white/20 rounded-full w-6 h-6 text-white transition"
+                          >
+                            <Minus size={11} />
+                          </button>
+                          <span className="min-w-5 font-bold text-[13px] text-white text-center">
+                            {mix.count}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => incrementMix(mix.id)}
+                            className="flex justify-center items-center hover:bg-white/20 rounded-full w-6 h-6 text-white transition"
+                          >
+                            <Plus size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {activeMix && (
+        <MixFlavorModal
+          open={!!activeMix}
+          mix={activeMix}
+          items={items}
+          onClose={() => setActiveMix(null)}
+          onConfirm={handleConfirm}
+        />
+      )}
+    </div>
+  );
+}
