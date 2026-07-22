@@ -123,6 +123,7 @@ export default function SubscriptionsOrderClientPage() {
     addItem({
       productId: "subscriptions",
       name: `${activeCategory.label} — ${selectedSize}`,
+      image: dondurmaBasklava.src,
       size: selectedSize,
       type,
       flavors: flavorNames,

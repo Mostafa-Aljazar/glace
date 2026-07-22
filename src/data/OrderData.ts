@@ -118,14 +118,22 @@ export const SPECIAL_FLAVORS: Flavor[] = [
 ];
 
 export const ADDONS: Addon[] = [
-  { id: 1, name: "بكيت بسكوت 4 حبة", price: 3 },
-  { id: 2, name: "بكيت بسكوت 6 حبة", price: 5 },
-  { id: 3, name: "بكيت بسكوت 8 حبة", price: 7 },
-  { id: 4, name: "إضافة صوص", price: 7 },
-  { id: 5, name: "إضافة مكسرات", price: 7 },
+  { id: 1, name: "بسكوت مخروط فاضي", price: 3 },
+  { id: 2, name: "حلبي", price: 3 },
+  { id: 3, name: "بندق", price: 5 },
+  { id: 4, name: "صوص نوتيلا", price: 7 },
+  { id: 5, name: "صوص لوتس", price: 7 },
+  { id: 6, name: "صوص حلبي بيستاشيو", price: 7 },
+  { id: 7, name: "صوص كراميل", price: 7 },
+  { id: 8, name: "صوص كندر", price: 7 },
 ];
 
-export const BISCUIT_PACK_ADDONS = ADDONS.filter((a) => a.id <= 3);
+export const EMPTY_CONE_ADDON = ADDONS[0];
+export const MULTI_CHOICE_ADDONS = ADDONS.filter((a) => a.id > 1);
+export const MAX_MULTI_ADDONS = 4;
+
+/** @deprecated kept for older biscuit pack UI references */
+export const BISCUIT_PACK_ADDONS = [EMPTY_CONE_ADDON];
 export const EXTRA_BISCUIT_UNIT_PRICE = 1;
 
 export function getIceItemPrice(item: IceItem): number {
@@ -222,7 +230,7 @@ export const DESSERT_CATEGORIES_V2: DessertCategoryConfig[] = [
         },
       },
     ],
-    hasAddons: true,
+    hasAddons: false,
     hasNotes: true,
   },
   {
@@ -262,7 +270,7 @@ export const DESSERT_CATEGORIES_V2: DessertCategoryConfig[] = [
         },
       },
     ],
-    hasAddons: true,
+    hasAddons: false,
     hasNotes: true,
   },
   {
@@ -302,7 +310,7 @@ export const DESSERT_CATEGORIES_V2: DessertCategoryConfig[] = [
         },
       },
     ],
-    hasAddons: true,
+    hasAddons: false,
     hasNotes: true,
   },
   {
@@ -342,7 +350,7 @@ export const DESSERT_CATEGORIES_V2: DessertCategoryConfig[] = [
         },
       },
     ],
-    hasAddons: true,
+    hasAddons: false,
     hasNotes: true,
   },
   {

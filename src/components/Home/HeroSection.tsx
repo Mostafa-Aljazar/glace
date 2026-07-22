@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useCallback } from "react";
-import { useHeroSlides } from "@/hooks/home/useHeroSlides";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, EffectFade } from "swiper/modules";
@@ -14,20 +13,6 @@ import "swiper/css/effect-fade";
 import {
   imgL,
   happinessExpertsImg,
-  ii1,
-  ii5,
-  man3,
-  ii6,
-  ii8,
-  man5,
-  pieceIceImg,
-  pieceIceImg2,
-  pieceIceImg3,
-  pieceIceImg4,
-  pieceIceImg5,
-  pieceIceImg6,
-  zigzagsImg,
-  zigzagsImgSvg,
   squarePointsImg,
   wrigglingArrow,
   imgBtn,
@@ -37,82 +22,17 @@ import {
   iceC,
   sunImg,
 } from "@/assets/images";
-import type { SlideData } from "@/types/home.types";
-
-const slides: SlideData[] = [
-  {
-    manImg: ii1,
-    pieceImg: pieceIceImg,
-    zigzagsImg: zigzagsImg,
-    titleH1: "جلاسية الأمير",
-    titleH2: "لإنتاج الآيس كريم و البراد و العصائر و الحلويات",
-    bgColor: "#51C9F4",
-    headerBgColor: "#51c9f4",
-    h1BgColor: "#53352a",
-    h2BgColor: "#51c9f4",
-  },
-  {
-    manImg: ii5,
-    pieceImg: pieceIceImg2,
-    zigzagsImg: zigzagsImg,
-    titleH1: "رحلة لذيذة",
-    titleH2: "عالم من النكهات المبهجة والمتعة العالية",
-    bgColor: "#3FBD59",
-    headerBgColor: "#3FBD598a",
-    h1BgColor: "#01580F",
-    h2BgColor: "#01A41B",
-  },
-  {
-    manImg: man3,
-    pieceImg: pieceIceImg3,
-    zigzagsImg: zigzagsImg,
-    titleH1: "يومك منعش",
-    titleH2: "لا شيء يضاهي البهجة مع المثلجات في يوم حار",
-    bgColor: "#BEBB49",
-    headerBgColor: "#BEBB498a",
-    h1BgColor: "#F3900E",
-    h2BgColor: "#F47251",
-  },
-  {
-    manImg: ii6,
-    pieceImg: pieceIceImg4,
-    zigzagsImg: zigzagsImgSvg,
-    titleH1: "بوظة شهية",
-    titleH2: "بوظة لذيذة، استمتع بالانتعاش في كل لقمة",
-    bgColor: "#DA51F4",
-    headerBgColor: "#DA51F48a",
-    h1BgColor: "#A506C4",
-    h2BgColor: "#E883FB",
-  },
-  {
-    manImg: ii8,
-    pieceImg: pieceIceImg5,
-    zigzagsImg: zigzagsImgSvg,
-    titleH1: "تذوق واستمتع",
-    titleH2: "استمتع باللحظة مع بوظة جلاسيه الأمير",
-    bgColor: "#FF9900",
-    headerBgColor: "#FF99008a",
-    h1BgColor: "#005C5D",
-    h2BgColor: "#F2A634",
-  },
-  {
-    manImg: man5,
-    pieceImg: pieceIceImg6,
-    zigzagsImg: zigzagsImgSvg,
-    titleH1: "كافئ نفسك",
-    titleH2: "استرخ وتمتع بنكهات شهية ومنعشة",
-    bgColor: "#6C5950",
-    headerBgColor: "#6C59508a",
-    h1BgColor: "#A66A2E",
-    h2BgColor: "#F0C648",
-  },
-];
+import type { ISlideData } from "@/types/home.types";
 
 interface HeroSectionProps {
+  slides: ISlideData[];
   onColorChange?: (color: string) => void;
 }
 
-export default function HeroSection({ onColorChange }: HeroSectionProps) {
+export default function HeroSection({
+  slides,
+  onColorChange,
+}: HeroSectionProps) {
   const iceCRef = useRef<HTMLImageElement>(null);
   const bgImgRef = useRef<HTMLImageElement>(null);
   const headerTRef = useRef<HTMLDivElement>(null);
@@ -121,7 +41,7 @@ export default function HeroSection({ onColorChange }: HeroSectionProps) {
   const rotationDegreeIceRef = useRef(0);
   const swiperRef = useRef<SwiperType | null>(null);
 
-  const { data: slidesData = slides } = useHeroSlides();
+  const slidesData = slides;
 
   const handleSlideChange = useCallback(
     (swiper: SwiperType) => {
@@ -143,6 +63,7 @@ export default function HeroSection({ onColorChange }: HeroSectionProps) {
       prevIndexRef.current = active;
 
       const slide = slidesData[swiper.realIndex];
+      if (!slide) return;
 
       if (bgImgRef.current) {
         bgImgRef.current.style.transform = `rotate(${rotationDegreeRef.current}deg) scale(3)`;
@@ -156,7 +77,7 @@ export default function HeroSection({ onColorChange }: HeroSectionProps) {
 
       onColorChange?.(slide.bgColor);
     },
-    [onColorChange],
+    [onColorChange, slidesData],
   );
 
   return (
@@ -203,7 +124,7 @@ export default function HeroSection({ onColorChange }: HeroSectionProps) {
           onSlideChange={handleSlideChange}
           className="w-full h-full"
         >
-          {slidesData.map((slide: SlideData, i: number) => (
+          {slidesData.map((slide: ISlideData, i: number) => (
             <SwiperSlide key={i}>
               <div className="flex items-center w-full h-full overflow-hidden">
                 {/* .centerImageH */}

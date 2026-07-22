@@ -1,16 +1,13 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import type { SlideData } from "@/types/home.types";
-import fetchHeroSlides from "@/hooks/home/fetchHeroSlides";
 import { FAKE_HERO_SLIDES } from "@/data/fake-data/heroSlides";
+import { useHomePage } from "@/hooks/home/useHomePage";
 
-export function useHeroSlides(initialData?: SlideData[]) {
-    return useQuery<SlideData[]>({
-        queryKey: ["heroSlides"],
-        queryFn: fetchHeroSlides,
-        initialData: initialData ?? FAKE_HERO_SLIDES,
-        staleTime: 1000 * 60 * 5,
-        refetchOnWindowFocus: false,
-    });
+/** Hero slides from the shared `GET /home` query. */
+export function useHeroSlides() {
+  const query = useHomePage();
+  return {
+    ...query,
+    data: query.data?.hero.slides ?? FAKE_HERO_SLIDES,
+  };
 }

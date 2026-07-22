@@ -1,50 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { i1, i2, i3, i4, imgbgI, imgBtn } from "@/assets/images";
-import type { EventCard } from "@/types";
+import { imgbgI, imgBtn } from "@/assets/images";
+import type { IHomeEventsData } from "@/types/home.types";
 
-const events: EventCard[] = [
-  {
-    id: 1,
-    title: "مشارك معرض الصناعات الغذائية الفلسطينية",
-    image: i1,
-    href: "/events/1",
-  },
-  { id: 2, title: "أجواء العيد مع جلاسيه غير", image: i2, href: "/events/2" },
-  {
-    id: 3,
-    title: "افتتاح فرع جديد فرع الأمن العام",
-    image: i3,
-    href: "/events/3",
-  },
-  {
-    id: 4,
-    title: "تقدم إدارة جلاسيه بالشكر و التقدير لكل فرد",
-    image: i4,
-    href: "/events/4",
-  },
-  {
-    id: 5,
-    title: "مشارك معرض الصناعات الغذائية الفلسطينية",
-    image: i1,
-    href: "/events/1",
-  },
-  { id: 6, title: "أجواء العيد مع جلاسيه غير", image: i2, href: "/events/2" },
-  {
-    id: 7,
-    title: "افتتاح فرع جديد فرع الأمن العام",
-    image: i3,
-    href: "/events/3",
-  },
-  {
-    id: 8,
-    title: "تقدم إدارة جلاسيه بالشكر و التقدير لكل فرد",
-    image: i4,
-    href: "/events/4",
-  },
-];
-
-export default function EventsSection() {
+export default function EventsSection({
+  eventsData,
+}: {
+  eventsData: IHomeEventsData;
+}) {
   return (
     <section
       className="relative -mt-px pt-2.5 pb-4 lg:pb-0 min-h-125 overflow-hidden"
@@ -53,12 +16,12 @@ export default function EventsSection() {
       <div className="mx-auto w-[90%] max-w-400">
         <div className="text-center">
           <h1 className="text-[38px] text-white md:text-[45px] lg:text-[60px]">
-            الفعاليات و المناسبات
+            {eventsData.title}
           </h1>
 
           <div className="mt-6 pb-8 md:pb-16 lg:pb-20">
             <div className="gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {events.map((ev) => (
+              {eventsData.items.map((ev) => (
                 <Link
                   key={ev.id}
                   href={ev.href}
@@ -90,7 +53,7 @@ export default function EventsSection() {
             {/* Show more button */}
             <div className="z-[8] relative flex justify-center mt-5 mb-22 w-full">
               <Link
-                href="/events"
+                href={eventsData.moreHref}
                 className="relative flex justify-center items-center"
               >
                 <Image
@@ -103,7 +66,7 @@ export default function EventsSection() {
                   className="relative mb-0 px-6 text-[36px] text-glace-yellow whitespace-nowrap"
                   style={{ textShadow: "1px 1px #00000071" }}
                 >
-                  عرض المزيد
+                  {eventsData.moreLabel}
                 </h2>
               </Link>
             </div>

@@ -10,31 +10,16 @@ import "swiper/css";
 import "swiper/css/navigation";
 
 import { Button } from "@/components/ui/button";
-import { imgppO, imgp, islamSobhi, imgPL, imgPR } from "@/assets/images";
-import type { Opinion } from "@/types";
+import { imgppO, imgPL, imgPR } from "@/assets/images";
+import type { IHomeOpinionsData } from "@/types/home.types";
+import { resolveHomeImageSrc } from "@/types/home.types";
 
-const opinions: Opinion[] = [
-  {
-    id: 1,
-    name: "Ibrahim S. Alfayoumi",
-    text: "جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات",
-    image: imgp,
-  },
-  {
-    id: 2,
-    name: "Islam Sobhi",
-    text: "جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات",
-    image: islamSobhi,
-  },
-  {
-    id: 3,
-    name: "Ibrahim S. Alfayoumi",
-    text: "جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات",
-    image: imgp,
-  },
-];
-
-export default function OpinionsSection() {
+export default function OpinionsSection({
+  opinionsData,
+}: {
+  opinionsData: IHomeOpinionsData;
+}) {
+  const opinions = opinionsData.items;
   const swiperRef = useRef<SwiperType | null>(null);
 
   return (
@@ -43,7 +28,7 @@ export default function OpinionsSection() {
         {/* Title */}
         <div className="text-[#53352a] text-center">
           <h1 className="text-[38px] md:text-[45px] lg:text-[60px]">
-            رأيك يهمنا!
+            {opinionsData.title}
           </h1>
         </div>
 
@@ -99,7 +84,7 @@ export default function OpinionsSection() {
                       />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={op.image.src}
+                        src={resolveHomeImageSrc(op.image)}
                         alt={op.name}
                         className="block w-40 sm:w-35 md:w-45 lg:w-45 h-40 sm:h-35 md:h-45 lg:h-45 mask1"
                       />

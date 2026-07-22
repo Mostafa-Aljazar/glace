@@ -1,51 +1,95 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
-import LogoNav from "@/components/Common/LogoNav";
-import { imgL, imgError500 } from "@/assets/images";
+import { AlertTriangle, RefreshCw, Home, ArrowLeft } from "lucide-react";
+import EventsBackground from "@/components/Events/EventsBackground";
+import { imgIesPP, imgIesC } from "@/assets/images";
 
-export default function GlobalError({
+export default function Error({
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
   return (
-    <div className="min-h-screen bg-[#51c9f4] relative overflow-x-hidden">
-      {/* Background blob */}
-      <div className="absolute top-0 right-0 w-[350px] h-full pointer-events-none z-0 max-[991px]:w-[200px] max-[700px]:w-[130px]">
-        <Image src={imgL} alt="" fill className="object-contain object-top" />
-      </div>
+    <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
+      <EventsBackground />
 
-      <LogoNav />
+      <Image
+        src={imgIesPP}
+        alt=""
+        width={90}
+        className="top-1/2 right-2.5 sm:right-7.5 lg:right-15 absolute opacity-60 w-10 sm:w-13 lg:w-15 pointer-events-none"
+      />
+      <Image
+        src={imgIesC}
+        alt=""
+        width={110}
+        className="top-1/2 left-2.5 sm:left-7.5 lg:left-15 absolute opacity-60 w-10 sm:w-13 lg:w-15 pointer-events-none"
+      />
 
-      {/* Main content */}
-      <div className="relative z-10 flex justify-center px-4 pt-[80px] pb-[50px]">
-        <div className="w-[90%] max-w-[1017px]">
-          <div className="flex items-center gap-[40px] max-[991px]:flex-col">
+      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-16 max-w-225">
+        <div className="flex flex-col items-center pt-4 sm:pt-6 pb-8 sm:pb-10 text-center">
+          <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 px-4 py-1 rounded-full text-[13px] text-white/80 mb-3">
+            <AlertTriangle size={12} className="text-glace-yellow" />
+            خطأ غير متوقع
+          </span>
+          <h1 className="font-bold text-[32px] sm:text-[44px] text-white leading-tight drop-shadow-lg">
+            حدث خطأ ما
+          </h1>
+        </div>
 
-            {/* Right: text */}
-            <div className="flex-1 text-white">
-              <h2
-                className="text-[70px] leading-[96%] max-[1400px]:text-[60px] max-[991px]:text-[50px] max-[500px]:text-[45px]"
-              >
-                عفوا هناك صيانة على الموقع
+        <div className="bg-white/17 backdrop-blur-[15px] border border-white/15 rounded-[30px] overflow-hidden">
+          <div className="flex flex-col items-center gap-6 px-6 py-16 sm:py-20 text-center">
+            <div className="relative">
+              <div className="flex items-center justify-center size-24 sm:size-28 rounded-full bg-white/10 border border-white/15">
+                <AlertTriangle
+                  size={40}
+                  className="text-white/45"
+                  strokeWidth={1.5}
+                />
+              </div>
+              <span className="absolute -top-1 -right-1 flex items-center justify-center size-8 rounded-full bg-glace-yellow shadow-[0_4px_12px_rgba(244,228,81,0.4)]">
+                <RefreshCw size={15} className="text-[#1e6a7f]" />
+              </span>
+            </div>
+
+            <div className="max-w-md">
+              <h2 className="text-white text-[24px] sm:text-[28px] font-bold mb-3">
+                عذراً، تعذّر تحميل الصفحة
               </h2>
+              <p className="text-white/60 text-[15px] sm:text-[16px] leading-relaxed">
+                حدث خطأ مؤقت أثناء عرض هذه الصفحة. يمكنك المحاولة مرة أخرى أو
+                العودة للصفحة الرئيسية.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-1">
               <button
+                type="button"
                 onClick={reset}
-                className="mt-[30px] px-[30px] py-[10px] bg-white/20 hover:bg-white/30 text-white text-[24px] rounded-[30px] border border-white/40 cursor-pointer transition-colors"
+                className="inline-flex items-center gap-2 bg-glace-yellow hover:bg-yellow-300 text-[#1e6a7f] font-bold text-[15px] px-7 py-3 rounded-full transition-all shadow-[0_4px_16px_rgba(244,228,81,0.35)] hover:shadow-[0_6px_24px_rgba(244,228,81,0.45)] hover:-translate-y-0.5 cursor-pointer"
               >
+                <RefreshCw size={16} />
                 حاول مجدداً
               </button>
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 bg-white/12 hover:bg-white/20 border border-white/20 text-white font-bold text-[15px] px-7 py-3 rounded-full transition-all"
+              >
+                <Home size={16} />
+                الرئيسية
+              </Link>
             </div>
 
-            {/* Left: error image */}
-            <div className="flex-1 flex justify-center max-[991px]:w-full">
-              <div className="relative w-full max-w-[450px] aspect-square">
-                <Image src={imgError500} alt="500" fill className="object-contain" />
-              </div>
-            </div>
-
+            <Link
+              href="/menu"
+              className="inline-flex items-center gap-1.5 text-white/60 hover:text-white text-[14px] transition-colors mt-1"
+            >
+              تصفح المنيو
+              <ArrowLeft size={14} />
+            </Link>
           </div>
         </div>
       </div>

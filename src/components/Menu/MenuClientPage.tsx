@@ -61,8 +61,6 @@ const CATEGORY_ICONS: Record<string, typeof IceCream> = {
   desserts: Cake,
   "hot-drinks": CupSoda,
   corn: Apple,
-  "other-addons": Cake,
-  new: IceCream,
 };
 
 const CATEGORY_GRADIENTS: Record<string, string> = {
@@ -82,8 +80,6 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   desserts: "from-[#da51f4]/20 to-[#9a2fb0]/20",
   "hot-drinks": "from-[#f4a851]/20 to-[#c97d2a]/20",
   corn: "from-[#f4a851]/20 to-[#c97d2a]/20",
-  "other-addons": "from-[#f4519f]/20 to-[#b02f74]/20",
-  new: "from-[#51c9f4]/20 to-[#388dab]/20",
 };
 
 const CATEGORY_ACCENT: Record<string, string> = {
@@ -103,8 +99,6 @@ const CATEGORY_ACCENT: Record<string, string> = {
   desserts: "#da51f4",
   "hot-drinks": "#f4a851",
   corn: "#f4a851",
-  "other-addons": "#f4519f",
-  new: "#51c9f4",
 };
 
 const DIRECT_ORDER_CARDS: Record<

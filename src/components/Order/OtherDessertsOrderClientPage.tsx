@@ -211,6 +211,7 @@ export default function OtherDessertsOrderClientPage({
       addItem({
         productId: activeCategory.id,
         name: `${activeCategory.label} — ${item.label}`,
+        image: item.image.src,
         type: item.label,
         addons: [],
         addonTotal: 0,

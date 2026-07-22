@@ -83,6 +83,7 @@ export default function DrinksOrderClientPage({
     addItem({
       productId: activeCategory.id,
       name: `${activeCategory.label} — ${selectedItem}`,
+      image: activeCategory.image.src,
       type: selectedItem,
       addons: [],
       addonTotal: 0,

@@ -1,17 +1,28 @@
 import type { StaticIMG } from "@/assets/images";
 import type React from "react";
+import type { HomeImage } from "./home.types";
 
 export interface NavItem {
   label: string;
   href: string;
   icon?: React.ElementType;
 }
-export type { SlideData } from "./home.types";
+export type { ISlideData, HomeImage, IHomePageData } from "./home.types";
+export type { IEvent, IEventsListResponse, EventImage } from "./events.types";
+export type {
+  IContactRequest,
+  IContactResponse,
+} from "./contact.types";
+
+/** @deprecated Prefer `IContactRequest` */
+export type ContactFormValues = import("./contact.types").IContactRequest & {
+  subject?: string;
+};
 
 export interface EventCard {
   id: number;
   title: string;
-  image: StaticIMG;
+  image: HomeImage;
   href: string;
 }
 
@@ -19,7 +30,7 @@ export interface Opinion {
   id: number;
   name: string;
   text: string;
-  image: StaticIMG;
+  image: HomeImage;
 }
 
 export interface Branch {
@@ -39,6 +50,7 @@ export type MenuModalType = "table" | "flavors" | "confirmation";
 export interface PriceRow {
   label: string;
   classic?: string | number;
+  mix?: string | number;
   special?: string | number;
   price?: string | number;
 }
@@ -74,14 +86,6 @@ export interface ToppingItem {
   id: number;
   name: string;
   price: number;
-}
-
-export interface ContactFormValues {
-  name: string;
-  phone: string;
-  email: string;
-  subject: string;
-  message: string;
 }
 
 export interface LoginFormValues {

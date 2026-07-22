@@ -111,40 +111,53 @@ export default function MenuModal({ item, onClose, onConfirm }: MenuModalProps) 
                       </div>
                     )}
                     <div className="divide-y divide-white/10 max-h-[260px] overflow-y-auto">
-                      {item.priceRows?.map((row, i) => (
-                        <div
-                          key={i}
-                          className="grid items-center hover:bg-white/[.06] transition-colors"
-                          style={{
-                            gridTemplateColumns: row.classic !== undefined
-                              ? `2fr 1fr 1fr`
-                              : `2fr 1fr`,
-                          }}
-                        >
-                          <div className="px-3 py-2.5 text-white text-[15px] font-bold text-right">{row.label}</div>
-                          {row.classic !== undefined && (
-                            <div className="px-3 py-2.5 text-center">
-                              <span className="inline-block bg-[#51c9f4]/20 text-[#a8e8f8] text-[14px] font-bold rounded-lg px-2 py-0.5">
-                                {row.classic} ₪
-                              </span>
-                            </div>
-                          )}
-                          {row.special !== undefined && (
-                            <div className="px-3 py-2.5 text-center">
-                              <span className="inline-block bg-glace-yellow/20 text-glace-yellow text-[14px] font-bold rounded-lg px-2 py-0.5">
-                                {row.special} ₪
-                              </span>
-                            </div>
-                          )}
-                          {row.price !== undefined && row.classic === undefined && (
-                            <div className="px-3 py-2.5 text-center">
-                              <span className="inline-block bg-white/15 text-white text-[14px] font-bold rounded-lg px-2 py-0.5">
-                                {row.price} ₪
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                      {item.priceRows?.map((row, i) => {
+                        const hasClassic = row.classic !== undefined;
+                        const hasMix = row.mix !== undefined;
+                        const hasSpecial = row.special !== undefined;
+                        const priceCols = [hasClassic, hasMix, hasSpecial].filter(Boolean).length;
+                        return (
+                          <div
+                            key={i}
+                            className="grid items-center hover:bg-white/[.06] transition-colors"
+                            style={{
+                              gridTemplateColumns: hasClassic
+                                ? `2fr ${Array(priceCols).fill("1fr").join(" ")}`
+                                : `2fr 1fr`,
+                            }}
+                          >
+                            <div className="px-3 py-2.5 text-white text-[15px] font-bold text-right">{row.label}</div>
+                            {hasClassic && (
+                              <div className="px-3 py-2.5 text-center">
+                                <span className="inline-block bg-[#51c9f4]/20 text-[#a8e8f8] text-[14px] font-bold rounded-lg px-2 py-0.5">
+                                  {row.classic} ₪
+                                </span>
+                              </div>
+                            )}
+                            {hasMix && (
+                              <div className="px-3 py-2.5 text-center">
+                                <span className="inline-block bg-white/15 text-white text-[14px] font-bold rounded-lg px-2 py-0.5">
+                                  {row.mix} ₪
+                                </span>
+                              </div>
+                            )}
+                            {hasSpecial && (
+                              <div className="px-3 py-2.5 text-center">
+                                <span className="inline-block bg-glace-yellow/20 text-glace-yellow text-[14px] font-bold rounded-lg px-2 py-0.5">
+                                  {row.special} ₪
+                                </span>
+                              </div>
+                            )}
+                            {row.price !== undefined && !hasClassic && (
+                              <div className="px-3 py-2.5 text-center">
+                                <span className="inline-block bg-white/15 text-white text-[14px] font-bold rounded-lg px-2 py-0.5">
+                                  {row.price} ₪
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

@@ -107,6 +107,19 @@
     direction: rtl;
     word-spacing: 0.15em;
   }
+
+  /* Swagger docs: Cairo + LTR */
+  html.swagger-docs,
+  html.swagger-docs *,
+  body.swagger-docs,
+  body.swagger-docs * {
+    font-family: var(--font-cairo), "Cairo", sans-serif !important;
+    direction: ltr !important;
+    word-spacing: normal !important;
+    letter-spacing: normal !important;
+    font-style: normal !important;
+  }
+
   body {
     @apply bg-background text-foreground;
     background-color: #51c9f4;

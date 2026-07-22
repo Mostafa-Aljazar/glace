@@ -227,6 +227,7 @@ export default function MilkshakeOrderClientPage() {
           addItem({
             productId: "milkshake",
             name: `ميلك شيك ${item.label}`,
+            image: item.image.src,
             type: item.label,
             addons: [],
             addonTotal: 0,

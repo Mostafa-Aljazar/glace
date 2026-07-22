@@ -1,16 +1,15 @@
-import { guestApi } from "@/lib/axios";
-import type { SlideData } from "@/types/home.types";
+import fetchHomePage from "@/hooks/home/fetchHomePage";
 import { FAKE_HERO_SLIDES } from "@/data/fake-data/heroSlides";
+import type { ISlideData } from "@/types/home.types";
 
-export async function fetchHeroSlides(): Promise<SlideData[]> {
-    try {
-        const res = await guestApi.get<SlideData[]>("/hero-slides");
-        if (res?.data && Array.isArray(res.data)) return res.data;
-        return FAKE_HERO_SLIDES;
-    } catch (e) {
-        console.error("[fetchHeroSlides]", e);
-        return FAKE_HERO_SLIDES;
-    }
+/** @deprecated Prefer `fetchHomePage` — kept for callers that only need slides. */
+export async function fetchHeroSlides(): Promise<ISlideData[]> {
+  try {
+    const home = await fetchHomePage();
+    return home.hero.slides?.length ? home.hero.slides : FAKE_HERO_SLIDES;
+  } catch {
+    return FAKE_HERO_SLIDES;
+  }
 }
 
 export default fetchHeroSlides;

@@ -13,6 +13,16 @@ export interface MixSelection {
   unitPrice: number;
 }
 
+function flavorFrequencyLabels(flavors: string[]) {
+  const counts = new Map<string, number>();
+  for (const flavor of flavors) {
+    counts.set(flavor, (counts.get(flavor) ?? 0) + 1);
+  }
+  return Array.from(counts.entries()).map(([flavor, count]) =>
+    count > 1 ? `${flavor} ×${count}` : flavor,
+  );
+}
+
 interface MixOrderSectionProps {
   mixes: MixConfig[];
   items: SimpleMenuItem[];
@@ -123,20 +133,22 @@ export default function MixOrderSection({
                             {mixConfig.label}
                           </p>
                           <div className="flex flex-wrap gap-1.5">
-                            {mix.selectedFlavors.map((flavor, flavorIdx) => (
-                              <span
-                                key={`${flavor}-${flavorIdx}`}
-                                className="bg-white/10 border border-white/10 px-2 py-0.5 rounded-full text-[11px] text-white/80"
-                              >
-                                {flavor}
-                              </span>
-                            ))}
+                            {flavorFrequencyLabels(mix.selectedFlavors).map(
+                              (label) => (
+                                <span
+                                  key={label}
+                                  className="bg-white/10 border border-white/10 px-2 py-0.5 rounded-full text-[11px] text-white/80"
+                                >
+                                  {label}
+                                </span>
+                              ),
+                            )}
                           </div>
                         </div>
                         <button
                           type="button"
                           onClick={() => removeMixSelection(mix.id)}
-                          className="flex justify-center items-center shrink-0 bg-white/8 hover:bg-white/15 rounded-full w-7 h-7 text-white/50 hover:text-white transition"
+                          className="flex justify-center items-center shrink-0 rounded-full w-7 h-7 border border-rose-400/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/30 hover:border-rose-400/60 hover:text-rose-100 transition"
                           aria-label="حذف"
                         >
                           <X size={13} />

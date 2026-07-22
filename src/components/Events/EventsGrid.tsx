@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CalendarX } from "lucide-react";
-import type { EventData } from "@/data/Events";
+import type { IEvent } from "@/types/events.types";
 
 interface EventsGridProps {
-  items: EventData[];
+  items: IEvent[];
 }
 
 export default function EventsGrid({ items }: EventsGridProps) {

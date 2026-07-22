@@ -246,6 +246,7 @@ export default function CupOrderClientPage() {
     addItem({
       productId: variant === "كاسة" ? "cup" : "biscuit",
       name: variant === "كاسة" ? "بوظة كاسة" : "بوظة بسكوت",
+      image: (variant === "كاسة" ? iceCreamCup : biscuitIceCream).src,
       size,
       type: flavorType || undefined,
       flavors: flavorNames,

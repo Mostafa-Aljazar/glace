@@ -176,6 +176,7 @@ export default function FavoritesClientPage() {
     addItem({
       productId: "favorites",
       name: `${item.category} - ${item.name}`,
+      image: item.image.src,
       type: item.name,
       addons: [],
       addonTotal: 0,

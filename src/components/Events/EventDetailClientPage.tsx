@@ -9,14 +9,15 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import EventsBackground from "@/components/Events/EventsBackground";
-import { EVENTS } from "@/data/Events";
-import type { EventData } from "@/data/Events";
+import { useEvent } from "@/hooks/events/useEvent";
+import { useEvents } from "@/hooks/events/useEvents";
+import type { IEvent } from "@/types/events.types";
 
 interface EventDetailClientPageProps {
   id: number;
 }
 
-function RelatedCard({ event }: { event: EventData }) {
+function RelatedCard({ event }: { event: IEvent }) {
   return (
     <Link
       href={`/events/${event.id}`}
@@ -50,8 +51,11 @@ function RelatedCard({ event }: { event: EventData }) {
 export default function EventDetailClientPage({
   id,
 }: EventDetailClientPageProps) {
-  const event = EVENTS.find((e) => e.id === id);
-  const otherEvents = EVENTS.filter((e) => e.id !== id).slice(0, 6);
+  const { data: event } = useEvent(id);
+  const { data: list } = useEvents({ page: 1, perPage: 20 });
+  const otherEvents = (list?.items ?? [])
+    .filter((e) => e.id !== id)
+    .slice(0, 6);
 
   if (!event) {
     return (
@@ -70,11 +74,9 @@ export default function EventDetailClientPage({
 
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
-      
       <EventsBackground />
 
       <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-16 max-w-[1200px]">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 mt-4 mb-7 text-[13px] text-white/50">
           <Link
             href="/events"
@@ -86,10 +88,8 @@ export default function EventDetailClientPage({
           <span className="text-white/75 line-clamp-1">{event.title}</span>
         </div>
 
-        {/* ── Main card ── */}
         <div className="relative bg-white/[.15] shadow-[0_24px_60px_rgba(0,0,0,0.22)] backdrop-blur-[18px] border border-white/20 rounded-[28px] overflow-hidden">
           <div className="flex md:flex-row flex-col">
-            {/* ── Right: Swiper — small fixed card, anchored to top ── */}
             <div className="self-start mt-16 p-5 w-full md:w-120 h-[220px] md:h-[220px] shrink-0">
               <div className="relative rounded-2xl w-full h-full overflow-hidden">
                 <Swiper
@@ -110,7 +110,6 @@ export default function EventDetailClientPage({
                   ))}
                 </Swiper>
 
-                {/* Photo count pill */}
                 <span className="top-2 right-2 z-20 absolute flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-full font-medium text-[11px] text-white/90 pointer-events-none">
                   <span className="inline-block bg-glace-yellow rounded-full size-1.5" />
                   {event.images.length} صور
@@ -118,9 +117,7 @@ export default function EventDetailClientPage({
               </div>
             </div>
 
-            {/* ── Left: Text — grows freely ── */}
             <div className="flex flex-col flex-1 gap-5 px-7 sm:px-10 py-7 sm:py-9 text-white">
-              {/* Date + back */}
               <div className="flex flex-wrap justify-between items-center gap-3">
                 <span className="inline-flex items-center gap-2 bg-white/10 px-3.5 py-1.5 border border-white/15 rounded-full text-[13px] text-white/65">
                   <Calendar size={13} className="text-glace-yellow" />
@@ -135,7 +132,6 @@ export default function EventDetailClientPage({
                 </Link>
               </div>
 
-              {/* Title */}
               <div>
                 <h1 className="mb-3 font-bold text-[22px] sm:text-[28px] leading-snug">
                   {event.title}
@@ -153,7 +149,6 @@ export default function EventDetailClientPage({
           </div>
         </div>
 
-        {/* ── Related events ── */}
         {otherEvents.length > 0 && (
           <div className="mt-14">
             <div className="flex items-center gap-4 mb-6">
@@ -190,7 +185,6 @@ export default function EventDetailClientPage({
           </div>
         )}
       </div>
-
     </div>
   );
 }

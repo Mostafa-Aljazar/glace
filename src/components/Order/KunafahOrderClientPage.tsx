@@ -9,7 +9,7 @@ import AddToCartButton from "@/components/Order/AddToCartButton";
 import BackButton from "@/components/Order/BackButton";
 import OrderLeaveConfirmationDialog from "@/components/Order/OrderLeaveConfirmationDialog";
 import { useLeavePageGuard } from "@/hooks/order";
-import { ADDONS, type MixConfig, type SimpleMenuItem } from "@/data/OrderData";
+import { type MixConfig, type SimpleMenuItem } from "@/data/OrderData";
 import MixOrderSection, {
   type MixSelection,
 } from "@/components/Order/MixOrderSection";
@@ -126,6 +126,7 @@ export default function KunafahOrderClientPage() {
           addItem({
             productId: KUNAFA_CONFIG.id,
             name: `${KUNAFA_CONFIG.label} — ${label}`,
+            image: item.image?.src ?? KUNAFA_CONFIG.image.src,
             type: label,
             addons: [],
             addonTotal: 0,
@@ -141,6 +142,7 @@ export default function KunafahOrderClientPage() {
         addItem({
           productId: KUNAFA_CONFIG.id,
           name: `${KUNAFA_CONFIG.label} — ${mix.mixLabel}`,
+          image: KUNAFA_CONFIG.image.src,
           type: mix.mixLabel,
           flavors: mix.selectedFlavors,
           addons: [],

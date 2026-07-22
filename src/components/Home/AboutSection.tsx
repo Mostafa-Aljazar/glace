@@ -1,8 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ppp, bgWA, imgBtn } from "@/assets/images";
+import { bgWA, imgBtn } from "@/assets/images";
+import type { IHomeAboutData } from "@/types/home.types";
 
-export default function AboutSection({ bgColor = "#BEBB49" }: { bgColor?: string }) {
+export default function AboutSection({
+  bgColor = "#BEBB49",
+  about,
+}: {
+  bgColor?: string;
+  about: IHomeAboutData;
+}) {
   return (
     <section
       id="about"
@@ -13,7 +20,7 @@ export default function AboutSection({ bgColor = "#BEBB49" }: { bgColor?: string
         {/* Character image */}
         <div className="mt-[47px] lg:mt-0 w-full lg:w-[40%]">
           <Image
-            src={ppp}
+            src={about.image}
             alt="جلاسيه الأمير"
             width={550}
             height={600}
@@ -28,20 +35,18 @@ export default function AboutSection({ bgColor = "#BEBB49" }: { bgColor?: string
               className="text-[#f4e451] text-[36px] md:text-[36px] lg:text-[45px] xl:text-[60px]"
               style={{ textShadow: "2px 2px #00000046" }}
             >
-              موهوبون في صناعة الأيسكريم !
+              {about.title}
             </h1>
-            <p className="text-[24px] md:text-[24px] lg:text-[26px]">
-              تأسس جلاسيه الأمير عام 2015 كأحد أفرع شركة أسكمو الأمير التي تأسست
-              على يد صاحبها السيد عماد الوادية عام 2000
-            </p>
-            <p className="text-[24px] md:text-[24px] lg:text-[26px]">
-              تعمل الشركة على تقديم أجود أنواع الآيس كريم والبراد بالإضافة
-              للعصائر والحلويات، ولديها خبرة طويلة في هذا المجال حيث تسعى الشركة
-              دوماً على التطوير و تحسين الأداء للوصول الى خدمة ومنتج يرقى
-              بزبائننا الكرام
-            </p>
+            {about.paragraphs.map((paragraph) => (
+              <p
+                key={paragraph.slice(0, 24)}
+                className="text-[24px] md:text-[24px] lg:text-[26px]"
+              >
+                {paragraph}
+              </p>
+            ))}
             <Link
-              href="#"
+              href={about.ctaHref}
               className="inline-block relative mt-5 cursor-pointer"
             >
               <Image
@@ -54,7 +59,7 @@ export default function AboutSection({ bgColor = "#BEBB49" }: { bgColor?: string
                 className="mb-0 px-[30px] text-[#f4e451] text-[30px]"
                 style={{ textShadow: "1px 1px #00000071" }}
               >
-                اعرف أكثر
+                {about.ctaLabel}
               </h2>
             </Link>
           </div>

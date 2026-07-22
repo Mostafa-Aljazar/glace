@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Tag, CheckCircle, XCircle } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -42,14 +42,25 @@ export default function PaymentClientPage({ deliveryMethod, address }: Props) {
   const subtotal = useCartStore((s) => s.subtotal);
   const total = useCartStore((s) => s.total);
   const discount = useCartStore((s) => s.discount);
+  const coupon = useCartStore((s) => s.coupon);
+  const applyCoupon = useCartStore((s) => s.applyCoupon);
   const clearCart = useCartStore((s) => s.clearCart);
   const walletBalance = useWalletStore((s) => s.balance);
   const walletDeduct = useWalletStore((s) => s.deduct);
   const walletTopUp = useWalletStore((s) => s.topUp);
   const placeOrder = useOrderStore((s) => s.placeOrder);
 
+  const [couponInput, setCouponInput] = useState(coupon);
+  const couponApplied = discount > 0;
+  const couponInvalid =
+    couponInput.trim().length > 0 && !couponApplied && couponInput !== coupon;
+
   const orderTotal = total();
   const cashChange = cashPaid ? Math.max(0, parseFloat(cashPaid) - orderTotal) : 0;
+
+  function handleApplyCoupon() {
+    applyCoupon(couponInput.trim());
+  }
 
   function handleConfirm() {
     if (method === "wallet" && walletBalance < orderTotal) return;
@@ -89,6 +100,44 @@ export default function PaymentClientPage({ deliveryMethod, address }: Props) {
           <div className="flex-1">
             <div className="bg-white/[.17] backdrop-blur-[15px] rounded-[30px] p-6 text-white">
               <h2 className="mb-5 text-[24px]">اختر طريقة الدفع</h2>
+
+              <div className="mb-6 rounded-[20px] border border-white/25 bg-white/10 p-4">
+                <p className="text-white/80 text-[14px] mb-2.5 flex items-center gap-1.5">
+                  <Tag size={14} className="text-glace-yellow" />
+                  كود الخصم
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
+                    placeholder="أدخل الكود"
+                    disabled={couponApplied}
+                    className="flex-1 bg-white/10 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] px-3.5 py-2.5 text-white text-[15px] placeholder:text-white/40 outline-none transition-colors disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={couponApplied || !couponInput.trim()}
+                    className="bg-glace-yellow hover:brightness-105 text-[#1e6a7f] rounded-[14px] px-4 py-2.5 text-[14px] font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                  >
+                    تطبيق
+                  </button>
+                </div>
+                {couponApplied && (
+                  <p className="flex items-center gap-1.5 text-green-300 text-[13px] mt-2.5">
+                    <CheckCircle size={14} />
+                    تم تطبيق خصم {discount} ₪
+                  </p>
+                )}
+                {couponInvalid && !couponApplied && (
+                  <p className="flex items-center gap-1.5 text-red-300 text-[13px] mt-2.5">
+                    <XCircle size={14} />
+                    كود غير صالح
+                  </p>
+                )}
+              </div>
 
               <div className="flex flex-col gap-3 mb-6">
                 {PAYMENT_METHODS.map((m) => (
@@ -188,6 +237,7 @@ export default function PaymentClientPage({ deliveryMethod, address }: Props) {
                 <span>المجموع الجزئي</span>
                 <span>{subtotal().toFixed(2)} ₪</span>
               </div>
+
               {discount > 0 && (
                 <div className="flex justify-between mb-2 text-[16px] text-green-300">
                   <span>خصم</span>

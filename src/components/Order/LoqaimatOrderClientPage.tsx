@@ -9,7 +9,7 @@ import AddToCartButton from "@/components/Order/AddToCartButton";
 import BackButton from "@/components/Order/BackButton";
 import OrderLeaveConfirmationDialog from "@/components/Order/OrderLeaveConfirmationDialog";
 import { useLeavePageGuard } from "@/hooks/order";
-import { ADDONS, type MixConfig, type SimpleMenuItem } from "@/data/OrderData";
+import { type MixConfig, type SimpleMenuItem } from "@/data/OrderData";
 import MixOrderSection, {
   type MixSelection,
 } from "@/components/Order/MixOrderSection";
@@ -93,31 +93,23 @@ const LOQAIMAT_CONFIG: {
       },
     },
   ],
-  hasAddons: true,
+  hasAddons: false,
   hasNotes: true,
 };
 
 export default function LoqaimatOrderClientPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [mixSelections, setMixSelections] = useState<MixSelection[]>([]);
-  const [selectedBiscuitAddon, setSelectedBiscuitAddon] = useState<string | null>(null);
-  const [selectedOptionalAddons, setSelectedOptionalAddons] = useState<string[]>([]);
   const [addedToCart, setAddedToCart] = useState(false);
   const [validationMsg, setValidationMsg] = useState("");
 
   const totalItems = Object.values(counts).reduce((s, c) => s + c, 0);
   const mixItems = mixSelections.filter((m) => m.count > 0).length;
-  const hasPendingSelections =
-    totalItems > 0 ||
-    mixItems > 0 ||
-    selectedBiscuitAddon !== null ||
-    selectedOptionalAddons.length > 0;
+  const hasPendingSelections = totalItems > 0 || mixItems > 0;
 
   const clearSelections = useCallback(() => {
     setCounts({});
     setMixSelections([]);
-    setSelectedBiscuitAddon(null);
-    setSelectedOptionalAddons([]);
   }, []);
 
   const {
@@ -146,37 +138,11 @@ export default function LoqaimatOrderClientPage() {
     });
   }
 
-  function toggleBiscuitAddon(addonId: string) {
-    setSelectedBiscuitAddon((prev) => (prev === addonId ? null : addonId));
-  }
-
-  function toggleOptionalAddon(addonId: string) {
-    setSelectedOptionalAddons((prev) => {
-      if (prev.includes(addonId)) {
-        return prev.filter((id) => id !== addonId);
-      } else {
-        return [...prev, addonId];
-      }
-    });
-  }
-
   function showValidation(msg: string) {
     setValidationMsg(msg);
     setTimeout(() => setValidationMsg(""), 3000);
   }
 
-  const addonTotal = (() => {
-    let total = 0;
-    if (selectedBiscuitAddon) {
-      const addon = ADDONS.find((a) => a.id?.toString() === selectedBiscuitAddon);
-      total += addon?.price ?? 0;
-    }
-    selectedOptionalAddons.forEach((addonId) => {
-      const addon = ADDONS.find((a) => a.id?.toString() === addonId);
-      total += addon?.price ?? 0;
-    });
-    return total;
-  })();
 
   function handleAddToCart() {
     if (totalItems === 0 && mixItems === 0) {
@@ -187,15 +153,13 @@ export default function LoqaimatOrderClientPage() {
       if (qty > 0) {
         const item = LOQAIMAT_CONFIG.items.find((i) => i.label === label);
         if (item) {
-          const allAddons = selectedBiscuitAddon
-          ? [selectedBiscuitAddon, ...selectedOptionalAddons]
-          : selectedOptionalAddons;
-        addItem({
+          addItem({
             productId: LOQAIMAT_CONFIG.id,
             name: `${LOQAIMAT_CONFIG.label} — ${label}`,
+            image: item.image?.src ?? LOQAIMAT_CONFIG.image.src,
             type: label,
-            addons: allAddons.map(a => ADDONS.find(addon => addon.id?.toString() === a)?.name || a),
-            addonTotal: addonTotal,
+            addons: [],
+            addonTotal: 0,
             unitPrice: item.price,
             quantity: qty,
           });
@@ -205,16 +169,14 @@ export default function LoqaimatOrderClientPage() {
 
     mixSelections.forEach((mix) => {
       if (mix.count > 0) {
-        const allAddons = selectedBiscuitAddon
-          ? [selectedBiscuitAddon, ...selectedOptionalAddons]
-          : selectedOptionalAddons;
         addItem({
           productId: LOQAIMAT_CONFIG.id,
           name: `${LOQAIMAT_CONFIG.label} — ${mix.mixLabel}`,
+          image: LOQAIMAT_CONFIG.image.src,
           type: mix.mixLabel,
           flavors: mix.selectedFlavors,
-          addons: allAddons.map(a => ADDONS.find(addon => addon.id?.toString() === a)?.name || a),
-          addonTotal: addonTotal,
+          addons: [],
+          addonTotal: 0,
           unitPrice: mix.unitPrice,
           quantity: mix.count,
         });
@@ -235,8 +197,7 @@ export default function LoqaimatOrderClientPage() {
     const item = LOQAIMAT_CONFIG.items.find((i) => i.label === label);
     return sum + (item?.price ?? 0) * qty;
   }, 0) +
-  mixSelections.reduce((sum, mix) => sum + mix.unitPrice * mix.count, 0) +
-  (totalItems + mixItems) * addonTotal;
+  mixSelections.reduce((sum, mix) => sum + mix.unitPrice * mix.count, 0);
 
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
@@ -387,123 +348,6 @@ export default function LoqaimatOrderClientPage() {
               />
             )}
 
-            {LOQAIMAT_CONFIG.hasAddons && (
-              <div className="mt-6 pt-6 border-white/15 border-t">
-                <div className="mb-5 pb-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-bold text-[16px] text-white">
-                      إضافات اختيارية
-                    </h3>
-                    <div className="inline-flex items-center gap-1.5 bg-white/10 px-2.5 py-1 border border-white/20 rounded-full">
-                      <span className="text-[11px] text-white/70">اختياري</span>
-                    </div>
-                  </div>
-                  <p className="text-[12px] text-white/60">
-                    أضف لمسات إضافية لتحسين طعم لقيماتك
-                  </p>
-                </div>
-
-                {/* Biscuit packs section */}
-                <div className="mb-5">
-                  <p className="text-[12px] font-medium text-white/70 mb-3">
-                    اختر بكيت بسكوت (اختياري):
-                  </p>
-                  <div className="space-y-2.5">
-                    {ADDONS.filter((a) => a.name.includes("بكيت بسكوت")).map((addon) => {
-                      const isSelected = selectedBiscuitAddon === addon.id.toString();
-                      return (
-                        <button
-                          key={addon.id}
-                          type="button"
-                          onClick={() => toggleBiscuitAddon(addon.id.toString())}
-                          className={`w-full flex items-center gap-3 px-4 py-4 rounded-[16px] border transition-all duration-200 group ${
-                            isSelected
-                              ? "bg-glace-yellow/15 border-glace-yellow/50 shadow-[0_4px_12px_rgba(244,228,81,0.15)]"
-                              : "bg-white/8 border-white/10 hover:bg-white/12 hover:border-white/20"
-                          }`}
-                        >
-                          {/* Custom radio button */}
-                          <div className={`flex items-center justify-center w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
-                            isSelected
-                              ? "bg-glace-yellow border-glace-yellow shadow-[0_2px_8px_rgba(244,228,81,0.3)]"
-                              : "border-white/40 group-hover:border-white/60"
-                          }`}>
-                            {isSelected && (
-                              <div className="w-2 h-2 bg-[#1e6a7f] rounded-full"></div>
-                            )}
-                          </div>
-
-                          {/* Addon info */}
-                          <div className="flex-1 text-right min-w-0">
-                            <p className="font-medium text-[14px] text-white leading-snug">
-                              {addon.name}
-                            </p>
-                          </div>
-
-                          {/* Price */}
-                          <p className={`font-bold text-[14px] whitespace-nowrap transition-colors ${
-                            isSelected ? "text-glace-yellow" : "text-white/70"
-                          }`}>
-                            +{addon.price} ₪
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Optional addons section */}
-                <div>
-                  <p className="text-[12px] font-medium text-white/70 mb-3">
-                    إضافات أخرى (متعددة):
-                  </p>
-                  <div className="space-y-2.5">
-                    {ADDONS.filter((a) => !a.name.includes("بكيت بسكوت")).map((addon) => {
-                      const isSelected = selectedOptionalAddons.includes(addon.id.toString());
-                      return (
-                        <button
-                          key={addon.id}
-                          type="button"
-                          onClick={() => toggleOptionalAddon(addon.id.toString())}
-                          className={`w-full flex items-center gap-3 px-4 py-4 rounded-[16px] border transition-all duration-200 group ${
-                            isSelected
-                              ? "bg-glace-yellow/15 border-glace-yellow/50 shadow-[0_4px_12px_rgba(244,228,81,0.15)]"
-                              : "bg-white/8 border-white/10 hover:bg-white/12 hover:border-white/20"
-                          }`}
-                        >
-                          {/* Custom checkbox */}
-                          <div className={`flex items-center justify-center w-5 h-5 rounded-md border-2 flex-shrink-0 transition-all ${
-                            isSelected
-                              ? "bg-glace-yellow border-glace-yellow shadow-[0_2px_8px_rgba(244,228,81,0.3)]"
-                              : "border-white/40 group-hover:border-white/60"
-                          }`}>
-                            {isSelected && (
-                              <svg className="w-3 h-3 text-[#1e6a7f]" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-
-                          {/* Addon info */}
-                          <div className="flex-1 text-right min-w-0">
-                            <p className="font-medium text-[14px] text-white leading-snug">
-                              {addon.name}
-                            </p>
-                          </div>
-
-                          {/* Price */}
-                          <p className={`font-bold text-[14px] whitespace-nowrap transition-colors ${
-                            isSelected ? "text-glace-yellow" : "text-white/70"
-                          }`}>
-                            +{addon.price} ₪
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

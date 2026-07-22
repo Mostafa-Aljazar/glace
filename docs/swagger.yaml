@@ -1,0 +1,930 @@
+openapi: 3.0.3
+info:
+  title: Glace API
+  description: |
+    API specification for the Glace application.
+    Endpoints will be added as they are defined.
+  version: 1.0.0
+  contact:
+    name: Glace Team
+
+servers:
+  - url: http://localhost:3000/api
+    description: Next.js local mock (Swagger Try it out)
+  - url: http://localhost:8000/api
+    description: Backend API (local)
+  - url: https://api.example.com/api
+    description: Production (update when ready)
+
+tags:
+  - name: Auth
+    description: Authentication and account access
+  - name: Users
+    description: User profile and account management
+  - name: Home
+    description: Home page content
+  - name: Menu
+    description: Menu categories and items
+  - name: Orders
+    description: Order creation and tracking
+  - name: Cart
+    description: Shopping cart
+  - name: Payment
+    description: Payment processing
+  - name: Wallet
+    description: User wallet and balance
+  - name: Favorites
+    description: Favorite items
+  - name: Events
+    description: Events and promotions
+  - name: Contact
+    description: Contact and support forms
+
+paths:
+  /home:
+    get:
+      tags: [Home]
+      summary: Get home page content
+      description: |
+        Public aggregate endpoint for the entire home page.
+        Returns hero slides, about, why-glace, branches, events, and opinions
+        in a single response so the frontend can load the page with one request.
+      operationId: getHomePage
+      security: []
+      responses:
+        "200":
+          description: Home page content (`IHomePageData`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IHomePageData"
+              example:
+                hero:
+                  slides:
+                    - manImg: https://cdn.example.com/home/hero/man-1.png
+                      pieceImg: https://cdn.example.com/home/hero/piece-1.png
+                      zigzagsImg: https://cdn.example.com/home/hero/zigzags.png
+                      titleH1: جلاسية الأمير
+                      titleH2: لإنتاج الآيس كريم و البراد و العصائر و الحلويات
+                      bgColor: "#51C9F4"
+                      headerBgColor: "#51c9f4"
+                      h1BgColor: "#53352a"
+                      h2BgColor: "#51c9f4"
+                about:
+                  title: موهوبون في صناعة الأيسكريم !
+                  paragraphs:
+                    - تأسس جلاسيه الأمير عام 2015 كأحد أفرع شركة أسكمو الأمير...
+                    - تعمل الشركة على تقديم أجود أنواع الآيس كريم والبراد...
+                  image: https://cdn.example.com/home/about/character.png
+                  ctaLabel: اعرف أكثر
+                  ctaHref: /about
+                whyGlace:
+                  title: لماذا جلاسيه الأمير؟
+                  description: جلاسيه الأمير حاصلة على شهادة الجودة العالمية لسلامة الغذاء ISO 22000
+                  features:
+                    - label: جودة عالية
+                      image: https://cdn.example.com/home/why/feature-p.png
+                    - label: أمانة وثقة
+                      image: https://cdn.example.com/home/why/feature-b.png
+                  videoUrl: https://www.youtube.com/embed/ShMr0XzIqSM
+                  videoThumbnail: https://cdn.example.com/home/why/video-thumb.png
+                branches:
+                  title: ننتظركم في المواعيد التالية
+                  branches:
+                    - id: ramal
+                      label: فرع الرمال
+                      mapSrc: https://www.google.com/maps/embed?...
+                      address: غزة، الرمال، شارع الشهداء...
+                      phone: "0592 226 522"
+                      whatsapp: "0592 226 522"
+                      weekdayHours: "PM 11:45 – AM 10:00"
+                      fridayHours: "PM 11:45 – PM02:00"
+                      borderRadius: "32% 68% 69% 31% / 30% 28% 72% 70%"
+                events:
+                  title: الفعاليات و المناسبات
+                  moreLabel: عرض المزيد
+                  moreHref: /events
+                  items:
+                    - id: 1
+                      title: مشارك معرض الصناعات الغذائية الفلسطينية
+                      image: https://cdn.example.com/home/events/1.png
+                      href: /events/1
+                opinions:
+                  title: رأيك يهمنا!
+                  items:
+                    - id: 1
+                      name: Ibrahim S. Alfayoumi
+                      text: جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات
+                      image: https://cdn.example.com/home/opinions/1.jpg
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /events:
+    get:
+      tags: [Events]
+      summary: List events
+      description: |
+        Public paginated list of events for `/events`.
+        Matches TypeScript `IEventsListResponse` / `IEvent`.
+      operationId: getEvents
+      security: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: perPage
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 8
+          example: 8
+      responses:
+        "200":
+          description: Paginated events list (`IEventsListResponse`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IEventsListResponse"
+              example:
+                items:
+                  - id: 2
+                    title: أجواء العيد مع جلاسيه غير
+                    date: "11/06/2020"
+                    description: كل عام وانتم بخير بحلول عيد الفطر المبارك...
+                    listImage: https://cdn.example.com/events/2-list.png
+                    images:
+                      - https://cdn.example.com/events/2-a.png
+                      - https://cdn.example.com/events/2-b.png
+                total: 10
+                page: 1
+                perPage: 8
+                totalPages: 2
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /events/{id}:
+    get:
+      tags: [Events]
+      summary: Get event by id
+      description: |
+        Public event detail for `/events/{id}`.
+        Matches TypeScript `IEvent`.
+      operationId: getEventById
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          example: 2
+      responses:
+        "200":
+          description: Event detail (`IEvent`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IEvent"
+              example:
+                id: 2
+                title: أجواء العيد مع جلاسيه غير
+                date: "11/06/2020"
+                description: كل عام وانتم بخير بحلول عيد الفطر المبارك احتفالنا معكم بالعيد أجمل...
+                listImage: https://cdn.example.com/events/2-list.png
+                images:
+                  - https://cdn.example.com/events/2-a.png
+                  - https://cdn.example.com/events/2-b.png
+                  - https://cdn.example.com/events/2-c.png
+                  - https://cdn.example.com/events/2-d.png
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /contact:
+    post:
+      tags: [Contact]
+      summary: Send contact message
+      description: |
+        Public contact form submission.
+        Matches TypeScript `IContactRequest` → `IContactResponse`.
+      operationId: sendContactMessage
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IContactRequest"
+            example:
+              name: أحمد علي
+              phone: "0592123456"
+              email: ahmed@example.com
+              message: أريد الاستفسار عن العروض الحالية
+      responses:
+        "200":
+          description: Message accepted (`IContactResponse`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IContactResponse"
+              example:
+                success: true
+                message: تم إرسال رسالتك بنجاح
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token from login. Sent as:
+        `Authorization: <token>`
+        (matches the frontend `userApi` axios interceptor)
+
+  schemas:
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          example: Something went wrong
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email: ["The email field is required."]
+
+    # --- Auth ---
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: secret123
+        rememberMe:
+          type: boolean
+          default: false
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: '#/components/schemas/User'
+
+    RegisterRequest:
+      type: object
+      required: [fullName, email, phone, password, confirmPassword]
+      properties:
+        fullName:
+          type: string
+          example: Ahmed Ali
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          example: "+9665XXXXXXXX"
+        password:
+          type: string
+          format: password
+        confirmPassword:
+          type: string
+          format: password
+
+    RestorePasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    NewPasswordRequest:
+      type: object
+      required: [password, confirmPassword]
+      properties:
+        password:
+          type: string
+          format: password
+        confirmPassword:
+          type: string
+          format: password
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword, confirmPassword]
+      properties:
+        currentPassword:
+          type: string
+          format: password
+        newPassword:
+          type: string
+          format: password
+        confirmPassword:
+          type: string
+          format: password
+
+    # --- User ---
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        fullName:
+          type: string
+          example: Ahmed Ali
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          example: "+9665XXXXXXXX"
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+
+    # --- Contact (matches src/types/contact.types.ts) ---
+    IContactRequest:
+      type: object
+      description: Matches TypeScript `IContactRequest`
+      required:
+        - name
+        - phone
+        - email
+        - message
+      properties:
+        name:
+          type: string
+          example: أحمد علي
+        phone:
+          type: string
+          example: "0592123456"
+        email:
+          type: string
+          format: email
+          example: ahmed@example.com
+        subject:
+          type: string
+          description: Optional subject (not used by current UI)
+        message:
+          type: string
+          example: أريد الاستفسار عن العروض الحالية
+      example:
+        name: أحمد علي
+        phone: "0592123456"
+        email: ahmed@example.com
+        message: أريد الاستفسار عن العروض الحالية
+
+    IContactResponse:
+      type: object
+      description: Matches TypeScript `IContactResponse`
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: تم إرسال رسالتك بنجاح
+      example:
+        success: true
+        message: تم إرسال رسالتك بنجاح
+
+    # Legacy alias (prefer IContactRequest)
+    ContactRequest:
+      allOf:
+        - $ref: "#/components/schemas/IContactRequest"
+
+    # --- Shared ---
+    SuccessMessage:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Operation completed successfully
+
+    # --- Home (matches src/types/home.types.ts) ---
+    IHomePageData:
+      type: object
+      description: Full payload for GET /home — matches TypeScript `IHomePageData`
+      required:
+        - hero
+        - about
+        - whyGlace
+        - branches
+        - events
+        - opinions
+      properties:
+        hero:
+          $ref: "#/components/schemas/IHomeHero"
+        about:
+          $ref: "#/components/schemas/IHomeAboutData"
+        whyGlace:
+          $ref: "#/components/schemas/IHomeWhyGlaceData"
+        branches:
+          $ref: "#/components/schemas/IHomeBranchesData"
+        events:
+          $ref: "#/components/schemas/IHomeEventsData"
+        opinions:
+          $ref: "#/components/schemas/IHomeOpinionsData"
+      example:
+        hero:
+          slides:
+            - manImg: https://cdn.example.com/home/hero/man-1.png
+              pieceImg: https://cdn.example.com/home/hero/piece-1.png
+              zigzagsImg: https://cdn.example.com/home/hero/zigzags.png
+              titleH1: جلاسية الأمير
+              titleH2: لإنتاج الآيس كريم و البراد و العصائر و الحلويات
+              bgColor: "#51C9F4"
+              headerBgColor: "#51c9f4"
+              h1BgColor: "#53352a"
+              h2BgColor: "#51c9f4"
+        about:
+          title: موهوبون في صناعة الأيسكريم !
+          paragraphs:
+            - تأسس جلاسيه الأمير عام 2015...
+            - تعمل الشركة على تقديم أجود أنواع الآيس كريم...
+          image: https://cdn.example.com/home/about/character.png
+          ctaLabel: اعرف أكثر
+          ctaHref: /about
+        whyGlace:
+          title: لماذا جلاسيه الأمير؟
+          description: جلاسيه الأمير حاصلة على شهادة الجودة العالمية لسلامة الغذاء ISO 22000
+          features:
+            - label: جودة عالية
+              image: https://cdn.example.com/home/why/feature-p.png
+          videoUrl: https://www.youtube.com/embed/ShMr0XzIqSM
+          videoThumbnail: https://cdn.example.com/home/why/video-thumb.png
+        branches:
+          title: ننتظركم في المواعيد التالية
+          branches:
+            - id: ramal
+              label: فرع الرمال
+              mapSrc: https://www.google.com/maps/embed?...
+              address: غزة، الرمال...
+              phone: "0592 226 522"
+              whatsapp: "0592 226 522"
+              weekdayHours: "PM 11:45 – AM 10:00"
+              fridayHours: "PM 11:45 – PM02:00"
+              borderRadius: "32% 68% 69% 31% / 30% 28% 72% 70%"
+        events:
+          title: الفعاليات و المناسبات
+          moreLabel: عرض المزيد
+          moreHref: /events
+          items:
+            - id: 1
+              title: مشارك معرض الصناعات الغذائية الفلسطينية
+              image: https://cdn.example.com/home/events/1.png
+              href: /events/1
+        opinions:
+          title: رأيك يهمنا!
+          items:
+            - id: 1
+              name: Ibrahim S. Alfayoumi
+              text: جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات
+              image: https://cdn.example.com/home/opinions/1.jpg
+
+    IHomeHero:
+      type: object
+      description: Hero block inside `IHomePageData.hero`
+      required:
+        - slides
+      properties:
+        slides:
+          type: array
+          items:
+            $ref: "#/components/schemas/ISlideData"
+
+    ISlideData:
+      type: object
+      description: Matches TypeScript `ISlideData`
+      required:
+        - manImg
+        - pieceImg
+        - zigzagsImg
+        - titleH1
+        - titleH2
+        - bgColor
+        - headerBgColor
+        - h1BgColor
+        - h2BgColor
+      properties:
+        manImg:
+          type: string
+          format: uri
+          description: Character / person image URL
+          example: https://cdn.example.com/home/hero/man-1.png
+        pieceImg:
+          type: string
+          format: uri
+          description: Ice cream piece decoration URL
+          example: https://cdn.example.com/home/hero/piece-1.png
+        zigzagsImg:
+          type: string
+          format: uri
+          description: Zigzag decoration URL
+          example: https://cdn.example.com/home/hero/zigzags.png
+        titleH1:
+          type: string
+          example: جلاسية الأمير
+        titleH2:
+          type: string
+          example: لإنتاج الآيس كريم و البراد و العصائر و الحلويات
+        bgColor:
+          type: string
+          example: "#51C9F4"
+        headerBgColor:
+          type: string
+          example: "#51c9f4"
+        h1BgColor:
+          type: string
+          example: "#53352a"
+        h2BgColor:
+          type: string
+          example: "#51c9f4"
+
+    IHomeAboutData:
+      type: object
+      description: Matches TypeScript `IHomeAboutData`
+      required:
+        - title
+        - paragraphs
+        - image
+        - ctaLabel
+        - ctaHref
+      properties:
+        title:
+          type: string
+          example: موهوبون في صناعة الأيسكريم !
+        paragraphs:
+          type: array
+          items:
+            type: string
+          example:
+            - تأسس جلاسيه الأمير عام 2015...
+            - تعمل الشركة على تقديم أجود أنواع الآيس كريم...
+        image:
+          type: string
+          format: uri
+          description: About section character image URL
+          example: https://cdn.example.com/home/about/character.png
+        ctaLabel:
+          type: string
+          example: اعرف أكثر
+        ctaHref:
+          type: string
+          example: /about
+
+    IHomeWhyFeature:
+      type: object
+      description: Matches TypeScript `IHomeWhyFeature`
+      required:
+        - label
+        - image
+      properties:
+        label:
+          type: string
+          example: جودة عالية
+        image:
+          type: string
+          format: uri
+          description: Feature badge background image URL
+          example: https://cdn.example.com/home/why/feature-p.png
+
+    IHomeWhyGlaceData:
+      type: object
+      description: Matches TypeScript `IHomeWhyGlaceData`
+      required:
+        - title
+        - description
+        - features
+        - videoUrl
+        - videoThumbnail
+      properties:
+        title:
+          type: string
+          example: لماذا جلاسيه الأمير؟
+        description:
+          type: string
+          example: جلاسيه الأمير حاصلة على شهادة الجودة العالمية لسلامة الغذاء ISO 22000
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/IHomeWhyFeature"
+        videoUrl:
+          type: string
+          format: uri
+          example: https://www.youtube.com/embed/ShMr0XzIqSM
+        videoThumbnail:
+          type: string
+          format: uri
+          description: Thumbnail shown for the video CTA
+          example: https://cdn.example.com/home/why/video-thumb.png
+
+    IHomeBranch:
+      type: object
+      description: Matches TypeScript `IHomeBranch`
+      required:
+        - id
+        - label
+        - mapSrc
+        - address
+        - phone
+        - whatsapp
+        - weekdayHours
+        - fridayHours
+        - borderRadius
+      properties:
+        id:
+          type: string
+          example: ramal
+        label:
+          type: string
+          example: فرع الرمال
+        mapSrc:
+          type: string
+          format: uri
+          description: Google Maps embed URL
+        address:
+          type: string
+          example: غزة، الرمال، شارع الشهداء...
+        phone:
+          type: string
+          example: "0592 226 522"
+        whatsapp:
+          type: string
+          example: "0592 226 522"
+        weekdayHours:
+          type: string
+          example: "PM 11:45 – AM 10:00"
+        fridayHours:
+          type: string
+          example: "PM 11:45 – PM02:00"
+        borderRadius:
+          type: string
+          description: CSS border-radius for the map frame
+          example: "32% 68% 69% 31% / 30% 28% 72% 70%"
+
+    IHomeBranchesData:
+      type: object
+      description: Matches TypeScript `IHomeBranchesData`
+      required:
+        - title
+        - branches
+      properties:
+        title:
+          type: string
+          example: ننتظركم في المواعيد التالية
+        branches:
+          type: array
+          items:
+            $ref: "#/components/schemas/IHomeBranch"
+
+    IHomeEvent:
+      type: object
+      description: Matches TypeScript `IHomeEvent`
+      required:
+        - id
+        - title
+        - image
+        - href
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: مشارك معرض الصناعات الغذائية الفلسطينية
+        image:
+          type: string
+          format: uri
+          example: https://cdn.example.com/home/events/1.png
+        href:
+          type: string
+          example: /events/1
+
+    IHomeEventsData:
+      type: object
+      description: Matches TypeScript `IHomeEventsData`
+      required:
+        - title
+        - items
+        - moreLabel
+        - moreHref
+      properties:
+        title:
+          type: string
+          example: الفعاليات و المناسبات
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IHomeEvent"
+        moreLabel:
+          type: string
+          example: عرض المزيد
+        moreHref:
+          type: string
+          example: /events
+
+    IHomeOpinion:
+      type: object
+      description: Matches TypeScript `IHomeOpinion`
+      required:
+        - id
+        - name
+        - text
+        - image
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Ibrahim S. Alfayoumi
+        text:
+          type: string
+          example: جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات
+        image:
+          type: string
+          format: uri
+          description: Customer avatar image URL
+          example: https://cdn.example.com/home/opinions/1.jpg
+
+    IHomeOpinionsData:
+      type: object
+      description: Matches TypeScript `IHomeOpinionsData`
+      required:
+        - title
+        - items
+      properties:
+        title:
+          type: string
+          example: رأيك يهمنا!
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IHomeOpinion"
+
+    # --- Events (matches src/types/events.types.ts) ---
+    IEvent:
+      type: object
+      description: Matches TypeScript `IEvent` — list card + detail
+      required:
+        - id
+        - title
+        - date
+        - description
+        - listImage
+        - images
+      properties:
+        id:
+          type: integer
+          example: 2
+        title:
+          type: string
+          example: أجواء العيد مع جلاسيه غير
+        date:
+          type: string
+          example: "11/06/2020"
+        description:
+          type: string
+          example: كل عام وانتم بخير بحلول عيد الفطر المبارك...
+        listImage:
+          type: string
+          format: uri
+          description: Card thumbnail image URL
+          example: https://cdn.example.com/events/2-list.png
+        images:
+          type: array
+          description: Gallery images for the detail page
+          items:
+            type: string
+            format: uri
+          example:
+            - https://cdn.example.com/events/2-a.png
+            - https://cdn.example.com/events/2-b.png
+      example:
+        id: 2
+        title: أجواء العيد مع جلاسيه غير
+        date: "11/06/2020"
+        description: كل عام وانتم بخير بحلول عيد الفطر المبارك احتفالنا معكم بالعيد أجمل...
+        listImage: https://cdn.example.com/events/2-list.png
+        images:
+          - https://cdn.example.com/events/2-a.png
+          - https://cdn.example.com/events/2-b.png
+          - https://cdn.example.com/events/2-c.png
+          - https://cdn.example.com/events/2-d.png
+
+    IEventsListResponse:
+      type: object
+      description: Matches TypeScript `IEventsListResponse`
+      required:
+        - items
+        - total
+        - page
+        - perPage
+        - totalPages
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IEvent"
+        total:
+          type: integer
+          example: 10
+        page:
+          type: integer
+          example: 1
+        perPage:
+          type: integer
+          example: 8
+        totalPages:
+          type: integer
+          example: 2
+      example:
+        items:
+          - id: 2
+            title: أجواء العيد مع جلاسيه غير
+            date: "11/06/2020"
+            description: كل عام وانتم بخير...
+            listImage: https://cdn.example.com/events/2-list.png
+            images:
+              - https://cdn.example.com/events/2-a.png
+        total: 10
+        page: 1
+        perPage: 8
+        totalPages: 2
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+# Default security for protected routes.
+# Override with `security: []` on public endpoints (e.g. login, register).
+security:
+  - bearerAuth: []

@@ -4,53 +4,17 @@ import Image from "next/image";
 import { useState } from "react";
 import { MapPin, Phone, MessageCircle } from "lucide-react";
 import { imgTimesWorkSec, imgbgBS, imgpp, imgpp2 } from "@/assets/images";
-import type { Branch } from "@/types";
+import type { IHomeBranchesData } from "@/types/home.types";
 
-const branches: Branch[] = [
-  {
-    id: "ramal",
-    label: "فرع الرمال",
-    mapSrc:
-      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3401.134069155089!2d34.442460474075105!3d31.52047749458951!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14fd7fa668193343%3A0x63812dcdb0e703ee!2zZ2xhY2UgZWxhbWVlciDYrNmE2KfYs9mK2Ycg2KfZhNij2YXZitixINmB2LHYuSDYp9mG2LHYuSDYp9mE2LHZhdan2YQ!5e0!3m2!1sar!2s!4v1692262174549!5m2!1sar!2s",
-    address:
-      "غزة، الرمال، شارع الشهداء، غرب شركة الإتصالات بالجهة المقابلة للطابون، شرقي بنده مول",
-    phone: "0592 226 522",
-    whatsapp: "0592 226 522",
-    weekdayHours: "PM 11:45 – AM 10:00",
-    fridayHours: "PM 11:45 – PM02:00",
-    borderRadius: "32% 68% 69% 31% / 30% 28% 72% 70%",
-  },
-  {
-    id: "nasr",
-    label: "فرع النصر",
-    mapSrc:
-      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d802.3957364051882!2d34.46570501521984!3d31.539686489519603!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14fd7f5edd3f91d9%3A0xc83c9ac2a734d616!2zZ2xhY2UgZWxhbWVlciDYrNmE2KfYs9mK2Ycg2KfZhNij2YXZitixINmB2LHYuSDYp9mG2LYdtixg!5e0!3m2!1sar!2s!4v1692271440799!5m2!1sar!2s",
-    address:
-      "غزة، شارع النصر، مفترق الأمن العام، بجانب مكتبة عودة، بالقرب من الساب واي",
-    phone: "0592226577",
-    whatsapp: "00970592226577",
-    weekdayHours: "PM 11:45 – AM 10:00",
-    fridayHours: "PM 11:45 – PM02:00",
-    borderRadius: "56% 44% 69% 31% / 70% 61% 39% 30%",
-  },
-  {
-    id: "bahr",
-    label: "فرع البحر",
-    mapSrc:
-      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13602.987559794487!2d34.46657431482985!3d31.531111026597035!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14fd7ff1aaf9de67%3A0x7d0a7e3df1fa9c76!2z2KzZhNin2LPZitmHINin2YTYo9mF2YrYsSDZgdix2Lkg2KfZhNio2K3Ysigz2YTYoCBnbGFjZSBl bGFtZWVy!5e0!3m2!1sar!2s!4v1692271505959!5m2!1sar!2s",
-    address:
-      "غزة، كورنيش بحر غزة، دوار ال17، أول موقف لسيارات، منتجع السي سايد",
-    phone: "0592229892",
-    whatsapp: "00970592229892",
-    weekdayHours: "PM 11:45 – AM 10:00",
-    fridayHours: "PM 11:45 – PM02:00",
-    borderRadius: "56% 44% 69% 31% / 53% 63% 37% 47%",
-  },
-];
-
-export default function TimesWorkSection() {
-  const [activeBranch, setActiveBranch] = useState("ramal");
-  const branch = branches.find((b) => b.id === activeBranch)!;
+export default function TimesWorkSection({
+  branchesData,
+}: {
+  branchesData: IHomeBranchesData;
+}) {
+  const branches = branchesData.branches;
+  const [activeBranch, setActiveBranch] = useState(branches[0]?.id ?? "ramal");
+  const branch = branches.find((b) => b.id === activeBranch) ?? branches[0];
+  if (!branch) return null;
 
   return (
     <section
@@ -98,7 +62,7 @@ export default function TimesWorkSection() {
         {/* Title row */}
         <div className="relative">
           <h1 className="text-[38px] text-white sm:text-[45px] lg:text-[45px] xl:text-[55px]">
-            ننتظركم في المواعيد التالية
+            {branchesData.title}
           </h1>
           {/* imgpp2 — hidden on mobile per original */}
           <Image

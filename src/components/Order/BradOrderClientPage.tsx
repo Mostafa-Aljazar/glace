@@ -217,6 +217,7 @@ export default function BradOrderClientPage({
     addItem({
       productId: withIceCream ? "brad-boza" : "brad",
       name: withIceCream ? "براد مع بوظة" : "براد",
+      image: (withIceCream ? iceCream : refrigerator).src,
       size: sizeLabel || undefined,
       type: iceLabel || undefined,
       flavors: [flavorLabel, ...flavorNames].filter(Boolean) as string[],

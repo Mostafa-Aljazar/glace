@@ -281,6 +281,7 @@ export default function FamilyOrderClientPage() {
     addItem({
       productId: "family",
       name: "بوظة عائلي",
+      image: familyIceCream.src,
       size: familySize ? `${containerType} · ${familySize}` : undefined,
       type: flavorType || undefined,
       flavors: flavorNames,
