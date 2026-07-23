@@ -245,6 +245,124 @@ paths:
         "500":
           $ref: "#/components/responses/ServerError"
 
+  /menu/categories:
+    get:
+      tags: [Menu]
+      summary: List menu categories
+      description: |
+        Public list of browse-grid category tabs for `/menu`.
+        Matches TypeScript `IMenuCategory`.
+      operationId: getMenuCategories
+      security: []
+      responses:
+        "200":
+          description: Menu categories (`IMenuCategory[]`)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IMenuCategory"
+              example:
+                - id: pancake
+                  label: بان كيك
+                  icon: cake
+                  accentColor: "#f4a851"
+                  gradientFrom: "#f4a851"
+                  gradientTo: "#c97d2a"
+                  sortOrder: 11
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /menu/products:
+    get:
+      tags: [Menu]
+      summary: List products
+      description: |
+        Public list of orderable/reference products, optionally filtered by
+        category. Matches TypeScript `IProduct` — a discriminated union on
+        `kind` (`builder` | `flat-list`).
+      operationId: getMenuProducts
+      security: []
+      parameters:
+        - name: category
+          in: query
+          required: false
+          description: Filter by `IMenuCategory.id`
+          schema:
+            type: string
+          example: pancake
+      responses:
+        "200":
+          description: Products (`IProduct[]`)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IProduct"
+              example:
+                - id: pancake
+                  categoryId: pancake
+                  kind: flat-list
+                  name: بان كيك
+                  image: https://cdn.example.com/menu/pancake.jpg
+                  sortOrder: 1
+                  available: true
+                  inStoreOnly: true
+                  hasFavorites: true
+                  hasNotes: true
+                  items:
+                    - label: نوتيلا
+                      price: 11
+                      available: true
+                    - label: لوتس
+                      price: 13
+                      available: true
+                    - label: بيستاشيو
+                      price: 17
+                      available: true
+                      isPremiumMixFlavor: true
+                  mixes:
+                    - id: mix
+                      label: مكس
+                      pick: 2
+                      basePrice: 14
+                      flavorPrice: 7
+                      premiumFlavorPrice: 11
+                      flavorOptionIds: [نوتيلا, لوتس, بيستاشيو]
+                - id: cup
+                  categoryId: ice-cream
+                  kind: builder
+                  name: بوظة كاسة
+                  image: https://cdn.example.com/menu/cup.jpg
+                  sortOrder: 1
+                  available: true
+                  selectionMode: repeatable
+                  flavorFamilies: [classic, special, mix]
+                  hasExtraBiscuitAddon: true
+                  containerOptions:
+                    - id: cup
+                      label: كاسة
+                      available: true
+                    - id: biscuit
+                      label: بسكوت
+                      available: true
+                      name: بوظة بسكوت
+                      image: https://cdn.example.com/menu/biscuit.jpg
+                  sizes:
+                    - id: cup-small
+                      label: صغير
+                      maxBalls: 1
+                      containerId: cup
+                      prices:
+                        - flavorFamily: classic
+                          price: 2
+                        - flavorFamily: special
+                          price: 4
+        "500":
+          $ref: "#/components/responses/ServerError"
+
 
 components:
   securitySchemes:
@@ -894,6 +1012,267 @@ components:
         page: 1
         perPage: 8
         totalPages: 2
+
+    IMenuCategory:
+      type: object
+      description: Matches TypeScript `IMenuCategory`
+      required: [id, label, icon, accentColor, gradientFrom, gradientTo, sortOrder]
+      properties:
+        id:
+          type: string
+          example: pancake
+        label:
+          type: string
+          example: بان كيك
+        icon:
+          type: string
+          enum: [ice-cream, cup-soda, cake, glass-water, milk, apple]
+          example: cake
+        accentColor:
+          type: string
+          example: "#f4a851"
+        gradientFrom:
+          type: string
+          example: "#f4a851"
+        gradientTo:
+          type: string
+          example: "#c97d2a"
+        sortOrder:
+          type: integer
+          example: 11
+
+    IFlavorOption:
+      type: object
+      description: Matches TypeScript `IFlavorOption`
+      required: [id, nameAr, nameEn, image, family, available]
+      properties:
+        id:
+          type: string
+          example: pistachio
+        nameAr:
+          type: string
+          example: بيستاشيو
+        nameEn:
+          type: string
+          example: Pistachio
+        image:
+          type: string
+          format: uri
+        family:
+          type: string
+          enum: [classic, special, stevia]
+        available:
+          type: boolean
+        isPremiumMixFlavor:
+          type: boolean
+          description: Priced at a mix's premiumFlavorPrice instead of flavorPrice
+
+    IProductVariant:
+      type: object
+      description: Matches TypeScript `IProductVariant`
+      required: [label, price, available]
+      properties:
+        label:
+          type: string
+          example: نوتيلا
+        price:
+          type: number
+          example: 11
+        description:
+          type: string
+        image:
+          type: string
+          format: uri
+        available:
+          type: boolean
+        isPremiumMixFlavor:
+          type: boolean
+
+    IMixRule:
+      type: object
+      description: Matches TypeScript `IMixRule`
+      required: [id, label, pick, basePrice, flavorPrice, premiumFlavorPrice, flavorOptionIds]
+      properties:
+        id:
+          type: string
+          example: mix
+        label:
+          type: string
+          example: مكس
+        pick:
+          type: integer
+          example: 2
+        basePrice:
+          type: number
+          example: 14
+        flavorPrice:
+          type: number
+          example: 7
+        premiumFlavorPrice:
+          type: number
+          example: 11
+        flavorOptionIds:
+          type: array
+          items:
+            type: string
+          example: [نوتيلا, لوتس, بيستاشيو]
+
+    IPriceCell:
+      type: object
+      description: Matches TypeScript `IPriceCell`
+      required: [flavorFamily, price]
+      properties:
+        flavorFamily:
+          type: string
+          enum: [classic, special, mix]
+        price:
+          type: number
+          example: 4
+
+    IContainerOption:
+      type: object
+      description: Matches TypeScript `IContainerOption`
+      required: [id, label, available]
+      properties:
+        id:
+          type: string
+          example: biscuit
+        label:
+          type: string
+          example: بسكوت
+        available:
+          type: boolean
+        name:
+          type: string
+          description: Overrides the product's own name when this container is picked
+          example: بوظة بسكوت
+        image:
+          type: string
+          format: uri
+
+    ISizeOption:
+      type: object
+      description: Matches TypeScript `ISizeOption`
+      required: [id, label, maxBalls, prices]
+      properties:
+        id:
+          type: string
+          example: cup-small
+        label:
+          type: string
+          example: صغير
+        maxBalls:
+          type: integer
+          example: 1
+        prices:
+          type: array
+          items:
+            $ref: "#/components/schemas/IPriceCell"
+        containerId:
+          type: string
+          description: Restricts this size to one IContainerOption id
+          example: cup
+
+    IProductBase:
+      type: object
+      description: Fields shared by every IProduct variant (see the `kind` discriminator on IProduct)
+      required: [id, categoryId, name, image, sortOrder, available]
+      properties:
+        id:
+          type: string
+          description: Globally unique — doubles as the /menu/order/[type] route param
+          example: pancake
+        categoryId:
+          type: string
+          example: pancake
+        name:
+          type: string
+          example: بان كيك
+        image:
+          type: string
+          format: uri
+        sortOrder:
+          type: integer
+          example: 1
+        available:
+          type: boolean
+        hasAddons:
+          type: boolean
+        hasNotes:
+          type: boolean
+        hasFavorites:
+          type: boolean
+        hasImageZoom:
+          type: boolean
+        inStoreOnly:
+          type: boolean
+          description: Shows an in-store-only warning before entering the order flow
+
+    IBuilderProduct:
+      description: Matches TypeScript `IBuilderProduct` — the size/flavor "wizard" template (cup, family, brad, brad-boza)
+      allOf:
+        - $ref: "#/components/schemas/IProductBase"
+        - type: object
+          required: [kind, sizes]
+          properties:
+            kind:
+              type: string
+              enum: [builder]
+            containerOptions:
+              type: array
+              items:
+                $ref: "#/components/schemas/IContainerOption"
+            includesIceCreamStep:
+              type: boolean
+              description: Brad-boza only — renders an extra ice-type + flavor-ball step
+            iceCreamAddonPrices:
+              type: array
+              items:
+                $ref: "#/components/schemas/IPriceCell"
+            hasExtraBiscuitAddon:
+              type: boolean
+            sizes:
+              type: array
+              items:
+                $ref: "#/components/schemas/ISizeOption"
+            selectionMode:
+              type: string
+              enum: [repeatable, toggle]
+            flavorFamilies:
+              type: array
+              items:
+                type: string
+                enum: [classic, special, mix]
+
+    IFlatListProduct:
+      description: Matches TypeScript `IFlatListProduct` — the flat items + optional mixes template
+      allOf:
+        - $ref: "#/components/schemas/IProductBase"
+        - type: object
+          required: [kind, items]
+          properties:
+            kind:
+              type: string
+              enum: [flat-list]
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/IProductVariant"
+            mixes:
+              type: array
+              items:
+                $ref: "#/components/schemas/IMixRule"
+
+    IProduct:
+      description: Matches TypeScript `IProduct` — discriminated union on `kind`
+      oneOf:
+        - $ref: "#/components/schemas/IBuilderProduct"
+        - $ref: "#/components/schemas/IFlatListProduct"
+      discriminator:
+        propertyName: kind
+        mapping:
+          builder: "#/components/schemas/IBuilderProduct"
+          flat-list: "#/components/schemas/IFlatListProduct"
 
   responses:
     Unauthorized:

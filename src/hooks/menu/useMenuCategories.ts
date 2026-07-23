@@ -1,24 +1,21 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { FAKE_CATEGORIES, type ApiMenuCategory } from "@/data/fake-data/menuApiData";
-import { guestApi } from "@/lib/axios";
+import { FAKE_MENU_CATEGORIES } from "@/data/fake-data/menu";
+import fetchMenuCategories from "@/hooks/menu/fetchMenuCategories";
 
-async function fetchMenuCategories(): Promise<ApiMenuCategory[]> {
-  try {
-    const res = await guestApi.get<ApiMenuCategory[]>('/menu/categories');
-    if (res?.data && Array.isArray(res.data)) return res.data;
-    return FAKE_CATEGORIES;
-  } catch (e) {
-    // fallback to fake data when backend is unavailable
-    return FAKE_CATEGORIES;
-  }
-}
+export const MENU_CATEGORIES_QUERY_KEY = ["menu-categories"] as const;
 
+/**
+ * Loads the menu category list (`GET /menu/categories`).
+ * Uses fake data as initial/fallback content so the UI never goes empty.
+ */
 export function useMenuCategories() {
   return useQuery({
-    queryKey: ["menu-categories"],
+    queryKey: MENU_CATEGORIES_QUERY_KEY,
     queryFn: fetchMenuCategories,
-    staleTime: Infinity,
+    initialData: FAKE_MENU_CATEGORIES,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 }

@@ -3,7 +3,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { Minus, Plus, Sparkles, X } from "lucide-react";
 import MixFlavorModal from "@/components/Order/MixFlavorModal";
-import type { MixConfig, SimpleMenuItem } from "@/data/OrderData";
+import type { IMixRule, IProductVariant } from "@/types/menu.types";
 
 export interface MixSelection {
   id: string;
@@ -13,19 +13,22 @@ export interface MixSelection {
   unitPrice: number;
 }
 
-function flavorFrequencyLabels(flavors: string[]) {
+/** Collapse a raw, possibly-repeated array of labels into {label, qty} pairs. */
+export function countFlavorOccurrences(flavors: string[]): Array<{ label: string; qty: number }> {
   const counts = new Map<string, number>();
-  for (const flavor of flavors) {
-    counts.set(flavor, (counts.get(flavor) ?? 0) + 1);
-  }
-  return Array.from(counts.entries()).map(([flavor, count]) =>
-    count > 1 ? `${flavor} ×${count}` : flavor,
+  for (const flavor of flavors) counts.set(flavor, (counts.get(flavor) ?? 0) + 1);
+  return Array.from(counts.entries()).map(([label, qty]) => ({ label, qty }));
+}
+
+function flavorFrequencyLabels(flavors: string[]) {
+  return countFlavorOccurrences(flavors).map(({ label, qty }) =>
+    qty > 1 ? `${label} ×${qty}` : label,
   );
 }
 
 interface MixOrderSectionProps {
-  mixes: MixConfig[];
-  items: SimpleMenuItem[];
+  mixes: IMixRule[];
+  items: IProductVariant[];
   mixSelections: MixSelection[];
   setMixSelections: Dispatch<SetStateAction<MixSelection[]>>;
 }
@@ -36,7 +39,7 @@ export default function MixOrderSection({
   mixSelections,
   setMixSelections,
 }: MixOrderSectionProps) {
-  const [activeMix, setActiveMix] = useState<MixConfig | null>(null);
+  const [activeMix, setActiveMix] = useState<IMixRule | null>(null);
 
   function incrementMix(mixId: string) {
     setMixSelections((prev) =>
@@ -109,7 +112,7 @@ export default function MixOrderSection({
                   <p className="mt-0.5 text-[12px] text-white/50">
                     {mixConfig.pick}{" "}
                     {mixConfig.pick === 2 ? "طعمين" : "أطعمة"} · من{" "}
-                    {mixConfig.price} ₪
+                    {mixConfig.basePrice} ₪
                   </p>
                 </div>
                 <span className="shrink-0 bg-glace-yellow group-hover:brightness-105 shadow-md px-4 py-2 rounded-full font-bold text-[13px] text-[#1e6a7f] transition">

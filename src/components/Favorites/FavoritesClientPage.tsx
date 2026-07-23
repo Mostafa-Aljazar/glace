@@ -9,155 +9,55 @@ import CartBar from "@/components/Order/CartBar";
 import BackButton from "@/components/Order/BackButton";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useCartStore } from "@/store/cartStore";
-import {
-  chocolateIce,
-  vanillaaIce,
-  strawberryIce,
-  caramelIce,
-  nescafeIce,
-  nutellaIce,
-  lotusIce,
-  kinderBuenoIce,
-  oreoIce,
-  kitKatIce,
-  pistachioIce,
-  marioIce,
-} from "@/assets/images";
-import type { StaticIMG } from "@/assets/images";
+import { useMenuCategories } from "@/hooks/menu/useMenuCategories";
+import { useMenuProducts } from "@/hooks/menu/useMenuProducts";
+import { isFlatListProduct, resolveMenuImageSrc } from "@/types/menu.types";
 
 interface FavoriteItem {
   id: string;
-  name: string;
+  label: string;
   price: number;
-  image: StaticIMG;
+  image: string;
+  productId: string;
+  productName: string;
   category: string;
 }
 
-const ALL_ITEMS: FavoriteItem[] = [
-  // Milkshake
-  {
-    id: "classic-chocolate",
-    name: "كلاسيك شوكولاته",
-    price: 8,
-    image: chocolateIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "classic-vanilla",
-    name: "كلاسيك فانيلا",
-    price: 8,
-    image: vanillaaIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "classic-strawberry",
-    name: "كلاسيك فراولة",
-    price: 8,
-    image: strawberryIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "classic-caramel",
-    name: "كلاسيك كاراميل",
-    price: 8,
-    image: caramelIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "classic-nescafe",
-    name: "كلاسيك نسكافيه",
-    price: 8,
-    image: nescafeIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "classic-barouka",
-    name: "كلاسيك باروكا",
-    price: 8,
-    image: caramelIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "special-nutella",
-    name: "سبيشال نوتيلا",
-    price: 10,
-    image: nutellaIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "special-lotus",
-    name: "سبيشال لوتس",
-    price: 10,
-    image: lotusIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "special-kinder",
-    name: "سبيشال كندر",
-    price: 10,
-    image: kinderBuenoIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "special-oreo",
-    name: "سبيشال أوريو",
-    price: 10,
-    image: oreoIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "special-kitkat",
-    name: "سبيشال كت كات",
-    price: 10,
-    image: kitKatIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "special-fitness",
-    name: "سبيشال فيتنس",
-    price: 10,
-    image: nescafeIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "special-shoufan",
-    name: "سبيشال شوفان",
-    price: 10,
-    image: nutellaIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "serlac",
-    name: "سيرلاك (أطعم خاصة)",
-    price: 8,
-    image: marioIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "einstein",
-    name: "اينشتاين (أطعم خاصة)",
-    price: 9,
-    image: marioIce,
-    category: "ميلك شيك",
-  },
-  {
-    id: "pistachio",
-    name: "بيستاشيو (أطعم خاصة)",
-    price: 13,
-    image: pistachioIce,
-    category: "ميلك شيك",
-  },
-];
-
 export default function FavoritesClientPage() {
-  const { ids: favoriteIds, toggle: toggleFavorite, isFavorite } =
-    useFavoritesStore();
+  const { ids: favoriteIds, toggle: toggleFavorite } = useFavoritesStore();
   const addItem = useCartStore((s) => s.addItem);
+  const { data: products = [] } = useMenuProducts();
+  const { data: categories = [] } = useMenuCategories();
 
-  const favoriteItems = useMemo(
-    () => ALL_ITEMS.filter((item) => favoriteIds.includes(item.id)),
-    [favoriteIds],
+  const categoryLabels = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.label])),
+    [categories],
   );
+
+  // Favorite ids are written as `${productId}-${itemLabel}` from the order
+  // page's heart button (OrderFlatListTemplate) — matched back against the
+  // live product catalog here instead of a separate hardcoded list, so a
+  // favorited item actually shows up on this page.
+  const favoriteItems = useMemo(() => {
+    const pool: FavoriteItem[] = [];
+    for (const product of products) {
+      if (!isFlatListProduct(product)) continue;
+      for (const item of product.items) {
+        const id = `${product.id}-${item.label}`;
+        if (!favoriteIds.includes(id)) continue;
+        pool.push({
+          id,
+          label: item.label,
+          price: item.price,
+          image: resolveMenuImageSrc(item.image ?? product.image),
+          productId: product.id,
+          productName: product.name,
+          category: categoryLabels.get(product.categoryId) ?? product.categoryId,
+        });
+      }
+    }
+    return pool;
+  }, [products, favoriteIds, categoryLabels]);
 
   const groupedByCategory = useMemo(() => {
     return favoriteItems.reduce(
@@ -174,11 +74,11 @@ export default function FavoritesClientPage() {
 
   function handleAddToCart(item: FavoriteItem) {
     addItem({
-      productId: "favorites",
-      name: `${item.category} - ${item.name}`,
-      image: item.image.src,
-      type: item.name,
-      addons: [],
+      productId: item.productId,
+      name: `${item.productName} — ${item.label}`,
+      image: item.image,
+      type: item.label,
+      selections: [],
       addonTotal: 0,
       unitPrice: item.price,
       quantity: 1,
@@ -242,33 +142,35 @@ export default function FavoritesClientPage() {
                         {/* Image */}
                         <Image
                           src={item.image}
-                          alt={item.name}
+                          alt={item.label}
                           width={60}
                           height={60}
                           className="w-16 h-16 object-contain rounded-lg shrink-0"
                         />
 
-                        {/* Label + price */}
+                        {/* Label */}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-[15px] text-white">
-                            {item.name}
-                          </p>
-                          <p className="text-[16px] font-bold text-glace-yellow">
-                            {item.price} ₪
+                            {item.label}
                           </p>
                         </div>
 
-                        {/* Heart favorite */}
-                        <button
-                          type="button"
-                          onClick={() => toggleFavorite(item.id)}
-                          className="shrink-0 transition-colors"
-                        >
-                          <Heart
-                            size={20}
-                            className="fill-red-500 text-red-500"
-                          />
-                        </button>
+                        {/* Price + heart favorite */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <p className="text-[16px] font-bold text-glace-yellow whitespace-nowrap">
+                            {item.price} ₪
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => toggleFavorite(item.id)}
+                            className="transition-colors"
+                          >
+                            <Heart
+                              size={20}
+                              className="fill-red-500 text-red-500"
+                            />
+                          </button>
+                        </div>
 
                         {/* Add to cart button */}
                         <button

@@ -1,6 +1,40 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { ADDONS } from "@/data/OrderData";
+
+/** Cart-level shared addon catalog (extras accordion on the cart page). */
+export interface Addon {
+  id: number;
+  name: string;
+  price: number;
+}
+
+export const ADDONS: Addon[] = [
+  { id: 1, name: "بسكوت مخروط فاضي", price: 3 },
+  { id: 2, name: "حلبي", price: 3 },
+  { id: 3, name: "بندق", price: 5 },
+  { id: 4, name: "صوص نوتيلا", price: 7 },
+  { id: 5, name: "صوص لوتس", price: 7 },
+  { id: 6, name: "صوص حلبي بيستاشيو", price: 7 },
+  { id: 7, name: "صوص كراميل", price: 7 },
+  { id: 8, name: "صوص كندر", price: 7 },
+];
+
+export const EMPTY_CONE_ADDON = ADDONS[0];
+export const MULTI_CHOICE_ADDONS = ADDONS.filter((a) => a.id > 1);
+export const MAX_MULTI_ADDONS = 4;
+
+/** One structured, priced pick inside a cart line — replaces the old
+ *  `flavors?: string[]` / `addons?: string[]` string-encoded pair (which
+ *  needed two differently-anchored regexes to parse quantities back out). */
+export type SelectionKind = "flavor" | "mix" | "addon";
+
+export interface CartSelection {
+  kind: SelectionKind;
+  id: string; // flavor id / addon id / mix rule id — never a label-string key
+  label: string;
+  qty: number; // repeat count OR a toggle-selected flavor's count of 1
+  unitPrice: number; // 0 for flavor choices bundled into the base price
+}
 
 export interface CartItem {
   id: string;
@@ -10,9 +44,11 @@ export interface CartItem {
   image?: string;
   size?: string;
   type?: string;
-  flavors?: string[];
-  /** Product-specific extras from the order page (e.g. extra biscuit) */
-  addons?: string[];
+  /** Builder products only — e.g. Cup's "بسكوت", Family's "فلين" container. */
+  container?: string;
+  flavorFamily?: "classic" | "special" | "mix";
+  /** Structured flavor/mix/addon picks for this line. */
+  selections: CartSelection[];
   addonTotal: number;
   unitPrice: number;
   quantity: number;
@@ -71,15 +107,43 @@ function calcCatalogAddonTotal(addonLines: string[]): number {
   }, 0);
 }
 
+/** Product extras like "بسكوت إضافي ×3" use embedded qty × unit 1, or known names */
+function calcProductAddonTotal(addonLines: string[]): number {
+  return addonLines.reduce((sum, line) => {
+    if (isCartCatalogAddon(line)) {
+      return sum + calcCatalogAddonTotal([line]);
+    }
+    // e.g. بسكوت إضافي ×3 at 1₪ each
+    const match = line.match(/×(\d+)/);
+    if (match) return sum + Number(match[1]);
+    return sum;
+  }, 0);
+}
+
+/** Pre-v3 persisted item shape (still has string-encoded flavors/addons). */
+interface LegacyCartItem {
+  id: string;
+  productId: string;
+  name: string;
+  image?: string;
+  size?: string;
+  type?: string;
+  flavors?: string[];
+  addons?: string[];
+  addonTotal?: number;
+  unitPrice: number;
+  quantity: number;
+}
+
 /**
  * Migrate old persisted carts that stamped shared addons onto every item.
  * Moves catalog addons up to cart-level and leaves only product-specific extras on items.
  */
 function migrateSharedAddonsFromItems(state: {
-  items: CartItem[];
+  items: LegacyCartItem[];
   cartAddons?: string[];
   cartAddonTotal?: number;
-}): Pick<CartState, "items" | "cartAddons" | "cartAddonTotal"> {
+}): { items: LegacyCartItem[]; cartAddons: string[]; cartAddonTotal: number } {
   const existingCartAddons = state.cartAddons ?? [];
   if (existingCartAddons.length > 0) {
     return {
@@ -134,17 +198,53 @@ function migrateSharedAddonsFromItems(state: {
   };
 }
 
-/** Product extras like "بسكوت إضافي ×3" use embedded qty × unit 1, or known names */
-function calcProductAddonTotal(addonLines: string[]): number {
-  return addonLines.reduce((sum, line) => {
-    if (isCartCatalogAddon(line)) {
-      return sum + calcCatalogAddonTotal([line]);
+/** Collapse a raw, possibly-repeated array of labels into {label, qty} pairs. */
+function countOccurrences(labels: string[]): Array<{ label: string; qty: number }> {
+  const counts = new Map<string, number>();
+  for (const label of labels) counts.set(label, (counts.get(label) ?? 0) + 1);
+  return Array.from(counts.entries()).map(([label, qty]) => ({ label, qty }));
+}
+
+/**
+ * v2 -> v3: convert each item's legacy `flavors`/`addons` string arrays into
+ * structured `selections`. Historical `unitPrice`/`addonTotal` are left
+ * untouched as the source of truth for totals — `selections` is
+ * structural/display only, so no historical total is at risk even where a
+ * per-flavor unit price can't be reconstructed.
+ */
+function migrateToStructuredSelections(items: LegacyCartItem[]): CartItem[] {
+  return items.map((item) => {
+    const selections: CartSelection[] = [];
+
+    for (const { label, qty } of countOccurrences(item.flavors ?? [])) {
+      selections.push({ kind: "flavor", id: label, label, qty, unitPrice: 0 });
     }
-    // e.g. بسكوت إضافي ×3 at 1₪ each
-    const match = line.match(/×(\d+)/);
-    if (match) return sum + Number(match[1]);
-    return sum;
-  }, 0);
+
+    for (const line of item.addons ?? []) {
+      const { name, qty } = parseAddonLine(line);
+      const catalogAddon = ADDONS.find((a) => a.name === name);
+      selections.push({
+        kind: "addon",
+        id: name,
+        label: name,
+        qty,
+        unitPrice: catalogAddon?.price ?? 1,
+      });
+    }
+
+    return {
+      id: item.id,
+      productId: item.productId,
+      name: item.name,
+      image: item.image,
+      size: item.size,
+      type: item.type,
+      selections,
+      addonTotal: item.addonTotal ?? 0,
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+    };
+  });
 }
 
 export const useCartStore = create<CartState>()(
@@ -163,7 +263,7 @@ export const useCartStore = create<CartState>()(
             ...state.items,
             {
               ...item,
-              addons: item.addons ? [...item.addons] : [],
+              selections: item.selections ? [...item.selections] : [],
               addonTotal: item.addonTotal ?? 0,
               id: genId(),
             },
@@ -251,35 +351,46 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "glace-cart",
-      version: 2,
-      migrate: (persisted) => {
-        const state = (persisted ?? {}) as {
-          items?: CartItem[];
+      version: 3,
+      migrate: (persisted, fromVersion) => {
+        const raw = (persisted ?? {}) as {
+          items?: LegacyCartItem[];
           cartAddons?: string[];
           cartAddonTotal?: number;
           orderNote?: string;
           coupon?: string;
           discount?: number;
         };
-        const migrated = migrateSharedAddonsFromItems({
-          items: state.items ?? [],
-          cartAddons: state.cartAddons,
-          cartAddonTotal: state.cartAddonTotal,
-        });
+
+        let items = raw.items ?? [];
+        let cartAddons = raw.cartAddons ?? [];
+        let cartAddonTotal = raw.cartAddonTotal;
+
+        if (fromVersion < 2) {
+          const migrated = migrateSharedAddonsFromItems({
+            items,
+            cartAddons,
+            cartAddonTotal,
+          });
+          items = migrated.items;
+          cartAddons = migrated.cartAddons;
+          cartAddonTotal = migrated.cartAddonTotal;
+        }
+
+        const finalItems: CartItem[] =
+          fromVersion < 3 ? migrateToStructuredSelections(items) : (items as CartItem[]);
+
         return {
-          ...state,
-          ...migrated,
-          orderNote: state.orderNote ?? "",
-          coupon: state.coupon ?? "",
-          discount: state.discount ?? 0,
+          items: finalItems,
+          cartAddons,
+          cartAddonTotal: cartAddonTotal ?? calcCatalogAddonTotal(cartAddons),
+          orderNote: raw.orderNote ?? "",
+          coupon: raw.coupon ?? "",
+          discount: raw.discount ?? 0,
         };
       },
     },
   ),
 );
 
-export {
-  parseAddonLine,
-  calcCatalogAddonTotal,
-  isCartCatalogAddon,
-};
+export { parseAddonLine, calcCatalogAddonTotal, isCartCatalogAddon };

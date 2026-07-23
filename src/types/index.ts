@@ -45,37 +45,6 @@ export interface Branch {
   borderRadius: string;
 }
 
-export type MenuModalType = "table" | "flavors" | "confirmation";
-
-export interface PriceRow {
-  label: string;
-  classic?: string | number;
-  mix?: string | number;
-  special?: string | number;
-  price?: string | number;
-}
-
-export interface FlavorCard {
-  nameAr: string;
-  nameEn: string;
-  image: StaticIMG;
-}
-
-export type MenuCategory = "ice-cream" | "drinks" | "desserts";
-
-export interface MenuItem {
-  id: string;
-  name: string;
-  image: StaticIMG;
-  modalType: MenuModalType;
-  category: MenuCategory;
-  tableHeaders?: string[];
-  priceRows?: PriceRow[];
-  flavors?: FlavorCard[];
-  orderHref?: string;
-  confirmationModal?: boolean;
-}
-
 export interface FlavorItem {
   id: number;
   name: string;

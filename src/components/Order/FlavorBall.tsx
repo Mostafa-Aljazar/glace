@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import { X } from "lucide-react";
-import type { Flavor } from "@/data/OrderData";
+import { resolveMenuImageSrc, type IFlavorOption } from "@/types/menu.types";
 
 interface FlavorBallProps {
-  flavor: Flavor;
+  flavor: IFlavorOption;
   count: number;
   isFull: boolean;
   onAdd: () => void;
@@ -49,8 +49,8 @@ export default function FlavorBall({
         )}
 
         <Image
-          src={flavor.image}
-          alt={flavor.name}
+          src={resolveMenuImageSrc(flavor.image)}
+          alt={flavor.nameAr}
           width={52}
           height={52}
           className={`w-13 h-13 object-contain ${unavailable ? "opacity-30" : ""}`}
@@ -69,7 +69,7 @@ export default function FlavorBall({
       <span
         className={`text-[12px] text-center leading-tight ${count > 0 ? "text-glace-yellow font-semibold" : unavailable ? "text-white/40" : "text-white/75"}`}
       >
-        {flavor.name}
+        {flavor.nameAr}
       </span>
     </div>
   );

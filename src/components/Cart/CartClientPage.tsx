@@ -20,13 +20,11 @@ import {
   useCartStore,
   parseAddonLine,
   calcCatalogAddonTotal,
-  type CartItem,
-} from "@/store/cartStore";
-import {
   EMPTY_CONE_ADDON,
   MAX_MULTI_ADDONS,
   MULTI_CHOICE_ADDONS,
-} from "@/data/OrderData";
+  type CartItem,
+} from "@/store/cartStore";
 
 const CONE_NAME = EMPTY_CONE_ADDON.name;
 
@@ -56,17 +54,6 @@ function getAddonSummary(addonLines: string[]) {
       : []),
     ...multiSelected,
   ];
-}
-
-/** Collapse repeated flavors into "flavor ×n" labels */
-function flavorFrequencyLabels(flavors: string[]) {
-  const counts = new Map<string, number>();
-  for (const flavor of flavors) {
-    counts.set(flavor, (counts.get(flavor) ?? 0) + 1);
-  }
-  return Array.from(counts.entries()).map(([flavor, count]) =>
-    count > 1 ? `${flavor} ×${count}` : flavor,
-  );
 }
 
 function QtyControl({
@@ -155,23 +142,26 @@ function ItemCard({ item, index }: { item: CartItem; index: number }) {
                 {item.type}
               </span>
             )}
-            {item.flavors &&
-              flavorFrequencyLabels(item.flavors).map((label) => (
+            {item.selections
+              .filter((s) => s.kind === "flavor" || s.kind === "mix")
+              .map((s) => (
                 <span
-                  key={label}
+                  key={`${s.kind}-${s.id}`}
                   className="bg-glace-yellow/15 text-glace-yellow px-2.5 py-1 rounded-lg text-[11px] font-medium"
                 >
-                  {label}
+                  {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
                 </span>
               ))}
-            {item.addons?.map((addon) => (
-              <span
-                key={addon}
-                className="bg-white/8 px-2.5 py-1 rounded-lg text-[11px] text-white/65"
-              >
-                {addon}
-              </span>
-            ))}
+            {item.selections
+              .filter((s) => s.kind === "addon")
+              .map((s) => (
+                <span
+                  key={`addon-${s.id}`}
+                  className="bg-white/8 px-2.5 py-1 rounded-lg text-[11px] text-white/65"
+                >
+                  {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
+                </span>
+              ))}
           </div>
 
           <div className="flex items-center justify-between gap-3 flex-wrap">

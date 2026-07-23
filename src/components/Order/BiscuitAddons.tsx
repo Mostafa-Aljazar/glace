@@ -1,45 +1,6 @@
 "use client";
 
 import { Minus, Plus } from "lucide-react";
-import type { Addon } from "@/data/OrderData";
-
-export function BiscuitPackSelector({
-  addons,
-  selectedIds,
-  onToggle,
-}: {
-  addons: Addon[];
-  selectedIds: number[];
-  onToggle: (id: number) => void;
-}) {
-  return (
-    <div className="gap-3 grid grid-cols-1 sm:grid-cols-2">
-      {addons.map((addon) => {
-        const checked = selectedIds.includes(addon.id);
-        return (
-          <button
-            key={addon.id}
-            type="button"
-            onClick={() => onToggle(addon.id)}
-            className={`flex items-center justify-between gap-3 px-4 py-3 rounded-[14px] border text-right transition-all cursor-pointer
-              ${
-                checked
-                  ? "bg-glace-yellow/15 border-glace-yellow/50 text-white"
-                  : "bg-white/10 border-white/20 text-white/75 hover:border-white/40"
-              }`}
-          >
-            <span className="text-[14px]">{addon.name}</span>
-            <span
-              className={`text-[13px] font-bold shrink-0 ${checked ? "text-glace-yellow" : "text-white/50"}`}
-            >
-              +{addon.price} ₪
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 export function ExtraBiscuitCounter({
   count,

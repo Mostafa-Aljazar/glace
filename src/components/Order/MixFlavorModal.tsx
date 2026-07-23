@@ -5,17 +5,17 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Minus, Plus, X } from "lucide-react";
 import {
-  getMixFlavorPrice,
+  getMixFlavorUnitPrice,
   getMixSelectionPrice,
-  isPistachioFlavor,
-  type MixConfig,
-  type SimpleMenuItem,
-} from "@/data/OrderData";
+  resolveMenuImageSrc,
+  type IMixRule,
+  type IProductVariant,
+} from "@/types/menu.types";
 
 interface MixFlavorModalProps {
   open: boolean;
-  mix: MixConfig;
-  items?: SimpleMenuItem[];
+  mix: IMixRule;
+  items?: IProductVariant[];
   onClose: () => void;
   onConfirm: (flavors: string[], unitPrice: number) => void;
 }
@@ -49,7 +49,10 @@ export default function MixFlavorModal({
 
   if (!open || !mounted) return null;
 
-  const total = getMixSelectionPrice(mix, selected);
+  const selectedItems = selected.map(
+    (label) => items.find((item) => item.label === label) ?? { label, isPremiumMixFlavor: false },
+  );
+  const total = getMixSelectionPrice(mix, selectedItems);
   const canConfirm = selected.length === mix.pick;
   const remaining = mix.pick - selected.length;
   const remainingLabel =
@@ -122,13 +125,13 @@ export default function MixFlavorModal({
         </div>
 
         <div className="space-y-2 mb-5">
-          {mix.options.map((flavor) => {
+          {mix.flavorOptionIds.map((flavor) => {
             const count = selected.filter((f) => f === flavor).length;
             const flavorItem = items.find((item) => item.label === flavor);
             const unavailable = flavorItem?.available === false;
-            const flavorPrice = getMixFlavorPrice(mix, flavor);
-            const flavorImage = mix.optionImages?.[flavor];
-            const special = isPistachioFlavor(flavor);
+            const flavorPrice = getMixFlavorUnitPrice(mix, flavorItem?.isPremiumMixFlavor);
+            const flavorImage = flavorItem?.image;
+            const special = !!flavorItem?.isPremiumMixFlavor;
             const canAdd =
               !unavailable && !isFull && count < MAX_SAME_FLAVOR;
 
@@ -150,7 +153,7 @@ export default function MixFlavorModal({
                 >
                   {flavorImage && (
                     <Image
-                      src={flavorImage}
+                      src={resolveMenuImageSrc(flavorImage)}
                       alt={flavor}
                       width={40}
                       height={40}

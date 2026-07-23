@@ -1,39 +1,41 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import DessertsOrderClientPage from "@/components/Order/DessertsOrderClientPage";
-import { DESSERT_CATEGORIES_V2 } from "@/data/OrderData";
+import OrderFlatListTemplate from "@/components/Order/OrderFlatListTemplate";
+import OrderBuilderTemplate from "@/components/Order/OrderBuilderTemplate";
+import { FAKE_PRODUCTS } from "@/data/fake-data/menu";
 
 interface Props {
   params: Promise<{ type: string }>;
 }
 
-const CATEGORY_TITLES: Record<string, string> = {
-  pancake: "طلب بان كيك | جلاسيه الأمير",
-  waffle: "طلب وافل | جلاسيه الأمير",
-  crepe: "طلب كريب | جلاسيه الأمير",
-  pizza: "طلب بيتزا جلاسيه | جلاسيه الأمير",
-  molten: "طلب مولتن كيك | جلاسيه الأمير",
-  "cold-drinks": "طلب مشروبات باردة | جلاسيه الأمير",
-  juices: "طلب عصائر طبيعية | جلاسيه الأمير",
-};
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { type } = await params;
-  const title = CATEGORY_TITLES[type] || "طلب | جلاسيه الأمير";
-  return { title };
+  const product = FAKE_PRODUCTS.find((p) => p.id === type);
+  return {
+    title: product ? `طلب ${product.name} | جلاسيه الأمير` : "طلب | جلاسيه الأمير",
+  };
 }
 
 export function generateStaticParams() {
-  return DESSERT_CATEGORIES_V2.map((cat) => ({ type: cat.id }));
+  return FAKE_PRODUCTS.map((p) => ({ type: p.id }));
 }
 
 export default async function OrderTypePage({ params }: Props) {
   const { type } = await params;
+  const product = FAKE_PRODUCTS.find((p) => p.id === type);
 
-  const categoryExists = DESSERT_CATEGORIES_V2.some((cat) => cat.id === type);
-  if (!categoryExists) {
+  if (!product) {
     notFound();
   }
 
-  return <DessertsOrderClientPage initialType={type} />;
+  if (product.kind === "flat-list") {
+    return <OrderFlatListTemplate product={product} />;
+  }
+
+  return (
+    <Suspense>
+      <OrderBuilderTemplate product={product} />
+    </Suspense>
+  );
 }
