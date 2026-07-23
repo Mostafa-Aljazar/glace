@@ -569,3 +569,11 @@ export const FAKE_PRODUCTS: IProduct[] = [
   cookiesProduct,
   cheesecakeProduct,
 ];
+
+export function findFakeProductById(id: string): IProduct | undefined {
+  return FAKE_PRODUCTS.find((p) => p.id === id);
+}
+
+export function findFakeCategoryById(id: string): IMenuCategory | undefined {
+  return FAKE_MENU_CATEGORIES.find((c) => c.id === id);
+}

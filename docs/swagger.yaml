@@ -17,24 +17,10 @@ servers:
     description: Production (update when ready)
 
 tags:
-  - name: Auth
-    description: Authentication and account access
-  - name: Users
-    description: User profile and account management
   - name: Home
     description: Home page content
   - name: Menu
     description: Menu categories and items
-  - name: Orders
-    description: Order creation and tracking
-  - name: Cart
-    description: Shopping cart
-  - name: Payment
-    description: Payment processing
-  - name: Wallet
-    description: User wallet and balance
-  - name: Favorites
-    description: Favorite items
   - name: Events
     description: Events and promotions
   - name: Contact
@@ -360,6 +346,66 @@ paths:
                           price: 2
                         - flavorFamily: special
                           price: 4
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /menu/products/{id}:
+    get:
+      tags: [Menu]
+      summary: Get product by id
+      description: |
+        Public product detail for `/menu/order/{type}` (`id` doubles as the
+        route's `type` param). Matches TypeScript `IProduct`.
+      operationId: getMenuProductById
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: cup
+      responses:
+        "200":
+          description: Product detail (`IProduct`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IProduct"
+              example:
+                id: cup
+                categoryId: ice-cream
+                kind: builder
+                name: بوظة كاسة
+                image: https://cdn.example.com/menu/cup.jpg
+                sortOrder: 1
+                available: true
+                selectionMode: repeatable
+                flavorFamilies: [classic, special, mix]
+                hasExtraBiscuitAddon: true
+                containerOptions:
+                  - id: cup
+                    label: كاسة
+                    available: true
+                    pricingLabel: الكاسة
+                  - id: biscuit
+                    label: بسكوت
+                    available: true
+                    name: بوظة بسكوت
+                    image: https://cdn.example.com/menu/biscuit.jpg
+                    pricingLabel: البسكوت
+                sizes:
+                  - id: cup-small
+                    label: صغير
+                    maxBalls: 1
+                    containerId: cup
+                    prices:
+                      - flavorFamily: classic
+                        price: 2
+                      - flavorFamily: special
+                        price: 4
+        "404":
+          $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/ServerError"
 
@@ -1149,6 +1195,10 @@ components:
         image:
           type: string
           format: uri
+        pricingLabel:
+          type: string
+          description: Heading for this container's price table, e.g. "الكاسة"
+          example: الكاسة
 
     ISizeOption:
       type: object
@@ -1231,6 +1281,14 @@ components:
                 $ref: "#/components/schemas/IPriceCell"
             hasExtraBiscuitAddon:
               type: boolean
+            pricingLabel:
+              type: string
+              description: |
+                Heading for the price table when sizes aren't split per
+                container (e.g. برادة's "أسعار البراد"). Unused when sizes
+                carry their own containerId — the container's own
+                pricingLabel wins in that case.
+              example: البراد
             sizes:
               type: array
               items:

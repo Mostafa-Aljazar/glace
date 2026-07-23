@@ -1,0 +1,20 @@
+
+> glace-next@0.1.0 dev
+> next dev
+
+[32m✔[0m [33mConsole Ninja[0m extension is connected to [33mNext.js[0m, see [36mhttps://tinyurl.com/2vt8jxzw[0m
+⚠ Port 3000 is in use by process 18592, using available port 3001 instead.
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.50.54:3001
+- Environments: .env.local
+✓ Ready in 1128ms
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          18592
+- Dir:          E:\Programming\Full Stack\Next.js\Projects\work\glace\glace-next
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 18592 /F to stop it.
+[?25h

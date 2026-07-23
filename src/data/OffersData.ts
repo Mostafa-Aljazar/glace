@@ -33,7 +33,7 @@ export const OFFERS: Offer[] = [
     image: milkshake,
     category: "ميلك شيك",
     badge: "الأكثر طلبًا",
-    orderHref: "/menu/order-milkshake",
+    orderHref: "/menu/order/milkshake",
     featured: true,
   },
   {
@@ -44,7 +44,7 @@ export const OFFERS: Offer[] = [
     salePrice: 3,
     image: iceCreamCup,
     category: "بوظة",
-    orderHref: "/menu/order-cup",
+    orderHref: "/menu/order/cup",
   },
   {
     id: 3,
@@ -55,7 +55,7 @@ export const OFFERS: Offer[] = [
     image: nutellaIce,
     category: "بوظة",
     badge: "عرض محدود",
-    orderHref: "/menu/order-cup",
+    orderHref: "/menu/order/cup",
     featured: true,
   },
   {
@@ -110,7 +110,7 @@ export const OFFERS: Offer[] = [
     image: pistachioIce,
     category: "ميلك شيك",
     badge: "مميز",
-    orderHref: "/menu/order-milkshake",
+    orderHref: "/menu/order/milkshake",
   },
   {
     id: 9,
@@ -129,7 +129,7 @@ export const OFFERS: Offer[] = [
     salePrice: 9,
     image: lotusIce,
     category: "بوظة",
-    orderHref: "/menu/order-cup",
+    orderHref: "/menu/order/cup",
   },
   {
     id: 11,
@@ -152,7 +152,7 @@ export const OFFERS: Offer[] = [
     category: "عروض خاصة",
     couponCode: "GLACE10",
     badge: "عرض الثنائي",
-    orderHref: "/menu/order-milkshake",
+    orderHref: "/menu/order/milkshake",
   },
   {
     id: 13,
@@ -182,7 +182,7 @@ export const OFFERS: Offer[] = [
     salePrice: 5,
     image: caramelIce,
     category: "بوظة",
-    orderHref: "/menu/order-cup",
+    orderHref: "/menu/order/cup",
   },
   {
     id: 16,
@@ -192,7 +192,7 @@ export const OFFERS: Offer[] = [
     salePrice: 10,
     image: kinderBuenoIce,
     category: "ميلك شيك",
-    orderHref: "/menu/order-milkshake",
+    orderHref: "/menu/order/milkshake",
   },
 ];
 

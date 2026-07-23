@@ -2,12 +2,203 @@
   direction: ltr;
   text-align: left;
   min-height: 100vh;
-  background: #fff;
+  background: linear-gradient(135deg, #f8fafb 0%, #f0f5f9 100%);
 }
 
 .swagger-loading {
   padding: 2rem;
   text-align: center;
-  font-size: 0.875rem;
+  font-size: 1rem;
+  color: #388dab;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* Glace brand customization */
+.swagger-ui {
+  font-family: "Cairo", sans-serif !important;
+}
+
+.swagger-ui .topbar {
+  background: linear-gradient(135deg, #51c9f4 0%, #388dab 100%);
+  box-shadow: 0 4px 12px rgba(81, 201, 244, 0.15);
+}
+
+.swagger-ui .topbar-wrapper {
+  padding: 20px 0;
+}
+
+.swagger-ui .logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+/* Endpoint styling */
+.swagger-ui .opblock {
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border-left: 4px solid #51c9f4;
+  box-shadow: 0 2px 8px rgba(81, 201, 244, 0.08);
+  transition: all 0.3s ease;
+}
+
+.swagger-ui .opblock:hover {
+  box-shadow: 0 4px 16px rgba(81, 201, 244, 0.12);
+}
+
+.swagger-ui .opblock.opblock-get {
+  border-left-color: #51c9f4;
+}
+
+.swagger-ui .opblock.opblock-post {
+  border-left-color: #f4a651;
+}
+
+.swagger-ui .opblock.opblock-put {
+  border-left-color: #51c9f4;
+}
+
+.swagger-ui .opblock.opblock-delete {
+  border-left-color: #ff6b6b;
+}
+
+.swagger-ui .opblock-summary {
+  padding: 12px 20px;
+}
+
+/* Button styling */
+.swagger-ui .btn {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.swagger-ui .btn-primary {
+  background-color: #51c9f4;
+  color: white;
+}
+
+.swagger-ui .btn-primary:hover {
+  background-color: #388dab;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(81, 201, 244, 0.3);
+}
+
+.swagger-ui .btn-secondary {
+  border: 2px solid #51c9f4;
+  color: #51c9f4;
+  background-color: transparent;
+}
+
+.swagger-ui .btn-secondary:hover {
+  background-color: #f0f9fc;
+  color: #388dab;
+}
+
+/* Try it out button */
+.swagger-ui .try-out > button {
+  background-color: #f4a651;
+  color: white;
+  border-radius: 6px;
+}
+
+.swagger-ui .try-out > button:hover {
+  background-color: #d68d2d;
+}
+
+/* Response highlighting */
+.swagger-ui .response-control .response-tabs .response-tab {
+  color: #51c9f4;
+  font-weight: 500;
+}
+
+.swagger-ui .response-control .response-tabs .response-tab.active {
+  border-bottom: 2px solid #51c9f4;
+  color: #51c9f4;
+}
+
+/* Model/Schema styling */
+.swagger-ui .models .model {
+  border-radius: 8px;
+  background: #f8fafb;
+  border: 1px solid #e8eef5;
+}
+
+.swagger-ui table.model tr.property-row:hover {
+  background-color: #f0f5f9;
+}
+
+/* Parameter styling */
+.swagger-ui .parameter__name {
+  color: #388dab;
+  font-weight: 600;
+}
+
+.swagger-ui .parameter__type {
+  color: #51c9f4;
+  font-weight: 500;
+}
+
+/* Request body styling */
+.swagger-ui .body-param {
+  border-radius: 6px;
+  background: #f8fafb;
+  border: 1px solid #e8eef5;
+  padding: 12px;
+}
+
+/* Scrollbar styling */
+.swagger-ui *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.swagger-ui *::-webkit-scrollbar-track {
+  background: #f0f5f9;
+  border-radius: 4px;
+}
+
+.swagger-ui *::-webkit-scrollbar-thumb {
+  background: #51c9f4;
+  border-radius: 4px;
+}
+
+.swagger-ui *::-webkit-scrollbar-thumb:hover {
+  background: #388dab;
+}
+
+/* Heading styling */
+.swagger-ui .info .title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #388dab;
+  margin-bottom: 8px;
+}
+
+.swagger-ui .info > div {
   color: #525252;
+  margin-bottom: 16px;
+}
+
+/* Section heading */
+.swagger-ui .schemes > label {
+  color: #388dab;
+  font-weight: 600;
+}
+
+/* Tag styling */
+.swagger-ui .opblock-tag {
+  color: #388dab;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.swagger-ui .opblock-tag:hover {
+  color: #51c9f4;
 }

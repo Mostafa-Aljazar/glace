@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import OrderFlatListTemplate from "@/components/Order/OrderFlatListTemplate";
-import OrderBuilderTemplate from "@/components/Order/OrderBuilderTemplate";
-import { FAKE_PRODUCTS } from "@/data/fake-data/menu";
+import OrderTypeClientPage from "@/components/Order/OrderTypeClientPage";
+import { fetchMenuProducts } from "@/hooks/menu/fetchMenuProducts";
 
 interface Props {
   params: Promise<{ type: string }>;
@@ -11,31 +9,24 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { type } = await params;
-  const product = FAKE_PRODUCTS.find((p) => p.id === type);
+  const products = await fetchMenuProducts();
+  const product = products.find((p) => p.id === type);
   return {
     title: product ? `طلب ${product.name} | جلاسيه الأمير` : "طلب | جلاسيه الأمير",
   };
 }
 
-export function generateStaticParams() {
-  return FAKE_PRODUCTS.map((p) => ({ type: p.id }));
+export async function generateStaticParams() {
+  const products = await fetchMenuProducts();
+  return products.map((p) => ({ type: p.id }));
 }
 
 export default async function OrderTypePage({ params }: Props) {
   const { type } = await params;
-  const product = FAKE_PRODUCTS.find((p) => p.id === type);
+  const products = await fetchMenuProducts();
 
-  if (!product) {
-    notFound();
-  }
+  // Gate 404s server-side to avoid client-side flashes for garbage ids
+  if (!products.some((p) => p.id === type)) notFound();
 
-  if (product.kind === "flat-list") {
-    return <OrderFlatListTemplate product={product} />;
-  }
-
-  return (
-    <Suspense>
-      <OrderBuilderTemplate product={product} />
-    </Suspense>
-  );
+  return <OrderTypeClientPage productId={type} />;
 }

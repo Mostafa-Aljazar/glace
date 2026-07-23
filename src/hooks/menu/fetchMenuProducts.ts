@@ -15,7 +15,7 @@ function isProductBase(value: unknown): value is Record<string, unknown> {
   );
 }
 
-function isProduct(value: unknown): value is IProduct {
+export function isProduct(value: unknown): value is IProduct {
   if (!isProductBase(value)) return false;
   const p = value as Partial<IProduct>;
   switch (p.kind) {

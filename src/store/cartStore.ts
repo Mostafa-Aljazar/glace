@@ -86,6 +86,38 @@ function genId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+/** Check if two selection arrays are identical */
+function selectionsMatch(a: CartSelection[], b: CartSelection[]): boolean {
+  if (a.length !== b.length) return false;
+  const sortedA = [...a].sort((x, y) => x.id.localeCompare(y.id));
+  const sortedB = [...b].sort((x, y) => x.id.localeCompare(y.id));
+  return sortedA.every(
+    (sel, i) =>
+      sel.kind === sortedB[i].kind &&
+      sel.id === sortedB[i].id &&
+      sel.label === sortedB[i].label &&
+      sel.qty === sortedB[i].qty &&
+      sel.unitPrice === sortedB[i].unitPrice,
+  );
+}
+
+/** Find existing cart item matching product + type + container + size + flavorFamily + selections */
+function findMatchingItem(
+  items: CartItem[],
+  item: Omit<CartItem, "id">,
+): CartItem | undefined {
+  return items.find(
+    (existing) =>
+      existing.productId === item.productId &&
+      existing.type === item.type &&
+      existing.size === item.size &&
+      existing.container === item.container &&
+      existing.flavorFamily === item.flavorFamily &&
+      existing.addonTotal === item.addonTotal &&
+      selectionsMatch(existing.selections, item.selections),
+  );
+}
+
 function parseAddonLine(line: string): { name: string; qty: number } {
   const match = line.match(/^(.*)\s×(\d+)$/);
   if (match) return { name: match[1].trim(), qty: Number(match[2]) };
@@ -258,17 +290,29 @@ export const useCartStore = create<CartState>()(
       discount: 0,
 
       addItem: (item) =>
-        set((state) => ({
-          items: [
-            ...state.items,
-            {
-              ...item,
-              selections: item.selections ? [...item.selections] : [],
-              addonTotal: item.addonTotal ?? 0,
-              id: genId(),
-            },
-          ],
-        })),
+        set((state) => {
+          const existing = findMatchingItem(state.items, item);
+          if (existing) {
+            // Increment quantity of existing matching item
+            return {
+              items: state.items.map((i) =>
+                i.id === existing.id ? { ...i, quantity: i.quantity + item.quantity } : i,
+              ),
+            };
+          }
+          // Add as new item if no match
+          return {
+            items: [
+              ...state.items,
+              {
+                ...item,
+                selections: item.selections ? [...item.selections] : [],
+                addonTotal: item.addonTotal ?? 0,
+                id: genId(),
+              },
+            ],
+          };
+        }),
 
       removeItem: (id) =>
         set((state) => {

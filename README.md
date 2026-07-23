@@ -21,14 +21,23 @@ This README documents everything built across **Cursor** sessions: the app shell
 npm install
 npm run dev
 # http://localhost:3000
-# http://localhost:3000/swagger
+# http://localhost:3000/swagger (OpenAPI 3 interactive docs with Glace branding)
 ```
 
-Env:
+**Environment Setup:**
 
 ```env
+# .env.local
 NEXT_PUBLIC_API_URL=http://localhost:8000/api
 ```
+
+Update this when your Laravel backend is ready. All frontend API calls automatically use this URL.
+
+| Environment | Backend URL |
+|---|---|
+| **Local Development** | `http://localhost:8000/api` |
+| **Staging** | `https://staging-api.glace.com/api` |
+| **Production** | `https://api.glace.com/api` |
 
 ---
 
@@ -36,7 +45,6 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 
 - `src/app/layout.tsx` — root HTML shell, `lang="ar" dir="rtl"`, global `QueryProvider`, a global `LoadingPage` splash screen gated by a `sessionStorage` flag (`glace-splash-seen`) so it only shows once per session.
 - `src/app/(main)/layout.tsx` — the shell for all storefront routes: `LogoNav` (top nav) + page content + `BottomNav` (mobile tab bar) + `FloatingFavoritesButton`.
-- `src/app/(standalone)/` — routes outside the main shell (currently `coming-soon`).
 
 ---
 
@@ -53,26 +61,32 @@ When wiring a new domain (menu, checkout, etc.) to a real API, follow this patte
 
 Images from a real API are URL strings; fake data may use Next `StaticImageData`. Helpers like `resolveHomeImageSrc` / `resolveEventImageSrc` normalize both.
 
-**Local Next mocks** (so Swagger's "Try it out" works against `:3000` without a backend):
+**API Configuration:**
+
+All frontend API calls use **Axios** instances configured via `NEXT_PUBLIC_API_URL` in `.env.local`:
+
+```ts
+// src/lib/axios.ts
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+const guestApi = axios.create({ baseURL: BASE });  // public endpoints
+const userApi = axios.create({ baseURL: BASE });   // auto-injects auth token from localStorage
+```
+
+**Local routes** (only needed for Swagger UI):
 
 | Route | Purpose |
 |--------|---------|
-| `GET /api/openapi` | Serves `docs/swagger.yaml` |
-| `GET /api/home` | Mock home payload |
-| `GET /api/events` | Mock paginated events |
-| `GET /api/events/[id]` | Mock event detail |
+| `GET /api/openapi` | Serves `docs/swagger.yaml` for Swagger UI at `/swagger` |
 
-Only 3 domains have a local mock route + full Swagger docs so far (`home`, `events`, `contact` — contact has no GET, only mocks the POST via the hook's fallback). Everything else (menu, cart, checkout, auth, favorites, wallet, orders) is fake-data/local-state only — see [Continuing work](#continuing-work-suggested).
+All other endpoints (home, events, menu, contact, auth, cart, etc.) call the backend API at `NEXT_PUBLIC_API_URL`.
 
-Swagger servers (Try it out):
-
-1. `http://localhost:3000/api` — local mocks
-2. `http://localhost:8000/api` — real backend
-3. Production placeholder
+**Fallback strategy:** All fetch functions catch errors and return fake data, so pages never render blank.
 
 ---
 
-## API surface (documented in Swagger today)
+## API surface (all documented in Swagger)
+
+### Public Endpoints
 
 | Method | Path | Types | Hooks / functions |
 |--------|------|--------|-------------------|
@@ -80,8 +94,20 @@ Swagger servers (Try it out):
 | `GET` | `/events?page&perPage` | `IEventsListResponse` | `fetchEvents`, `useEvents` |
 | `GET` | `/events/{id}` | `IEvent` | `fetchEventById`, `useEvent` |
 | `POST` | `/contact` | `IContactRequest` → `IContactResponse` | `sendContactMessage`, `useSendContactMessage` |
+| `GET` | `/menu/categories` | `IMenuCategory[]` | `fetchMenuCategories`, `useMenuCategories` |
+| `GET` | `/menu/products?category={id}` | `IProduct[]` | `fetchMenuProducts`, `useMenuProducts` |
+| `GET` | `/menu/products/{id}` | `IProduct \| null` | `fetchMenuProductById`, `useMenuProduct` |
 
-Hooks that exist in code but aren't in Swagger yet: `useLogin` / `useRegister` / `useLogout` / `useMe` / `useUpdateProfile` / `useChangePassword` (`src/hooks/auth/`), `useMenuCategories` / `useMenuItems` (`src/hooks/menu/`).
+### Protected Endpoints (require auth token)
+
+- `POST /auth/login` (`LoginRequest` → `LoginResponse`)
+- `POST /auth/register` (`RegisterRequest` → user + token)
+- `POST /auth/logout`
+- `GET /auth/me` (current user)
+- `PUT /auth/profile` (update profile)
+- `POST /auth/password` (change password)
+
+See `src/hooks/auth/` for implementations.
 
 ---
 
@@ -109,12 +135,24 @@ Hooks that exist in code but aren't in Swagger yet: `useLogin` / `useRegister` /
 - `sendContactMessage` + `useSendContactMessage`, with a fake-success fallback when the backend is down
 - Swagger: **POST** only, under the Contact tag
 
-### 4. Menu (`/menu`)
+### 4. Menu API & Ordering System
+
+**Complete API contract** is in [`docs/MENU_CATALOG.md`](docs/MENU_CATALOG.md) — a professional backend specification for your Laravel developer:
+- **3 endpoints:** `GET /menu/categories`, `GET /menu/products?category=`, `GET /menu/products/{id}`
+- **19 products** across 16 categories (ice-cream, bread, drinks, desserts, etc.)
+- **23 global flavors** with availability control + premium pricing
+- **Two order templates:** builder (wizard: size → flavor → quantity) and flat-list (pick items + optional mixes)
+- **Mix system:** pick-2/pick-3 flavor combinations with per-flavor pricing
+- **Dashboard features:** control availability at product, item, flavor, size, container, and mix levels
+
+**Frontend:**
 
 - `MenuClientPage`: sticky, **auto-scrolling category selector** — the active category chip tracks scroll position and auto-scrolls into view
-- Categories (`src/data/fake-data/menuApiData.ts`, `FAKE_CATEGORIES`): آيس كريم → براد → براد مع بوظة → مشروبات باردة → مشروبات ساخنة → عصائر طبيعية → ذرة → ميلك شيك → كنافة آيس كريم → لقيمات → بان كيك → وافل → كريب → بيتزا جلاسيه → مولتن كيك → حلويات (اضافات اخرى / جديدنا were removed)
-- `MenuModal` renders one of three shapes per item (`modalType`): `table` (size/flavor price grid, now with a **mix** column for family-size — `classic` / `mix` / `special`), `flavors` (flavor gallery), or `confirmation`
-- Types: `PriceRow.mix` in `src/types/index.ts`, `ApiMenuItem`/`ApiPriceRow` in `menuApiData.ts`
+- **Types:** `src/types/menu.types.ts` — `IMenuCategory`, `IFlavorOption`, `IProduct` (discriminated union on `kind`), `IBuilderProduct`, `IFlatListProduct`, `ISizeOption`, `IMixRule`, `IProductVariant`
+- **Fake data:** `src/data/fake-data/menu.ts` (16 categories, 23 flavors, 19 products)
+- **Hooks:** `useMenuCategories()`, `useMenuProducts(categoryId)`, `useMenuProduct(productId)` + fetch functions
+- **Order templates:** `OrderBuilderTemplate` (wizard flow) and `OrderFlatListTemplate` (flat items + mixes)
+- **Cart consolidation:** identical items with same selections automatically increment quantity instead of creating duplicates
 
 ### 5. Ordering flow (`/menu/order/*`)
 
@@ -178,6 +216,39 @@ Two generations of order pages exist side by side:
 
 ---
 
+## Documentation
+
+### Swagger / OpenAPI
+
+**URL:** http://localhost:3000/swagger
+
+**Files:**
+- `docs/swagger.yaml` — OpenAPI 3 spec (all endpoints + schemas + examples)
+- `src/app/swagger/SwaggerUIClient.tsx` — interactive UI (Try it out enabled)
+- `src/app/api/openapi/route.ts` — serves the YAML file
+
+**Features:**
+- ✅ Try endpoints directly against your backend
+- ✅ Full schema definitions with examples
+- ✅ Arabic-first, Glace-branded styling
+- ✅ Supports GET, POST, PUT, PATCH, DELETE
+
+### Menu Catalog (Backend Contract)
+
+**File:** [`docs/MENU_CATALOG.md`](docs/MENU_CATALOG.md)
+
+**For:** Your Laravel backend developer — complete specification of:
+- 16 categories with metadata (icons, colors, sort order)
+- 23 flavors with availability control + premium pricing
+- 19 products (builder templates + flat-list templates)
+- Dashboard features required (availability toggles, CRUD)
+- Error handling expectations
+- Implementation checklist
+
+**Share this file with your backend team.** It's the contract your frontend expects.
+
+---
+
 ## State stores at a glance
 
 | Store | File | Persisted key | Holds |
@@ -195,18 +266,24 @@ All are local-only today (no backend sync) — treat them as the shape a future 
 ## Important paths
 
 ```
-docs/swagger.yaml                          # OpenAPI source of truth
-src/app/swagger/                           # Swagger UI page
-src/app/api/openapi|home|events/           # Local mocks
-src/types/index.ts                         # Shared/legacy types + re-exports
+docs/swagger.yaml                          # OpenAPI 3 spec (all 3 menu endpoints + other APIs)
+docs/MENU_CATALOG.md                       # Professional backend contract for menu API
+src/app/swagger/SwaggerUIClient.tsx        # Interactive Swagger UI page at /swagger
+src/app/api/openapi/                       # Serves swagger.yaml (for Swagger UI only)
+src/types/menu.types.ts                    # Menu API types: IMenuCategory, IFlavorOption, IProduct
 src/types/home|events|contact.types.ts     # Per-domain API types (I-prefixed)
-src/data/OrderData.ts                      # Flavors, pricing, addon catalog, mixes
-src/data/fake-data/                        # Fake API payloads per domain
-src/hooks/home|events|contact|auth|menu|order/
-src/store/cartStore|orderStore|favoritesStore|authStore|walletStore.ts
-src/lib/axios.ts                           # guestApi / userApi clients
-src/components/Order/                      # Order pages, mix modal, cart bar, leave-guard dialog
-src/components/Cart|Menu|Checkout|Payment|Favorites|Account|Wallet|Auth|Offers|ComingSoon/
+src/data/fake-data/menu.ts                 # All menu categories, flavors, products (FAKE_MENU_CATEGORIES, FAKE_FLAVORS, FAKE_PRODUCTS)
+src/data/fake-data/                        # Fake API payloads per domain (fallback on API failure)
+src/hooks/menu/fetchMenuCategories.ts      # Fetch 3 endpoints + error → fake-data fallback
+src/hooks/menu/fetchMenuProducts.ts
+src/hooks/menu/fetchMenuProductById.ts
+src/hooks/home|events|contact|auth/        # Other domain hooks
+src/store/cartStore.ts                     # Cart state + consolidation logic (identical items merge)
+src/store/orderStore|favoritesStore|authStore|walletStore.ts
+src/lib/axios.ts                           # guestApi / userApi clients (configured via NEXT_PUBLIC_API_URL)
+src/components/Order/templates/            # OrderBuilderTemplate.tsx, OrderFlatListTemplate.tsx
+src/components/Order/shared/               # StepCard, Pill, QuantityStepper, StickyOrderBar, etc.
+src/components/Cart|Menu|Checkout|Payment|Favorites|Account|Wallet|Auth|Offers/
 ```
 
 ---
@@ -224,23 +301,37 @@ src/components/Cart|Menu|Checkout|Payment|Favorites|Account|Wallet|Auth|Offers|C
 
 ---
 
-## Continuing work (suggested)
+## Next steps: Backend Integration
 
-Wire the same API pattern (types → fake data → fetch fn → RQ hook → Swagger → UI) for whatever moves to a real backend next:
+When your Laravel backend is ready:
 
-- Menu categories/items (hooks already exist — `useMenuCategories`/`useMenuItems` — just needs Swagger + a real fetch fn)
-- Cart / checkout / order placement (currently 100% client-state in `cartStore`/`orderStore`)
-- Auth endpoints (hooks exist, no Swagger yet)
-- Favorites / wallet / offers
+1. **Update `.env.local`:**
+   ```env
+   NEXT_PUBLIC_API_URL=https://your-backend.com/api
+   ```
+   All frontend API calls automatically switch to the backend.
 
-Prefer documenting in **`docs/swagger.yaml`** first. Add a Next `app/api/*` mock route only when "Try it out" on `:3000` is actually needed (Contact deliberately has none — a POST-only fallback in the hook is enough).
+2. **Implement endpoints** from `docs/MENU_CATALOG.md` and `docs/swagger.yaml`:
+   - Menu: 3 endpoints (categories, products, products/{id})
+   - Auth: login, register, logout, me, profile, password
+   - Others: home, events, contact, cart, checkout, orders, wallet, favorites
+
+3. **Use the fake data as fallback** — the frontend already handles backend failures gracefully (logs error, returns fake data).
+
+4. **Add endpoints to Swagger** as you build them (already documented for menu).
+
+**Note:** Remove `src/app/api/*` mock routes once the backend is live (keep only `/api/openapi` for Swagger UI if desired).
 
 ---
 
-## Agent notes
+## For developers & agents
 
-- This is **Next.js 16** with breaking changes vs. training data — read `AGENTS.md` and the local Next docs (`node_modules/next/dist/docs/`) before touching framework APIs (routing, params/searchParams as promises, etc.).
-- Keep interface names with the **`I`** prefix for new API types; keep fake-data fallbacks so no page ever renders blank on a failed request.
+- **Next.js 16** with breaking changes vs. training data — read `AGENTS.md` and `node_modules/next/dist/docs/` before touching framework APIs (routing, params/searchParams as promises, etc.).
+- **API pattern:** All new endpoints follow: types → fake data → fetch function → React Query hook → Swagger → UI. Fake data is the fallback when the backend fails, so pages never render blank.
+- **Interface naming:** All API types use **`I`** prefix (`IMenuCategory`, `IProduct`, etc.). Matches TypeScript and Swagger schema names.
+- **Menu API:** Complete contract in `docs/MENU_CATALOG.md` — send this to your backend developer. It specifies JSON structure, availability control, pricing, and all 19 products.
+- **Axios config:** `src/lib/axios.ts` uses `NEXT_PUBLIC_API_URL` from `.env.local`. Update the env file to switch between local/staging/production backends.
+- **Cart consolidation:** Identical items (same product, size, flavors, addons) automatically merge into one line with increased quantity.
 - Don't commit secrets; don't invent commits unless asked.
 
 ---
