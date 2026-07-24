@@ -1,25 +1,23 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { findFakeProductById } from "@/data/fake-data/menu";
-import fetchMenuProductById from "@/hooks/menu/fetchMenuProductById";
+import fetchMenuProductBySlug from "@/hooks/menu/fetchMenuProductById";
 import type { IProduct } from "@/types/menu.types";
 
-export function menuProductQueryKey(id: string) {
-  return ["menu-product", id] as const;
+export function menuProductQueryKey(slug: string) {
+  return ["menu-product", slug] as const;
 }
 
 /**
- * Loads a single product (`GET /menu/products/{id}`).
- * Falls back to fake data; `data` is `null` when the id does not exist.
+ * Loads a single product by slug (`GET /menu/products/{slug}`).
+ * Falls back to fake data; `data` is `null` when the slug does not exist.
  */
-export function useMenuProduct(id: string) {
+export function useMenuProduct(slug: string) {
   return useQuery<IProduct | null>({
-    queryKey: menuProductQueryKey(id),
-    queryFn: () => fetchMenuProductById(id),
-    initialData: findFakeProductById(id) ?? null,
+    queryKey: menuProductQueryKey(slug),
+    queryFn: () => fetchMenuProductBySlug(slug),
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
-    enabled: id.length > 0,
+    enabled: slug.length > 0,
   });
 }

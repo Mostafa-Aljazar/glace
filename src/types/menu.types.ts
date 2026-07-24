@@ -52,6 +52,23 @@ export interface IProductVariant {
   isPremiumMixFlavor?: boolean;
 }
 
+/**
+ * An optional extra a customer can add to a unit of the product (e.g. extra
+ * caramel, nuts). A product exposes a catalog of these via `IProductBase.addons`;
+ * the cart lets the user apply them either uniformly or per individual unit.
+ */
+export interface IAddonOption {
+  id: string; // stable slug: "extra-caramel", "extra-nuts"
+  label: string; // "كراميل إضافي"
+  price: number; // per-unit surcharge (₪), charged per selected quantity
+  available?: boolean;
+  /** How the addon is picked in the cart: "toggle" (on/off, default) or
+   *  "counter" (a +/- quantity stepper, e.g. extra biscuit ×3). */
+  type?: "toggle" | "counter";
+  /** Optional cap for counter addons (max quantity per unit). */
+  maxQty?: number;
+}
+
 export interface IMixRule {
   id: string;
   label: string; // "مكس", "سوبر مكس"
@@ -93,14 +110,21 @@ export interface IContainerOption {
 }
 
 interface IProductBase {
-  id: string; // globally unique — doubles as the /menu/order/[type] param
+  id: string; // opaque backend primary key — used for cart/order/favorites references, never rendered in a URL
+  slug: string; // stable URL-safe identifier, e.g. "cup", "family" — matched against /menu/order/[type]
   categoryId: string;
   name: string;
+  description?: string; // short product description shown on order page
   image: MenuImage;
   sortOrder: number;
   available: boolean;
+  /** Superseded by `addons` below — presence of a non-empty `addons` catalog
+   *  is what actually drives the per-unit additions UI on the cart page. */
   hasAddons?: boolean;
   hasNotes?: boolean;
+  /** Optional per-unit extras a customer can add to this product (toppings,
+   *  sauces...). Drives the "تخصيص الإضافات" flow on the cart page. */
+  addons?: IAddonOption[];
   hasFavorites?: boolean;
   hasImageZoom?: boolean;
   /** Shows a small in-store-only warning step before entering the order flow. */

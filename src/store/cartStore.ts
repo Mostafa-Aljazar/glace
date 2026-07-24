@@ -36,6 +36,13 @@ export interface CartSelection {
   unitPrice: number; // 0 for flavor choices bundled into the base price
 }
 
+/** One physical unit of a cart line, with its own additions — used when a line
+ *  is customized "differently per unit" from the cart page. */
+export interface CartUnit {
+  selections: CartSelection[]; // this unit's additions (kind: "addon")
+  // note?: string;            // reserved for future per-unit notes
+}
+
 export interface CartItem {
   id: string;
   productId: string;
@@ -52,6 +59,22 @@ export interface CartItem {
   addonTotal: number;
   unitPrice: number;
   quantity: number;
+  /** When present, per-unit additions override the shared `selections`/`addonTotal`.
+   *  Invariant: `units.length === quantity`. Absent = uniform line (default). */
+  units?: CartUnit[];
+}
+
+/** Sum of priced picks in a selection array (per-unit addon cost). */
+export function sumSelections(selections: CartSelection[]): number {
+  return selections.reduce((s, x) => s + x.unitPrice * x.qty, 0);
+}
+
+/** Full price of a cart line — base×qty plus addons, whether uniform or per-unit. */
+export function getLineItemTotal(item: CartItem): number {
+  const addonCost = item.units
+    ? item.units.reduce((s, u) => s + sumSelections(u.selections), 0)
+    : (item.addonTotal ?? 0) * item.quantity;
+  return item.unitPrice * item.quantity + addonCost;
 }
 
 interface CartState {
@@ -65,6 +88,10 @@ interface CartState {
   addItem: (item: Omit<CartItem, "id">) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, qty: number) => void;
+  /** Apply one shared additions set to every unit of a line (clears per-unit units). */
+  setItemSharedAddons: (id: string, selections: CartSelection[], addonTotal: number) => void;
+  /** Apply per-unit additions to a line; drives quantity from `units.length`. */
+  setItemUnits: (id: string, units: CartUnit[]) => void;
   setOrderNote: (note: string) => void;
   setCartAddons: (addons: string[], addonTotal: number) => void;
   applyCoupon: (code: string) => void;
@@ -333,9 +360,17 @@ export const useCartStore = create<CartState>()(
           const items =
             qty <= 0
               ? state.items.filter((i) => i.id !== id)
-              : state.items.map((i) =>
-                  i.id === id ? { ...i, quantity: qty } : i,
-                );
+              : state.items.map((i) => {
+                  if (i.id !== id) return i;
+                  if (!i.units) return { ...i, quantity: qty };
+                  // Keep per-unit records in sync: pad new units with no
+                  // additions, truncate when shrinking.
+                  const units = Array.from(
+                    { length: qty },
+                    (_, idx) => i.units?.[idx] ?? { selections: [] },
+                  );
+                  return { ...i, quantity: qty, units };
+                });
           if (items.length === 0) {
             return {
               items,
@@ -346,6 +381,36 @@ export const useCartStore = create<CartState>()(
           }
           return { items };
         }),
+
+      setItemSharedAddons: (id, selections, addonTotal) =>
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.id === id
+              ? {
+                  ...i,
+                  selections: [...selections],
+                  addonTotal: Math.max(0, addonTotal),
+                  units: undefined,
+                }
+              : i,
+          ),
+        })),
+
+      setItemUnits: (id, units) =>
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.id === id
+              ? {
+                  ...i,
+                  units: units.map((u) => ({ selections: [...u.selections] })),
+                  quantity: units.length,
+                  // Per-unit additions supersede the line-level shared ones.
+                  selections: [],
+                  addonTotal: 0,
+                }
+              : i,
+          ),
+        })),
 
       setOrderNote: (note) => set({ orderNote: note }),
 
@@ -377,10 +442,7 @@ export const useCartStore = create<CartState>()(
 
       itemsSubtotal: () => {
         const { items } = get();
-        return items.reduce(
-          (sum, i) => sum + (i.unitPrice + (i.addonTotal ?? 0)) * i.quantity,
-          0,
-        );
+        return items.reduce((sum, i) => sum + getLineItemTotal(i), 0);
       },
 
       subtotal: () => {
@@ -395,7 +457,9 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "glace-cart",
-      version: 3,
+      // v4 adds optional per-unit `units` on items — additive, existing items
+      // simply have no `units` and keep rendering as uniform lines.
+      version: 4,
       migrate: (persisted, fromVersion) => {
         const raw = (persisted ?? {}) as {
           items?: LegacyCartItem[];

@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import Image from "next/image";
 import { Minus, Plus, ShoppingCart, Check, Heart } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
-import CartBar from "@/components/Order/CartBar";
 import AddToCartButton from "@/components/Order/AddToCartButton";
 import AddToCartToast from "@/components/Order/AddToCartToast";
 import BackButton from "@/components/Order/BackButton";
@@ -135,7 +134,7 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
 
       <BackButton onBeforeBack={handleBeforeBack} />
 
-      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-36 max-w-3xl">
+      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-52 lg:pb-36 max-w-3xl">
         <div className="bg-white/17 backdrop-blur-[15px] mb-6 rounded-[28px] overflow-hidden">
           <div className="flex justify-center items-center p-8">
             <div className="flex flex-col items-center gap-6 text-center">
@@ -143,7 +142,7 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
                 <h1 className="font-bold text-[28px] text-white sm:text-[34px] leading-tight">
                   {product.name}
                 </h1>
-                <p className="text-[14px] text-white/55">خصّص طلبك خطوة بخطوة</p>
+                <p className="text-[14px] text-white/55">{product.description || "خصّص طلبك خطوة بخطوة"}</p>
               </div>
               <Image
                 src={resolveMenuImageSrc(product.image)}
@@ -220,7 +219,7 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-[15px] text-white mb-1">{item.label}</p>
                       {item.description && (
-                        <p className="text-[12px] text-white/60 leading-tight">{item.description}</p>
+                        <p className="text-[12px] text-white/60 leading-tight line-clamp-2">{item.description}</p>
                       )}
                     </div>
 
@@ -293,7 +292,7 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
         </div>
       </div>
 
-      <div className="bottom-23 lg:bottom-0 z-9999997 fixed inset-x-0 bg-linear-to-t from-[#1a6278]/95 to-transparent px-4 pt-6 pb-4 pointer-events-none">
+      <div className="bottom-28 lg:bottom-0 z-9999997 fixed inset-x-0 px-4 pt-6 pb-4 pointer-events-none">
         <div className="flex flex-wrap items-center gap-4 bg-white/18 backdrop-blur-[20px] mx-auto px-5 py-4 border border-white/20 rounded-[24px] max-w-3xl pointer-events-auto">
           <div className="flex-1">
             <p className="text-[12px] text-white/55">الإجمالي</p>
@@ -333,7 +332,6 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
         onConfirm={handleConfirmLeave}
       />
 
-      <CartBar />
     </div>
   );
 }

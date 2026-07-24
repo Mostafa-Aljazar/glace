@@ -18,7 +18,8 @@ This document is the complete specification for the menu API. It defines:
 |---|---|---|---|
 | `GET /api/menu/categories` | `useMenuCategories()` | `IMenuCategory[]` | Browse-grid tabs. ~50ms, cache 5min. |
 | `GET /api/menu/products?category={id}` | `useMenuProducts(id)` | `IProduct[]` | All products in category, or all if no param. Filter by `categoryId`. |
-| `GET /api/menu/products/{id}` | `useMenuProduct(id)` | `IProduct \| null` | Single product for order page. Returns `null` if not found (not 404). |
+| `GET /api/menu/products/{slug}` | `useMenuProduct(slug)` | `IProduct \| null` | Single product for order page, looked up by **`slug`** (route-model-bind on the `slug` column, NOT the PK). Returns `null` if not found (not 404). |
+| `GET /api/menu/addons` | `useMenuAddons()` | `IAddonOption[]` | Shared additions (إضافات) catalog with prices (sauces, nuts, biscuit…) for the cart's per-unit "تخصيص الإضافات" flow. A product may override via its own `addons`. |
 
 All three endpoints:
 1. Frontend tries the real API **first**.
@@ -95,12 +96,17 @@ All three endpoints:
 
 ```json
 {
-  "id": "cup",
+  "id": "b7f1c2a4-9e3d-4a10-8c21-3f5a2d1e9b04",
+  "slug": "cup",
   "categoryId": "ice-cream",
   "name": "بوظة كاسة",
+  "description": "اختر الحاوية والحجم والنكهة المفضلة لديك",
   "image": "https://cdn.glace.com/products/cup.jpg",
   "sortOrder": 1,
   "available": true,
+  "addons": [
+    { "id": "extra-caramel", "label": "صوص كراميل", "price": 3, "available": true }
+  ],
   "hasAddons": false,
   "hasNotes": true,
   "hasFavorites": false,
@@ -111,17 +117,39 @@ All three endpoints:
 
 | Field | Type | Example | Notes |
 |---|---|---|---|
-| `id` | string | "cup" | Globally unique. Doubles as `/menu/order/{id}` route param. |
+| `id` | string | "b7f1c2a4-…" | **Opaque backend primary key** (auto-increment int or UUID). Referenced by cart/order/favorites, sent back to the API — **never** appears in a URL. Do NOT assume it equals `slug`. |
+| `slug` | string | "cup" | **Stable, URL-safe identifier.** Matched against `/menu/order/{type}` and used to fetch the product (`GET /menu/products/{slug}`). Must be unique and stable — renaming `name` must NOT change it. |
 | `categoryId` | string | "ice-cream" | Foreign key to `IMenuCategory.id`. |
 | `name` | string | "بوظة كاسة" | Product name on order page. |
+| `description` | string | "اختر الحاوية…" | Optional. Short product description shown on the order page. |
 | `image` | string (URL) | "https://..." | Hero image on order page. |
 | `sortOrder` | int | 1 | Order within category. |
 | `available` | boolean | true | If false, product doesn't appear in browse grid and order page shows "غير متوفر". |
-| `hasAddons` | boolean | false | (Unused today, but parsed — set to `false`.) |
+| `addons` | array | see `IAddonOption` | Optional per-unit extras catalog (toppings/sauces). Drives the cart's "تخصيص الإضافات" flow. See below. |
+| `hasAddons` | boolean | false | Legacy flag — superseded by a non-empty `addons` array. |
 | `hasNotes` | boolean | true | Shows "أضف ملاحظة" textarea before qty stepper. |
 | `hasFavorites` | boolean | false | Shows heart favorite button on items (flat-list only). |
 | `hasImageZoom` | boolean | false | Tapping image opens a zoom dialog (flat-list only). |
 | `inStoreOnly` | boolean | false | If true, shows in-store-only warning before order flow (e.g., pancake, waffle). |
+
+#### IAddonOption (additions / إضافات)
+Per-unit extras (with prices) a customer can add to a cart line. The frontend loads a **shared catalog** from `GET /menu/addons` (`useMenuAddons()`) and applies it to any product; a product MAY override it with its own `addons[]` on the product payload. In the cart, the customer can apply one addition set to **all** units of a line, or **different** additions per individual unit (e.g. 4 milkshakes, each with its own toppings). The catalog includes a biscuit (بسكوت) option.
+
+```json
+{ "id": "extra-caramel", "label": "صوص كراميل إضافي", "price": 3, "available": true, "type": "toggle" }
+{ "id": "extra-biscuit", "label": "بسكوت مخروط", "price": 3, "available": true, "type": "counter", "maxQty": 10 }
+```
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | Stable slug for the addon (e.g. `extra-caramel`). |
+| `label` | string | Display name (Arabic). |
+| `price` | number | Per-unit surcharge in ₪, charged **per selected quantity**. |
+| `available` | boolean | Optional. If `false`, hidden from the picker. |
+| `type` | enum | Optional. `"toggle"` (on/off checkbox, default) or `"counter"` (+/- quantity stepper, e.g. extra biscuit ×3). **Set per-addon in the dashboard.** |
+| `maxQty` | int | Optional. Max quantity per unit for `counter` addons. |
+
+> **Cart representation (client-side today):** the cart lives in the browser (localStorage), so per-unit additions are not persisted server-side yet. When the order/checkout endpoint is built, each ordered unit must carry its own selected addon ids + the product's `id` (PK), so a line of quantity N can have up to N distinct addition sets.
 
 ---
 
@@ -170,7 +198,7 @@ Extends `IProductBase` with:
 | `selectionMode` | enum | `"repeatable"` (same flavor ×N times) or `"toggle"` (each flavor ≤1). Cup/Family are repeatable; brad-boza is toggle. |
 | `flavorFamilies` | string[] | Array of `"classic"`, `"special"`, `"mix"`. Order is displayed order. |
 | `pricingLabel` | string | Heading for price table when all sizes share one table (e.g., "أسعار البراد"). Unused if sizes carry `containerId`. |
-| `containerOptions` | array | Containers (e.g., كاسة/بسكوت, كلاسيكس/فلين). Each has `id`, `label`, `available`, optional `name` (override product name), optional `image`, optional `pricingLabel`. |
+| `containerOptions` | array | Containers (e.g., كاسة/بسكوت, بلاستيك/فلين). Each has `id`, `label`, `available`, optional `name` (override product name), optional `image`, optional `pricingLabel`. |
 | `sizes` | array | Size rows. Each has `id`, `label`, `maxBalls` (flavor-ball count; 0 if no picker), `containerId` (optional, filters to one container), `prices` (grid of `{flavorFamily, price}`). |
 | `hasExtraBiscuitAddon` | boolean | If true, qty stepper shows +1/−1 extra-biscuit counter at 1₪ each. |
 | `includesIceCreamStep` | boolean | Brad-boza only. If true, adds extra "أضف بوظة" step after size. |
@@ -241,17 +269,22 @@ Extends `IProductBase` with:
 | تيك اواي | تيك اواي | 3 | 5 | 7 |
 
 #### 2. بوظة عائلي (`family`)
-- **Flow:** container (كلاسيكس/فلين) → size → flavor family → balls → extra-biscuit addon → qty
-- **Containers:** كلاسيكس (available), فلين *(available: false — disabled but shown)*
+- **Flow:** merged container+size selection (بلاستيك/فلين) → flavor family → balls → extra-biscuit addon → qty
+- **Containers:** بلاستيك (available), فلين *(available: false — disabled but shown with "غير متوفر" badge)*
 - **Flavor families:** classic, special, **mix** *(family shows explicit mix column)*
 - **selectionMode:** repeatable
 - **hasExtraBiscuitAddon:** true (1₪ each)
+- **UI:** Merged container+size selection step displays options as cards:
+  - 1/2 لتر بلاستيك
+  - 1 لتر بلاستيك
+  - 1/2 لتر فلين *(unavailable)*
+  - 1 لتر فلين *(unavailable)*
 - **Price table:**
 
 | Container | Size | maxBalls | classic | special | mix |
 |---|---|---|---|---|---|
-| كلاسيكس | 1/2 لتر | 8 | 14 | 18 | 16 |
-| كلاسيكس | 1 لتر | 12 | 28 | 35 | 32 |
+| بلاستيك | 1/2 لتر | 8 | 14 | 18 | 16 |
+| بلاستيك | 1 لتر | 12 | 28 | 35 | 32 |
 | فلين *(disabled)* | 1/2 لتر | 8 | 16 | 20 | 18 |
 | فلين *(disabled)* | 1 لتر | 12 | 31 | 38 | 35 |
 
@@ -336,6 +369,8 @@ Extends `IProductBase` with:
 ### Category: milkshake (1 product)
 
 #### 9. ميلك شيك (`milkshake`) — favorites ✓, zoom ✓
+
+**`addons[]` catalog** (per-unit extras, `IAddonOption`): صوص كراميل إضافي (3), صوص نوتيلا إضافي (4), بندق مبشور (4), قطع أوريو (3), بسكوت لوتس (4), كريمة مخفوقة (2).
 
 | Item | ₪ | available |
 |---|---|---|
@@ -500,7 +535,7 @@ The backend **must** provide a dashboard allowing **real-time control** over:
 ## Error Handling & Edge Cases
 
 1. **Invalid response (non-JSON, malformed data):** Frontend logs error, returns fake data. Never crashes.
-2. **Product not found:** `GET /menu/products/{id}` returns `null` (not 404 or empty object). Frontend renders a graceful "المنتج غير موجود" message.
+2. **Product not found:** `GET /menu/products/{slug}` returns `null` (not 404 or empty object). Frontend renders a graceful "المنتج غير موجود" message.
 3. **Missing optional fields:** Frontend treats missing fields as falsy/default. E.g., no `containerOptions` → no container step.
 4. **Empty lists:** A category with zero products returns `[]` (not `null`). Frontend renders an empty state gracefully.
 5. **Stale availability:** If a flavor is toggled unavailable mid-user-interaction, the picker still renders it (greyed). Real-time reactivity is nice-to-have, not required.
@@ -510,7 +545,9 @@ The backend **must** provide a dashboard allowing **real-time control** over:
 ## Implementation Checklist for Laravel Backend
 
 - [ ] Schema migration: tables for categories, flavors, products, items, sizes, containers, mixes, dashboard roles/permissions
-- [ ] Endpoints: GET `/api/menu/categories`, `GET /api/menu/products`, `GET /api/menu/products/{id}`
+- [ ] Endpoints: GET `/api/menu/categories`, `GET /api/menu/products`, `GET /api/menu/products/{slug}` (route-model-bind by `slug`, not PK), `GET /api/menu/addons`
+- [ ] Products carry a distinct opaque `id` (PK) **and** a unique, stable `slug` (URL identifier) — don't reuse the PK as the slug
+- [ ] Shared additions catalog (`GET /menu/addons` → `IAddonOption[]`, with prices, incl. biscuit) for the cart's per-unit additions flow; optional per-product `addons[]` override on the product payload
 - [ ] Data validation: return only fields specified in this doc; drop/ignore unknown fields
 - [ ] Dashboard UI: category/product/item/flavor CRUD with availability toggles
 - [ ] Seed/fixture: load all 19 products, 23 flavors, 16 categories from this spec exactly
@@ -528,6 +565,7 @@ GET http://localhost:3000/api/menu/products
 GET http://localhost:3000/api/menu/products?category=ice-cream
 GET http://localhost:3000/api/menu/products/cup
 GET http://localhost:3000/api/menu/products/brad-boza
+GET http://localhost:3000/api/menu/addons
 ```
 
 (In production, replace `localhost:3000` with your backend domain.)

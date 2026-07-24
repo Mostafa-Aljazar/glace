@@ -4,7 +4,6 @@ import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import EventsBackground from "@/components/Events/EventsBackground";
-import CartBar from "@/components/Order/CartBar";
 import AddToCartButton from "@/components/Order/AddToCartButton";
 import AddToCartToast from "@/components/Order/AddToCartToast";
 import BackButton from "@/components/Order/BackButton";
@@ -186,6 +185,12 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
     setSelectedFlavorIds([]);
   }
 
+  function selectContainerAndSize(cId: string, sId: string) {
+    setContainerId(cId);
+    setSizeId(sId);
+    setSelectedFlavorIds([]);
+  }
+
   function selectFlavorFamily(family: FlavorFamily) {
     setFlavorFamily(family);
     setSelectedFlavorIds([]);
@@ -244,8 +249,12 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
   }
 
   function handleAddToCart() {
-    if (product.containerOptions && !containerId) return showValidation("اختر النوع");
-    if (!selectedSize) return showValidation("اختر الحجم");
+    if (containerSizesList.length > 0) {
+      if (!containerId || !sizeId) return showValidation("اختر النوع و الحجم");
+    } else {
+      if (product.containerOptions && !containerId) return showValidation("اختر النوع");
+      if (!selectedSize) return showValidation("اختر الحجم");
+    }
     if (hasFlavorStep && selectedFlavorIds.length === 0) return showValidation("اختر الأطعمة");
     if (flavorFamily === "mix") {
       const hasClassic = selectedFlavorIds.some((id) => mixClassicIds.has(id));
@@ -305,6 +314,26 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
     s.prices.some((p) => p.flavorFamily === "special"),
   );
 
+  // Merged container+size selection only for family product
+  const isFamilyProduct = product.slug === "family";
+  const containerSizesList = useMemo(() => {
+    if (!isFamilyProduct || !product.containerOptions?.length) return [];
+    const composite: Array<{ containerId: string; sizeId: string; label: string; available: boolean; image?: string }> = [];
+    for (const container of product.containerOptions) {
+      const containerSizes = product.sizes.filter((s) => !s.containerId || s.containerId === container.id);
+      for (const size of containerSizes) {
+        composite.push({
+          containerId: container.id,
+          sizeId: size.id,
+          label: `${size.label} ${container.label}`,
+          available: container.available,
+          image: container.image ? resolveMenuImageSrc(container.image) : undefined,
+        });
+      }
+    }
+    return composite;
+  }, [product, isFamilyProduct]);
+
   const priceGroups = useMemo(() => {
     const byContainer = new Map<string | undefined, typeof product.sizes>();
     for (const size of product.sizes) {
@@ -328,7 +357,7 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
       <EventsBackground />
       <BackButton onBeforeBack={handleBeforeBack} />
 
-      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-36 max-w-3xl">
+      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-52 lg:pb-36 max-w-3xl">
         <div className="bg-white/17 backdrop-blur-[15px] mb-6 rounded-[28px] overflow-hidden">
           <div className="flex md:flex-row flex-col gap-4 p-5">
             {/* Hero (right side in RTL) */}
@@ -337,7 +366,7 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
                 <h1 className="font-bold text-[24px] text-white sm:text-[28px] leading-tight">
                   {product.name}
                 </h1>
-                <p className="text-[13px] text-white/55">خصّص طلبك خطوة بخطوة</p>
+                <p className="text-[13px] text-white/55">{product.description || "خصّص طلبك خطوة بخطوة"}</p>
               </div>
               <div className="flex items-end gap-1">
                 <Image
@@ -386,29 +415,79 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
           </div>
         </div>
 
-        {product.containerOptions && product.containerOptions.length > 0 && (
-          <StepCard step={stepNumber++} title="اختر النوع" done={!!containerId}>
-            <div className="flex flex-wrap gap-2.5">
-              {product.containerOptions.map((c) => (
-                <Pill
-                  key={c.id}
-                  label={c.label}
-                  active={containerId === c.id}
-                  unavailable={!c.available}
-                  onClick={() => c.available && selectContainer(c.id)}
-                />
+        {containerSizesList.length > 0 ? (
+          <StepCard step={stepNumber++} title="اختر النوع و الحجم" done={!!containerId && !!sizeId}>
+            <div className="flex flex-col gap-3">
+              {containerSizesList.map((option) => (
+                <button
+                  key={`${option.containerId}-${option.sizeId}`}
+                  type="button"
+                  disabled={!option.available}
+                  onClick={() => option.available && selectContainerAndSize(option.containerId, option.sizeId)}
+                  className={`flex items-center justify-between p-4 rounded-[16px] border-2 transition-all ${
+                    !option.available
+                      ? "bg-white/5 border-red-400/50 cursor-not-allowed"
+                      : containerId === option.containerId && sizeId === option.sizeId
+                        ? "bg-glace-yellow border-glace-yellow"
+                        : "bg-white/10 border-white/20 hover:bg-white/15"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {option.image && (
+                      <img
+                        src={option.image}
+                        alt={option.label}
+                        className={`w-14 h-14 object-contain shrink-0 ${!option.available ? "opacity-60" : ""}`}
+                      />
+                    )}
+                    <div className="flex flex-col items-start">
+                      <span className={`text-[14px] font-medium ${
+                        !option.available
+                          ? "text-white/70"
+                          : containerId === option.containerId && sizeId === option.sizeId
+                            ? "text-[#1e6a7f] font-bold"
+                            : "text-white"
+                      }`}>
+                        {option.label}
+                      </span>
+                    </div>
+                  </div>
+                  {!option.available && (
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-500/90 shrink-0">
+                      <span className="text-white text-[9px] font-bold text-center leading-tight">غير<br/>متوفر</span>
+                    </div>
+                  )}
+                </button>
               ))}
             </div>
           </StepCard>
-        )}
+        ) : (
+          <>
+            {product.containerOptions && product.containerOptions.length > 0 && (
+              <StepCard step={stepNumber++} title="اختر النوع" done={!!containerId}>
+                <div className="flex flex-wrap gap-2.5">
+                  {product.containerOptions.map((c) => (
+                    <Pill
+                      key={c.id}
+                      label={c.label}
+                      active={containerId === c.id}
+                      unavailable={!c.available}
+                      onClick={() => c.available && selectContainer(c.id)}
+                    />
+                  ))}
+                </div>
+              </StepCard>
+            )}
 
-        <StepCard step={stepNumber++} title="اختر الحجم" done={!!sizeId}>
-          <div className="flex flex-wrap gap-2.5">
-            {availableSizes.map((s) => (
-              <Pill key={s.id} label={s.label} active={sizeId === s.id} onClick={() => selectSize(s.id)} />
-            ))}
-          </div>
-        </StepCard>
+            <StepCard step={stepNumber++} title="اختر الحجم" done={!!sizeId}>
+              <div className="flex flex-wrap gap-2.5">
+                {availableSizes.map((s) => (
+                  <Pill key={s.id} label={s.label} active={sizeId === s.id} onClick={() => selectSize(s.id)} />
+                ))}
+              </div>
+            </StepCard>
+          </>
+        )}
 
         {hasFlavorStep && (
           <>
@@ -535,7 +614,7 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
         )}
       </div>
 
-      <div className="bottom-23 lg:bottom-0 z-9999997 fixed inset-x-0 bg-linear-to-t from-[#1a6278]/95 to-transparent px-4 pt-6 pb-4 pointer-events-none">
+      <div className="bottom-28 lg:bottom-0 z-9999997 fixed inset-x-0 px-4 pt-6 pb-4 pointer-events-none">
         <div className="flex flex-wrap items-center gap-4 bg-white/18 backdrop-blur-[20px] mx-auto px-5 py-4 border border-white/20 rounded-[24px] max-w-3xl pointer-events-auto">
           <div className="flex items-center gap-1.5 bg-white/15 px-2 py-1 border border-white/25 rounded-full shrink-0">
             <button
@@ -580,7 +659,6 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
         onConfirm={handleConfirmLeave}
       />
 
-      <CartBar />
     </div>
   );
 }

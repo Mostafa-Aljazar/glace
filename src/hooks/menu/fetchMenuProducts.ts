@@ -7,6 +7,7 @@ function isProductBase(value: unknown): value is Record<string, unknown> {
   const p = value as Partial<IProduct>;
   return (
     typeof p.id === "string" &&
+    typeof p.slug === "string" &&
     typeof p.categoryId === "string" &&
     typeof p.name === "string" &&
     p.image != null &&

@@ -1,21 +1,21 @@
 import { guestApi } from "@/lib/axios";
-import { findFakeProductById } from "@/data/fake-data/menu";
+import { findFakeProductBySlug } from "@/data/fake-data/menu";
 import { isProduct } from "@/hooks/menu/fetchMenuProducts";
 import type { IProduct } from "@/types/menu.types";
 
 /**
- * Fetches a single product from `GET /menu/products/{id}`.
+ * Fetches a single product from `GET /menu/products/{slug}`.
  * Falls back to fake data when the API fails; returns `null` if not found.
  */
-export async function fetchMenuProductById(id: string): Promise<IProduct | null> {
+export async function fetchMenuProductBySlug(slug: string): Promise<IProduct | null> {
   try {
-    const res = await guestApi.get<IProduct>(`/menu/products/${id}`);
+    const res = await guestApi.get<IProduct>(`/menu/products/${slug}`);
     if (isProduct(res?.data)) return res.data;
-    return findFakeProductById(id) ?? null;
+    return findFakeProductBySlug(slug) ?? null;
   } catch (e) {
-    console.error(`[fetchMenuProductById:${id}]`, e);
-    return findFakeProductById(id) ?? null;
+    console.error(`[fetchMenuProductBySlug:${slug}]`, e);
+    return findFakeProductBySlug(slug) ?? null;
   }
 }
 
-export default fetchMenuProductById;
+export default fetchMenuProductBySlug;

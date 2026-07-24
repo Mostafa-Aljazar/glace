@@ -28,7 +28,7 @@ function MenuProductCard({ product }: { product: IProduct }) {
 
   return (
     <Link
-      href={`/menu/order/${product.id}`}
+      href={`/menu/order/${product.slug}`}
       className="group relative flex flex-col items-center text-white text-center cursor-pointer select-none"
     >
       <div className="relative bg-white/14 hover:bg-white/22 backdrop-blur-md border border-glace-yellow/80 hover:border-glace-yellow rounded-2xl w-full overflow-hidden transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.25)] duration-300">
@@ -214,7 +214,7 @@ export default function MenuClientPage() {
         className="hidden lg:block top-27.5 left-16 absolute opacity-60 w-20 object-contain pointer-events-none"
       />
 
-      <div className="z-90 relative mx-auto px-4 sm:px-6 lg:px-8 pt-22.5 lg:pt-26.5 pb-4 max-w-screen-2xl">
+      <div className="z-90 relative mx-auto px-4 sm:px-6 lg:px-8 pt-22.5 lg:pt-26.5 pb-28 lg:pb-8 max-w-screen-2xl">
         <div className="relative flex flex-col items-center pt-8 pb-10 sm:pb-14 text-center">
           <div className="hidden top-0 left-0 absolute sm:flex gap-3 opacity-80 pointer-events-none">
             <Image src={iceCreamImg1} alt="" width={60} height={60} className="drop-shadow-lg w-14 h-14 object-contain rotate-[-15deg]" />

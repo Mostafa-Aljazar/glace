@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -10,51 +10,19 @@ import {
   ShoppingCart,
   ArrowRight,
   ChevronLeft,
-  ChevronDown,
-  Check,
   NotebookPen,
-  Sparkles,
+  SlidersHorizontal,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
+import CustomizeAdditionsDialog from "@/components/Cart/CustomizeAdditionsDialog";
+import { useMenuProducts, useMenuAddons } from "@/hooks/menu";
+import { findFakeProductById } from "@/data/fake-data/menu";
+import type { IAddonOption } from "@/types/menu.types";
 import {
   useCartStore,
-  parseAddonLine,
-  calcCatalogAddonTotal,
-  EMPTY_CONE_ADDON,
-  MAX_MULTI_ADDONS,
-  MULTI_CHOICE_ADDONS,
+  getLineItemTotal,
   type CartItem,
 } from "@/store/cartStore";
-
-const CONE_NAME = EMPTY_CONE_ADDON.name;
-
-function formatConeLine(qty: number) {
-  if (qty <= 0) return null;
-  return qty === 1 ? CONE_NAME : `${CONE_NAME} ×${qty}`;
-}
-
-function getConeQty(addonLines: string[]) {
-  const line = addonLines.find((a) => parseAddonLine(a).name === CONE_NAME);
-  return line ? parseAddonLine(line).qty : 0;
-}
-
-function getMultiSelected(addonLines: string[]) {
-  return addonLines
-    .map(parseAddonLine)
-    .filter((a) => a.name !== CONE_NAME)
-    .map((a) => a.name);
-}
-
-function getAddonSummary(addonLines: string[]) {
-  const coneQty = getConeQty(addonLines);
-  const multiSelected = getMultiSelected(addonLines);
-  return [
-    ...(coneQty > 0
-      ? [`${CONE_NAME}${coneQty > 1 ? ` ×${coneQty}` : ""}`]
-      : []),
-    ...multiSelected,
-  ];
-}
 
 function QtyControl({
   value,
@@ -91,18 +59,28 @@ function QtyControl({
   );
 }
 
-function ItemCard({ item, index }: { item: CartItem; index: number }) {
+function ItemCard({
+  item,
+  index,
+  addons,
+}: {
+  item: CartItem;
+  index: number;
+  addons?: IAddonOption[];
+}) {
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
-  const productLine =
-    (item.unitPrice + (item.addonTotal ?? 0)) * item.quantity;
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const productLine = getLineItemTotal(item);
+  const canCustomize = !!addons && addons.length > 0;
 
   return (
     <article
       className="group relative rounded-[22px] border border-white/12 bg-white/[0.09] hover:bg-white/[0.13] hover:border-white/20 p-4 sm:p-5 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
       style={{ animationDelay: `${Math.min(index, 6) * 40}ms` }}
     >
-      <div className="flex gap-4">
+      {/* Header row: image + title + line total */}
+      <div className="flex items-start gap-4">
         <div className="relative flex items-center justify-center shrink-0 size-14 rounded-2xl bg-linear-to-br from-white/20 to-white/5 border border-white/15 overflow-hidden">
           {item.image ? (
             <Image
@@ -121,71 +99,137 @@ function ItemCard({ item, index }: { item: CartItem; index: number }) {
           )}
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3 mb-2">
-            <h3 className="font-bold text-[16px] sm:text-[17px] text-white leading-snug">
-              {item.name}
-            </h3>
-            <p className="shrink-0 font-bold text-[17px] text-glace-yellow tabular-nums">
-              {productLine.toFixed(2)} ₪
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {item.size && (
-              <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
-                {item.size}
-              </span>
-            )}
-            {item.type && (
-              <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
-                {item.type}
-              </span>
-            )}
-            {item.selections
-              .filter((s) => s.kind === "flavor" || s.kind === "mix")
-              .map((s) => (
-                <span
-                  key={`${s.kind}-${s.id}`}
-                  className="bg-glace-yellow/15 text-glace-yellow px-2.5 py-1 rounded-lg text-[11px] font-medium"
-                >
-                  {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
-                </span>
-              ))}
-            {item.selections
-              .filter((s) => s.kind === "addon")
-              .map((s) => (
-                <span
-                  key={`addon-${s.id}`}
-                  className="bg-white/8 px-2.5 py-1 rounded-lg text-[11px] text-white/65"
-                >
-                  {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
-                </span>
-              ))}
-          </div>
-
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-[12px] text-white/50 tabular-nums">
-              {(item.unitPrice + (item.addonTotal ?? 0)).toFixed(2)} ₪ للوحدة
-            </p>
-            <div className="flex items-center gap-2">
-              <QtyControl
-                value={item.quantity}
-                onDec={() => updateQuantity(item.id, item.quantity - 1)}
-                onInc={() => updateQuantity(item.id, item.quantity + 1)}
-              />
-              <button
-                type="button"
-                onClick={() => removeItem(item.id)}
-                aria-label="حذف المنتج"
-                className="flex items-center justify-center size-9 rounded-full border border-rose-400/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/30 hover:border-rose-400/60 hover:text-rose-100 transition cursor-pointer"
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
-          </div>
+        <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+          <h3 className="font-bold text-[16px] sm:text-[17px] text-white leading-snug">
+            {item.name}
+          </h3>
+          <p className="shrink-0 font-bold text-[17px] text-glace-yellow tabular-nums">
+            {productLine.toFixed(2)} ₪
+          </p>
         </div>
       </div>
+
+      {/* Body — full width on mobile, indented beside the image on md+ (image 56px + gap 16px) */}
+      <div className="md:ps-[72px]">
+      <div className="flex flex-wrap gap-1.5 mt-3 mb-3">
+        {item.size && (
+          <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
+            {item.size}
+          </span>
+        )}
+        {item.type && (
+          <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
+            {item.type}
+          </span>
+        )}
+        {item.selections
+          .filter((s) => s.kind === "flavor" || s.kind === "mix")
+          .map((s) => (
+            <span
+              key={`${s.kind}-${s.id}`}
+              className="bg-glace-yellow/15 text-glace-yellow px-2.5 py-1 rounded-lg text-[11px] font-medium"
+            >
+              {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
+            </span>
+          ))}
+        {item.selections
+          .filter((s) => s.kind === "addon")
+          .map((s) => (
+            <span
+              key={`addon-${s.id}`}
+              className="bg-white/8 px-2.5 py-1 rounded-lg text-[11px] text-white/65"
+            >
+              {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
+            </span>
+          ))}
+      </div>
+
+      {item.units &&
+        (() => {
+          // Units with additions first; units without are collapsed into a
+          // single "بدون إضافات ×N" line at the end.
+          const withAddons = item.units.filter((u) =>
+            u.selections.some((s) => s.kind === "addon"),
+          );
+          const withoutCount = item.units.length - withAddons.length;
+          return (
+            <div className="mb-3 space-y-1.5 rounded-[14px] border border-white/10 bg-white/[0.04] p-3">
+              {withAddons.map((unit, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-2 text-[12px] leading-relaxed"
+                >
+                  <span className="shrink-0 font-bold text-glace-yellow/90">
+                    وحدة {i + 1}:
+                  </span>
+                  <span className="text-white/65">
+                    {unit.selections
+                      .filter((s) => s.kind === "addon")
+                      .map((s) => (s.qty > 1 ? `${s.label} ×${s.qty}` : s.label))
+                      .join("، ")}
+                  </span>
+                </div>
+              ))}
+              {withoutCount > 0 && (
+                <div className="flex items-center gap-2 text-[12px] leading-relaxed">
+                  <span className="font-bold text-glace-yellow/90">بدون إضافات</span>
+                  <span className="text-glace-yellow/90 tabular-nums">
+                    ×{withoutCount}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center justify-between gap-3">
+          {item.units ? (
+            <p className="text-[12px] text-glace-yellow/90">
+              {item.quantity} وحدات · إضافات مخصّصة
+            </p>
+          ) : (
+            <p className="text-[12px] text-glace-yellow/90 tabular-nums">
+              {(item.unitPrice + (item.addonTotal ?? 0)).toFixed(2)} ₪ للوحدة
+            </p>
+          )}
+          <div className="flex items-center gap-2 shrink-0">
+            <QtyControl
+              value={item.quantity}
+              onDec={() => updateQuantity(item.id, item.quantity - 1)}
+              onInc={() => updateQuantity(item.id, item.quantity + 1)}
+            />
+            <button
+              type="button"
+              onClick={() => removeItem(item.id)}
+              aria-label="حذف المنتج"
+              className="flex items-center justify-center size-9 rounded-full border border-rose-400/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/30 hover:border-rose-400/60 hover:text-rose-100 transition cursor-pointer"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        </div>
+        {canCustomize && (
+          <button
+            type="button"
+            onClick={() => setCustomizeOpen(true)}
+            className="flex w-full sm:w-auto sm:self-start items-center justify-center gap-1.5 rounded-full border border-glace-yellow/40 bg-glace-yellow/12 px-3 py-2.5 text-[12px] font-bold text-glace-yellow hover:bg-glace-yellow/22 transition cursor-pointer"
+          >
+            <SlidersHorizontal size={14} />
+            تخصيص الإضافات
+          </button>
+        )}
+      </div>
+      </div>
+
+      {canCustomize && (
+        <CustomizeAdditionsDialog
+          open={customizeOpen}
+          item={item}
+          addons={addons ?? []}
+          onClose={() => setCustomizeOpen(false)}
+        />
+      )}
     </article>
   );
 }
@@ -221,266 +265,33 @@ function CartOrderNote() {
   );
 }
 
-function AddonChip({
-  selected,
-  disabled,
-  label,
-  price,
-  onClick,
-}: {
-  selected: boolean;
-  disabled?: boolean;
-  label: string;
-  price: number;
-  onClick: () => void;
-}) {
+function CartLoading() {
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[14px] border text-right transition ${
-        selected
-          ? "bg-glace-yellow/18 border-glace-yellow/60 shadow-[0_0_0_1px_rgba(244,228,81,0.15)]"
-          : disabled
-            ? "opacity-30 cursor-not-allowed bg-white/5 border-white/8"
-            : "bg-white/8 border-white/12 hover:bg-white/12 hover:border-white/25 cursor-pointer"
-      }`}
-    >
-      <span
-        className={`flex items-center justify-center size-5 rounded-md border-2 shrink-0 ${
-          selected
-            ? "bg-glace-yellow border-glace-yellow"
-            : "border-white/35"
-        }`}
-      >
-        {selected && (
-          <Check size={11} className="text-[#1e6a7f]" strokeWidth={3} />
-        )}
-      </span>
-      <span className="flex-1 font-medium text-[13px] text-white truncate">
-        {label}
-      </span>
-      <span className="shrink-0 text-[12px] font-bold text-white/70 tabular-nums">
-        {price} ₪
-      </span>
-    </button>
-  );
-}
-
-function CartAddonsSection() {
-  const [open, setOpen] = useState(false);
-  const lockScrollY = useRef<number | null>(null);
-  const cartAddons = useCartStore((s) => s.cartAddons);
-  const cartAddonTotal = useCartStore((s) => s.cartAddonTotal);
-  const setCartAddons = useCartStore((s) => s.setCartAddons);
-
-  const summaryParts = getAddonSummary(cartAddons);
-  const coneQty = getConeQty(cartAddons);
-  const multiSelected = getMultiSelected(cartAddons);
-  const nutAddons = MULTI_CHOICE_ADDONS.filter((a) => !a.name.startsWith("صوص"));
-  const sauceAddons = MULTI_CHOICE_ADDONS.filter((a) =>
-    a.name.startsWith("صوص"),
-  );
-
-  useLayoutEffect(() => {
-    if (lockScrollY.current == null) return;
-    const y = lockScrollY.current;
-    lockScrollY.current = null;
-
-    let raf = 0;
-    const start = performance.now();
-    const hold = (now: number) => {
-      window.scrollTo({ top: y, left: 0, behavior: "auto" });
-      // Hold through the 300ms grid expand so scroll anchoring cannot jump
-      if (now - start < 320) raf = requestAnimationFrame(hold);
-    };
-    raf = requestAnimationFrame(hold);
-    return () => cancelAnimationFrame(raf);
-  }, [open]);
-
-  function commitAddons(cone: number, multi: string[]) {
-    const safeCone = Math.max(0, Math.min(cone, 20));
-    const safeMulti = multi.slice(0, MAX_MULTI_ADDONS);
-    const next: string[] = [];
-    const coneLine = formatConeLine(safeCone);
-    if (coneLine) next.push(coneLine);
-    next.push(...safeMulti);
-    setCartAddons(next, calcCatalogAddonTotal(next));
-  }
-
-  function setConeQty(nextQty: number) {
-    commitAddons(nextQty, multiSelected);
-  }
-
-  function toggleMulti(name: string) {
-    if (multiSelected.includes(name)) {
-      commitAddons(
-        coneQty,
-        multiSelected.filter((n) => n !== name),
-      );
-      return;
-    }
-    if (multiSelected.length >= MAX_MULTI_ADDONS) return;
-    commitAddons(coneQty, [...multiSelected, name]);
-  }
-
-  function toggleOpen() {
-    lockScrollY.current = window.scrollY;
-    setOpen((v) => !v);
-  }
-
-  return (
-    <section className="rounded-[28px] border border-white/12 bg-white/12 backdrop-blur-xl overflow-hidden [overflow-anchor:none]">
-      <button
-        type="button"
-        onClick={toggleOpen}
-        onMouseDown={(e) => {
-          // Avoid focus scrollIntoView when the panel expands
-          if (e.button === 0) e.preventDefault();
-        }}
-        aria-expanded={open}
-        className="w-full flex items-center gap-3 p-5 sm:p-6 text-right hover:bg-white/[0.04] transition cursor-pointer"
-      >
-        <div className="flex items-center justify-center size-10 rounded-xl bg-glace-yellow/15 border border-glace-yellow/25 text-glace-yellow shrink-0">
-          <Sparkles size={18} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <h2 className="text-white text-[18px] font-bold">إضافات الطلب</h2>
-            <span className="text-[11px] text-white/45">مرة واحدة</span>
-          </div>
-          <p className="text-[13px] text-white/55 truncate">
-            {summaryParts.length > 0
-              ? summaryParts.join(" · ")
-              : "بسكوت · مكسرات · صوصات"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {cartAddonTotal > 0 && (
-            <span className="font-bold text-[14px] text-glace-yellow tabular-nums">
-              +{cartAddonTotal} ₪
-            </span>
-          )}
-          <ChevronDown
-            size={18}
-            className={`text-white/50 transition-transform duration-300 ${
-              open ? "rotate-180" : ""
-            }`}
-          />
-        </div>
-      </button>
-
-      <div
-        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-        }`}
-      >
-        <div className="overflow-hidden">
-          <div className="px-5 sm:px-6 pb-5 sm:pb-6 space-y-5 border-t border-white/10">
-            <div className="pt-4">
-              <p className="mb-2.5 text-[12px] font-medium text-white/50">
-                بسكوت مخروط
-              </p>
-              <div className="flex items-center gap-3 rounded-[18px] border border-white/12 bg-white/8 px-4 py-3.5">
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-[14px] text-white">{CONE_NAME}</p>
-                  <p className="text-[12px] text-white/50 mt-0.5 tabular-nums">
-                    {EMPTY_CONE_ADDON.price} ₪ للقطعة
-                    {coneQty > 0 && (
-                      <span className="text-glace-yellow">
-                        {" "}
-                        · {coneQty * EMPTY_CONE_ADDON.price} ₪
-                      </span>
-                    )}
-                  </p>
+    <div className="flex flex-col gap-6">
+      <section className="rounded-[28px] border border-white/12 bg-white/12 backdrop-blur-xl p-5 sm:p-6">
+        <div className="h-6 w-28 bg-white/15 rounded-lg animate-pulse mb-5" />
+        <div className="flex flex-col gap-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="rounded-[22px] border border-white/12 bg-white/[0.06] p-4 sm:p-5 animate-pulse"
+            >
+              <div className="flex items-start gap-4">
+                <div className="size-14 rounded-2xl bg-white/12 shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="h-5 w-1/2 bg-white/12 rounded-lg" />
+                  <div className="h-4 w-1/4 bg-white/10 rounded-lg" />
                 </div>
-                <QtyControl
-                  value={coneQty}
-                  onDec={() => setConeQty(coneQty - 1)}
-                  onInc={() => setConeQty(coneQty + 1)}
-                  disabledDec={coneQty <= 0}
-                />
+              </div>
+              <div className="mt-4 flex items-center justify-between">
+                <div className="h-4 w-24 bg-white/10 rounded-lg" />
+                <div className="h-9 w-28 bg-white/10 rounded-full" />
               </div>
             </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <p className="text-[12px] font-medium text-white/50">
-                  مكسرات وصوصات
-                </p>
-                <p
-                  className={`text-[12px] font-bold tabular-nums ${
-                    multiSelected.length >= MAX_MULTI_ADDONS
-                      ? "text-glace-yellow"
-                      : "text-white/40"
-                  }`}
-                >
-                  {multiSelected.length}/{MAX_MULTI_ADDONS}
-                </p>
-              </div>
-
-              {nutAddons.length > 0 && (
-                <div className="mb-3">
-                  <p className="mb-2 text-[11px] text-white/35">مكسرات</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {nutAddons.map((addon) => {
-                      const selected = multiSelected.includes(addon.name);
-                      return (
-                        <AddonChip
-                          key={addon.id}
-                          selected={selected}
-                          disabled={
-                            !selected &&
-                            multiSelected.length >= MAX_MULTI_ADDONS
-                          }
-                          label={addon.name}
-                          price={addon.price}
-                          onClick={() => toggleMulti(addon.name)}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {sauceAddons.length > 0 && (
-                <div>
-                  <p className="mb-2 text-[11px] text-white/35">صوصات</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {sauceAddons.map((addon) => {
-                      const selected = multiSelected.includes(addon.name);
-                      return (
-                        <AddonChip
-                          key={addon.id}
-                          selected={selected}
-                          disabled={
-                            !selected &&
-                            multiSelected.length >= MAX_MULTI_ADDONS
-                          }
-                          label={addon.name}
-                          price={addon.price}
-                          onClick={() => toggleMulti(addon.name)}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {cartAddonTotal > 0 && (
-              <div className="flex items-center justify-between rounded-[16px] bg-glace-yellow/10 border border-glace-yellow/20 px-4 py-3">
-                <p className="text-[13px] text-white/70">مجموع الإضافات</p>
-                <p className="font-bold text-[16px] text-glace-yellow tabular-nums">
-                  +{cartAddonTotal} ₪
-                </p>
-              </div>
-            )}
-          </div>
+          ))}
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
 
@@ -514,12 +325,10 @@ function EmptyCart() {
 
 function OrderSummary() {
   const itemsSubtotal = useCartStore((s) => s.itemsSubtotal);
-  const cartAddonTotal = useCartStore((s) => s.cartAddonTotal);
-  const cartAddons = useCartStore((s) => s.cartAddons);
   const subtotal = useCartStore((s) => s.subtotal);
 
   return (
-    <aside className="lg:sticky lg:top-28 rounded-[28px] border border-white/15 bg-white/14 backdrop-blur-xl p-6 text-white shadow-[0_20px_50px_rgba(0,0,0,0.12)]">
+    <aside className="rounded-[28px] border border-white/15 bg-white/14 backdrop-blur-xl p-6 text-white shadow-[0_20px_50px_rgba(0,0,0,0.12)]">
       <h2 className="text-[20px] font-bold mb-5">ملخص الطلب</h2>
 
       <div className="space-y-3 mb-5">
@@ -529,20 +338,6 @@ function OrderSummary() {
             {itemsSubtotal().toFixed(2)} ₪
           </span>
         </div>
-
-        {cartAddonTotal > 0 && (
-          <div className="rounded-[14px] bg-white/6 border border-white/10 px-3 py-2.5 space-y-1.5">
-            <div className="flex justify-between text-[14px]">
-              <span className="text-white/65">إضافات السلة</span>
-              <span className="font-semibold text-glace-yellow tabular-nums">
-                +{cartAddonTotal.toFixed(2)} ₪
-              </span>
-            </div>
-            <p className="text-[11px] text-white/45 leading-relaxed">
-              {getAddonSummary(cartAddons).join(" · ")}
-            </p>
-          </div>
-        )}
       </div>
 
       <div className="h-px bg-white/15 mb-5" />
@@ -573,6 +368,44 @@ export default function CartClientPage() {
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clearCart);
   const totalPieces = items.reduce((sum, i) => sum + i.quantity, 0);
+
+  // The cart is persisted to localStorage and hydrates asynchronously — show a
+  // loading state until then so the empty view doesn't flash on first paint.
+  // Only touch `persist` in an effect: it is undefined during SSR/prerender.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    const persistApi = useCartStore.persist;
+    if (!persistApi) {
+      setHydrated(true);
+      return;
+    }
+    if (persistApi.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    return persistApi.onFinishHydration(() => setHydrated(true));
+  }, []);
+
+  // Shared additions catalog from the backend (GET /menu/addons), with a
+  // fake-data fallback — the options offered in the "تخصيص الإضافات" flow.
+  const { data: sharedAddons } = useMenuAddons();
+
+  // A product MAY still ship its own addons catalog (overrides the shared one).
+  const { data: products } = useMenuProducts();
+  const addonsByProductId = new Map<string, IAddonOption[]>(
+    (products ?? [])
+      .filter((p) => p.addons && p.addons.length > 0)
+      .map((p) => [p.id, p.addons as IAddonOption[]]),
+  );
+
+  function resolveAddons(productId: string): IAddonOption[] {
+    // Product-specific override wins (query first, then fake data — robust
+    // against a stale query cache); otherwise the shared backend catalog.
+    const productSpecific =
+      addonsByProductId.get(productId) ?? findFakeProductById(productId)?.addons;
+    if (productSpecific && productSpecific.length > 0) return productSpecific;
+    return sharedAddons ?? [];
+  }
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[radial-gradient(ellipse_at_top,#4eb4d4_0%,#388dab_45%,#2f7a96_100%)]">
@@ -605,11 +438,13 @@ export default function CartClientPage() {
           </div>
         </header>
 
-        {items.length === 0 ? (
+        {!hydrated ? (
+          <CartLoading />
+        ) : items.length === 0 ? (
           <EmptyCart />
         ) : (
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-            <div className="flex-1 w-full flex flex-col gap-5 min-w-0">
+          <div className="flex flex-col gap-6">
+            <div className="w-full flex flex-col gap-5 min-w-0">
               {/* Products */}
               <section className="rounded-[28px] border border-white/12 bg-white/12 backdrop-blur-xl p-5 sm:p-6">
                 <div className="flex items-center justify-between mb-5">
@@ -625,7 +460,12 @@ export default function CartClientPage() {
                 </div>
                 <div className="flex flex-col gap-3">
                   {items.map((item, index) => (
-                    <ItemCard key={item.id} item={item} index={index} />
+                    <ItemCard
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      addons={resolveAddons(item.productId)}
+                    />
                   ))}
                 </div>
               </section>
@@ -652,11 +492,10 @@ export default function CartClientPage() {
                 />
               </Link>
 
-              <CartAddonsSection />
               <CartOrderNote />
             </div>
 
-            <div className="w-full lg:w-[340px] shrink-0">
+            <div className="w-full">
               <OrderSummary />
             </div>
           </div>

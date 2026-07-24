@@ -1,12 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Heart } from "lucide-react";
 import { useFavoritesStore } from "@/store/favoritesStore";
 
 export default function FloatingFavoritesButton() {
+  const pathname = usePathname();
   const favoriteIds = useFavoritesStore((s) => s.ids);
   const favoriteCount = favoriteIds.length;
+
+  // Order pages render their own fixed bottom "أضف للسلة" bar (plus per-item
+  // heart toggles), so the floating shortcut would overlap it — hide it there.
+  if (pathname?.startsWith("/menu/order/")) return null;
 
   return (
     <Link

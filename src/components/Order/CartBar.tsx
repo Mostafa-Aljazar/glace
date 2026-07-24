@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
-import { bgOrderD, iceImg1M, iceImg2M } from "@/assets/images";
+import { bgOrderD } from "@/assets/images";
 import { useCartStore } from "@/store/cartStore";
 
 export default function CartBar() {
@@ -16,20 +16,6 @@ export default function CartBar() {
     <div className="lg:hidden z-[200] fixed bottom-[92px] left-0 rounded-[20px_20px_0_0] w-full shadow-[0_0_8px_rgba(0,0,0,0.19)]">
       <div className="relative flex items-center overflow-hidden h-[80px]">
         <Image src={bgOrderD} alt="" fill className="object-cover" />
-        <Image
-          src={iceImg1M}
-          alt=""
-          width={50}
-          height={60}
-          className="right-[10%] bottom-0 absolute z-[1] h-[60px] object-contain"
-        />
-        <Image
-          src={iceImg2M}
-          alt=""
-          width={50}
-          height={60}
-          className="left-[10%] bottom-0 absolute z-[1] h-[60px] object-contain"
-        />
         <div className="z-[2] relative flex justify-between items-center mx-auto w-[85%] max-w-[85%]">
           <div className="flex items-center gap-2 text-white">
             <ShoppingCart size={22} />

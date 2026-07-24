@@ -281,20 +281,32 @@ paths:
                 items:
                   $ref: "#/components/schemas/IProduct"
               example:
-                - id: pancake
+                - id: "a1c3e5f7-1111-4b22-9c33-aa44bb55cc66"
+                  slug: pancake
                   categoryId: pancake
                   kind: flat-list
                   name: بان كيك
+                  description: بان كيك طازج بنكهات متنوعة
                   image: https://cdn.example.com/menu/pancake.jpg
                   sortOrder: 1
                   available: true
                   inStoreOnly: true
                   hasFavorites: true
                   hasNotes: true
+                  addons:
+                    - id: extra-nutella
+                      label: صوص نوتيلا إضافي
+                      price: 4
+                      available: true
+                    - id: extra-nuts
+                      label: بندق مبشور
+                      price: 4
+                      available: true
                   items:
                     - label: نوتيلا
                       price: 11
                       available: true
+                      description: بان كيك بصوص النوتيلا
                     - label: لوتس
                       price: 13
                       available: true
@@ -310,7 +322,8 @@ paths:
                       flavorPrice: 7
                       premiumFlavorPrice: 11
                       flavorOptionIds: [نوتيلا, لوتس, بيستاشيو]
-                - id: cup
+                - id: "b7f1c2a4-9e3d-4a10-8c21-3f5a2d1e9b04"
+                  slug: cup
                   categoryId: ice-cream
                   kind: builder
                   name: بوظة كاسة
@@ -342,19 +355,23 @@ paths:
         "500":
           $ref: "#/components/responses/ServerError"
 
-  /menu/products/{id}:
+  /menu/products/{slug}:
     get:
       tags: [Menu]
-      summary: Get product by id
+      summary: Get product by slug
       description: |
-        Public product detail for `/menu/order/{type}` (`id` doubles as the
-        route's `type` param). Matches TypeScript `IProduct`.
-      operationId: getMenuProductById
+        Public product detail for `/menu/order/{type}` — looked up by the
+        product's **`slug`** column (route-model-bind on `slug`, NOT the
+        primary key). In Laravel: `Route::get('products/{product:slug}', ...)`.
+        The response's `id` is still the internal PK to send back when
+        POSTing cart/order data. Matches TypeScript `IProduct`.
+      operationId: getMenuProductBySlug
       security: []
       parameters:
-        - name: id
+        - name: slug
           in: path
           required: true
+          description: Stable URL-safe identifier (`IProductBase.slug`)
           schema:
             type: string
           example: cup
@@ -366,7 +383,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/IProduct"
               example:
-                id: cup
+                id: "b7f1c2a4-9e3d-4a10-8c21-3f5a2d1e9b04"
+                slug: cup
                 categoryId: ice-cream
                 kind: builder
                 name: بوظة كاسة
@@ -399,6 +417,47 @@ paths:
                         price: 4
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /menu/addons:
+    get:
+      tags: [Menu]
+      summary: List additions catalog
+      description: |
+        Public shared additions (إضافات) catalog — the per-unit extras a
+        customer can attach to a cart line (e.g. sauces, nuts, biscuit), each
+        with its own price. Applied to any product in the cart's
+        "تخصيص الإضافات" flow. A product MAY override this shared list with its
+        own `IProductBase.addons`. Matches TypeScript `IAddonOption[]`.
+      operationId: getMenuAddons
+      security: []
+      responses:
+        "200":
+          description: Additions catalog (`IAddonOption[]`)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IAddonOption"
+              example:
+                - id: extra-biscuit
+                  label: بسكوت مخروط
+                  price: 3
+                  available: true
+                  type: counter
+                  maxQty: 10
+                - id: extra-caramel
+                  label: صوص كراميل
+                  price: 3
+                  available: true
+                  type: toggle
+                - id: extra-nuts
+                  label: بندق مبشور
+                  price: 4
+                  available: true
+                  type: toggle
         "500":
           $ref: "#/components/responses/ServerError"
 
@@ -1170,11 +1229,21 @@ components:
     IProductBase:
       type: object
       description: Fields shared by every IProduct variant (see the `kind` discriminator on IProduct)
-      required: [id, categoryId, name, image, sortOrder, available]
+      required: [id, slug, categoryId, name, image, sortOrder, available]
       properties:
         id:
           type: string
-          description: Globally unique — doubles as the /menu/order/[type] route param
+          description: |
+            Opaque backend primary key (auto-increment int or UUID). Used for
+            cart/order/favorites references sent back to the API — NEVER
+            rendered in a URL. Do not assume it equals `slug`.
+          example: "a1c3e5f7-1111-4b22-9c33-aa44bb55cc66"
+        slug:
+          type: string
+          description: |
+            Stable, URL-safe identifier matched against `/menu/order/{type}`
+            and used to fetch the product (`GET /menu/products/{slug}`). Must be
+            unique and stable — renaming the display `name` must NOT change it.
           example: pancake
         categoryId:
           type: string
@@ -1182,6 +1251,10 @@ components:
         name:
           type: string
           example: بان كيك
+        description:
+          type: string
+          description: Short product description shown on the order page
+          example: بان كيك طازج بنكهات متنوعة
         image:
           type: string
           format: uri
@@ -1190,8 +1263,18 @@ components:
           example: 1
         available:
           type: boolean
+        addons:
+          type: array
+          description: |
+            Optional per-unit extras a customer can add to this product
+            (toppings, sauces...). Drives the cart's "تخصيص الإضافات" flow,
+            where the additions can be applied uniformly to all units or
+            differently per individual unit.
+          items:
+            $ref: "#/components/schemas/IAddonOption"
         hasAddons:
           type: boolean
+          description: Legacy flag — superseded by a non-empty `addons` array.
         hasNotes:
           type: boolean
         hasFavorites:
@@ -1201,6 +1284,41 @@ components:
         inStoreOnly:
           type: boolean
           description: Shows an in-store-only warning before entering the order flow
+
+    IAddonOption:
+      type: object
+      description: |
+        Matches TypeScript `IAddonOption` — one optional per-unit extra, served
+        by `GET /menu/addons` and/or a product's `addons` catalog. Each addon's
+        `type` (set in the dashboard) decides how it's picked in the cart:
+        `toggle` (on/off) or `counter` (a quantity stepper, e.g. extra biscuit).
+      required: [id, label, price]
+      properties:
+        id:
+          type: string
+          description: Stable slug for the addon
+          example: extra-caramel
+        label:
+          type: string
+          example: صوص كراميل إضافي
+        price:
+          type: number
+          description: Per-unit surcharge (₪), charged per selected quantity
+          example: 3
+        available:
+          type: boolean
+        type:
+          type: string
+          enum: [toggle, counter]
+          default: toggle
+          description: |
+            How the customer picks this addon — `toggle` (on/off checkbox,
+            default) or `counter` (+/- quantity stepper, e.g. extra biscuit ×3).
+          example: toggle
+        maxQty:
+          type: integer
+          description: Optional cap for `counter` addons (max quantity per unit)
+          example: 10
 
     IBuilderProduct:
       description: Matches TypeScript `IBuilderProduct` — the size/flavor "wizard" template (cup, family, brad, brad-boza)
