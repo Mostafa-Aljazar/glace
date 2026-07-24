@@ -19,7 +19,7 @@ export default function TimesWorkSection({
   return (
     <section
       id="timesWork"
-      className="relative -mt-[50px] lg:-mt-[50px] max-lg:mt-0 pt-52 lg:pt-52 max-lg:pt-25 pb-48 max-lg:pb-36 min-h-125 overflow-hidden"
+      className="relative z-[2] -mt-[50px] lg:-mt-[50px] max-lg:mt-0 pt-52 lg:pt-52 max-lg:pt-25 pb-28 max-lg:pb-24 min-h-125 overflow-hidden"
       style={{
         background:
           "radial-gradient(circle, rgba(136,103,91,1) 6%, rgba(83,53,42,1) 100%)",
@@ -142,13 +142,12 @@ export default function TimesWorkSection({
         </div>
       </div>
 
-      {/* bottom wave */}
-      <Image
-        src={imgbgBS}
+      {/* bottom food curve into Events — blue → white, transparent keeps brown drips */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imgbgBS.src}
         alt=""
-        width={1920}
-        height={200}
-        className="bottom-[-20px] absolute w-full h-auto"
+        className="-bottom-px left-0 z-[5] absolute w-full h-auto pointer-events-none select-none brightness-0 invert"
       />
     </section>
   );

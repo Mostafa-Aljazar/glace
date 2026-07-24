@@ -6,7 +6,6 @@ import AboutSection from "@/components/Home/AboutSection";
 import WhyGlaceSection from "@/components/Home/WhyGlaceSection";
 import TimesWorkSection from "@/components/Home/TimesWorkSection";
 import EventsSection from "@/components/Home/EventsSection";
-import OpinionsSection from "@/components/Home/OpinionsSection";
 import Footer from "@/components/Common/Footer";
 import { useHomePage } from "@/hooks/home/useHomePage";
 import { FAKE_HOME_PAGE } from "@/data/fake-data/homePage";
@@ -25,7 +24,6 @@ export default function HomeClientPage() {
       <WhyGlaceSection whyGlace={data.whyGlace} />
       <TimesWorkSection branchesData={data.branches} />
       <EventsSection eventsData={data.events} />
-      <OpinionsSection opinionsData={data.opinions} />
       <Footer />
     </div>
   );

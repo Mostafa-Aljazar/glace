@@ -21,8 +21,6 @@ import {
   i2,
   i3,
   i4,
-  imgp,
-  islamSobhi,
 } from "@/assets/images";
 import type { IHomePageData, ISlideData } from "@/types/home.types";
 
@@ -221,29 +219,6 @@ export const FAKE_HOME_PAGE: IHomePageData = {
         title: "تقدم إدارة جلاسيه بالشكر و التقدير لكل فرد",
         image: i4,
         href: "/events/4",
-      },
-    ],
-  },
-  opinions: {
-    title: "رأيك يهمنا!",
-    items: [
-      {
-        id: 1,
-        name: "Ibrahim S. Alfayoumi",
-        text: "جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات",
-        image: imgp,
-      },
-      {
-        id: 2,
-        name: "Islam Sobhi",
-        text: "جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات",
-        image: islamSobhi,
-      },
-      {
-        id: 3,
-        name: "Ibrahim S. Alfayoumi",
-        text: "جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات",
-        image: imgp,
       },
     ],
   },

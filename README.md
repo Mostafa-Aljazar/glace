@@ -115,11 +115,11 @@ See `src/hooks/auth/` for implementations.
 
 ### 1. Home page ↔ `GET /home`
 
-- Aggregate payload: `hero`, `about`, `whyGlace`, `branches`, `events`, `opinions`
+- Aggregate payload: `hero`, `about`, `whyGlace`, `branches`, `events`
 - Types: `src/types/home.types.ts`
 - Fake: `src/data/fake-data/homePage.ts` (`FAKE_HOME_PAGE`), hero slides in `src/data/fake-data/heroSlides.ts`
 - Hooks: `src/hooks/home/` — `useHomePage`, plus `useHeroSlides` (shares the `useHomePage` cache instead of refetching)
-- UI: `HomeClientPage` loads once and passes data into `HeroSection` / `AboutSection` / `WhyGlaceSection` / `TimesWorkSection` / `EventsSection` / `OpinionsSection` — hardcoded section content was removed from those components in favor of the fetched payload
+- UI: `HomeClientPage` loads once and passes data into `HeroSection` / `AboutSection` / `WhyGlaceSection` / `TimesWorkSection` / `EventsSection` — hardcoded section content was removed from those components in favor of the fetched payload
 
 ### 2. Events ↔ `GET /events`, `GET /events/{id}`
 

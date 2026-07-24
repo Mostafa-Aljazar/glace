@@ -67,18 +67,6 @@ export interface IHomeEventsData {
   moreHref: string;
 }
 
-export interface IHomeOpinion {
-  id: number;
-  name: string;
-  text: string;
-  image: HomeImage;
-}
-
-export interface IHomeOpinionsData {
-  title: string;
-  items: IHomeOpinion[];
-}
-
 /** Full payload for `GET /home` — one request for the entire home page. */
 export interface IHomePageData {
   hero: {
@@ -88,7 +76,6 @@ export interface IHomePageData {
   whyGlace: IHomeWhyGlaceData;
   branches: IHomeBranchesData;
   events: IHomeEventsData;
-  opinions: IHomeOpinionsData;
 }
 
 export function resolveHomeImageSrc(image: HomeImage): string {

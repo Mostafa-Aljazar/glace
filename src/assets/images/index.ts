@@ -80,6 +80,7 @@ import imdDetails from "./imdDetails.png";
 import imgA from "./imgA.png";
 import imgBtn from "./imgBtn.svg";
 import imgBtnB from "./imgBtnB.svg";
+import imgBtnBrown from "./imgBtnBrown.svg";
 import imgChamcerCI from "./imgChamcerCI.png";
 import imgError301 from "./imgError301.png";
 import imgError404 from "./imgError404.png";
@@ -184,7 +185,7 @@ export {
   iceC, iceCreamImg1, iceCreamImg2, iceCreamImg3, iceCreamImg4,
   iceCreamImg5, iceCreamImg6, iceImg1, iceImg1M, iceImg2, iceImg2M,
   iceN, ii1, ii5, ii6, ii8, imageHeaderT, imageHeaderTMob, imdDetails,
-  imgA, imgBtn, imgBtnB, imgChamcerCI, imgError301, imgError404,
+  imgA, imgBtn, imgBtnB, imgBtnBrown, imgChamcerCI, imgError301, imgError404,
   imgError500, imgGlace, imgI, imgIcee, imgIesC, imgIesP, imgIesPP,
   imgJobApplication, imgL, imgLB, imgMenuI, imgMenuNav, imgPL, imgPR,
   imgTimesWorkSec, imgWhyGlace, imgbgBS, imgbgI, imgp, imgpp, imgpp2,

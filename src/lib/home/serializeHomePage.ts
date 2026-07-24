@@ -6,7 +6,6 @@ import type {
   IHomeWhyGlaceData,
   IHomeBranchesData,
   IHomeEventsData,
-  IHomeOpinionsData,
 } from "@/types/home.types";
 import { resolveHomeImageSrc } from "@/types/home.types";
 
@@ -17,7 +16,6 @@ export interface IApiHomePageData {
   whyGlace: IApiHomeWhyGlaceData;
   branches: IApiHomeBranchesData;
   events: IApiHomeEventsData;
-  opinions: IApiHomeOpinionsData;
 }
 
 export interface IApiSlideData extends Omit<
@@ -44,11 +42,6 @@ export interface IApiHomeBranchesData extends IHomeBranchesData {}
 export interface IApiHomeEventsData
   extends Omit<IHomeEventsData, "items"> {
   items: { id: number; title: string; image: string; href: string }[];
-}
-
-export interface IApiHomeOpinionsData
-  extends Omit<IHomeOpinionsData, "items"> {
-  items: { id: number; name: string; text: string; image: string }[];
 }
 
 function img(image: HomeImage): string {
@@ -84,13 +77,6 @@ export function toApiHomePage(data: IHomePageData): IApiHomePageData {
       items: data.events.items.map((e) => ({
         ...e,
         image: img(e.image),
-      })),
-    },
-    opinions: {
-      ...data.opinions,
-      items: data.opinions.items.map((o) => ({
-        ...o,
-        image: img(o.image),
       })),
     },
   };

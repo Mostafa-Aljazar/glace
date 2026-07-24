@@ -11,8 +11,7 @@ function isHomePageData(value: unknown): value is IHomePageData {
     !!data.about &&
     !!data.whyGlace &&
     !!data.branches?.branches &&
-    !!data.events?.items &&
-    !!data.opinions?.items
+    !!data.events?.items
   );
 }
 

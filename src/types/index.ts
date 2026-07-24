@@ -26,13 +26,6 @@ export interface EventCard {
   href: string;
 }
 
-export interface Opinion {
-  id: number;
-  name: string;
-  text: string;
-  image: HomeImage;
-}
-
 export interface Branch {
   id: string;
   label: string;

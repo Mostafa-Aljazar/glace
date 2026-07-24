@@ -33,7 +33,7 @@ paths:
       summary: Get home page content
       description: |
         Public aggregate endpoint for the entire home page.
-        Returns hero slides, about, why-glace, branches, events, and opinions
+        Returns hero slides, about, why-glace, branches, and events
         in a single response so the frontend can load the page with one request.
       operationId: getHomePage
       security: []
@@ -95,13 +95,6 @@ paths:
                       title: مشارك معرض الصناعات الغذائية الفلسطينية
                       image: https://cdn.example.com/home/events/1.png
                       href: /events/1
-                opinions:
-                  title: رأيك يهمنا!
-                  items:
-                    - id: 1
-                      name: Ibrahim S. Alfayoumi
-                      text: جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات
-                      image: https://cdn.example.com/home/opinions/1.jpg
         "500":
           $ref: "#/components/responses/ServerError"
 
@@ -617,7 +610,6 @@ components:
         - whyGlace
         - branches
         - events
-        - opinions
       properties:
         hero:
           $ref: "#/components/schemas/IHomeHero"
@@ -629,8 +621,6 @@ components:
           $ref: "#/components/schemas/IHomeBranchesData"
         events:
           $ref: "#/components/schemas/IHomeEventsData"
-        opinions:
-          $ref: "#/components/schemas/IHomeOpinionsData"
       example:
         hero:
           slides:
@@ -680,13 +670,6 @@ components:
               title: مشارك معرض الصناعات الغذائية الفلسطينية
               image: https://cdn.example.com/home/events/1.png
               href: /events/1
-        opinions:
-          title: رأيك يهمنا!
-          items:
-            - id: 1
-              name: Ibrahim S. Alfayoumi
-              text: جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات
-              image: https://cdn.example.com/home/opinions/1.jpg
 
     IHomeHero:
       type: object
@@ -929,45 +912,6 @@ components:
         moreHref:
           type: string
           example: /events
-
-    IHomeOpinion:
-      type: object
-      description: Matches TypeScript `IHomeOpinion`
-      required:
-        - id
-        - name
-        - text
-        - image
-      properties:
-        id:
-          type: integer
-          example: 1
-        name:
-          type: string
-          example: Ibrahim S. Alfayoumi
-        text:
-          type: string
-          example: جلاسيه الأمير، عندما تلتقي الفخامة بألذ النكهات
-        image:
-          type: string
-          format: uri
-          description: Customer avatar image URL
-          example: https://cdn.example.com/home/opinions/1.jpg
-
-    IHomeOpinionsData:
-      type: object
-      description: Matches TypeScript `IHomeOpinionsData`
-      required:
-        - title
-        - items
-      properties:
-        title:
-          type: string
-          example: رأيك يهمنا!
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/IHomeOpinion"
 
     # --- Events (matches src/types/events.types.ts) ---
     IEvent:

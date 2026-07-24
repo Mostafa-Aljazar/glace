@@ -13,12 +13,7 @@ import "swiper/css/effect-fade";
 import {
   imgL,
   happinessExpertsImg,
-  squarePointsImg,
-  wrigglingArrow,
   imgBtn,
-  strawberryImg,
-  iceImg1,
-  iceImg2,
   iceC,
   sunImg,
 } from "@/assets/images";
@@ -81,14 +76,14 @@ export default function HeroSection({
   );
 
   return (
-    <div className="relative bg-[radial-gradient(circle,rgba(0,0,0,0.14)_48%,rgba(0,0,0,0.44)_96%)] h-screen overflow-hidden">
+    <div className="relative bg-[radial-gradient(circle,rgba(0,0,0,0.14)_48%,rgba(0,0,0,0.44)_96%)] pb-16 sm:pb-20 lg:pb-24 min-h-screen overflow-hidden">
       {/* .imgS — rotating background blob */}
-      <div className="z-[80] absolute inset-0 w-full h-screen overflow-hidden">
+      <div className="z-[80] absolute inset-0 w-full h-full overflow-hidden">
         <img
           ref={bgImgRef}
           src={imgL.src}
           alt=""
-          className="top-0 left-0 absolute w-full h-screen object-cover transition-[transform] duration-[3000ms] ease-linear"
+          className="top-0 left-0 absolute w-full h-full object-cover transition-[transform] duration-[3000ms] ease-linear"
           style={{ transform: "scale(3)" }}
         />
       </div>
@@ -100,12 +95,12 @@ export default function HeroSection({
         style={{ left: "0", width: "100vw", maxWidth: "none" }}
       />
 
-      {/* .iceC — desktop only */}
+      {/* .iceC — bottom ice cream (boza) */}
       <img
         ref={iceCRef}
         src={iceC.src}
         alt=""
-        className="hidden lg:block bottom-0 left-0 z-[98] absolute w-full 2xl:max-w-[1100px] xl:max-w-[900px] transition-[transform] duration-[1400ms] ease-in-out"
+        className="bottom-0 left-0 z-[98] absolute w-[85%] sm:w-[100%] md:w-[110%] lg:w-full max-w-none 2xl:max-w-[1100px] xl:max-w-[900px] transition-[transform] duration-[1400ms] ease-in-out pointer-events-none"
         style={{ transform: "translate(-58%, 50%)" }}
       />
 
@@ -189,49 +184,19 @@ export default function HeroSection({
                     </div>
                   </div>
 
-                  {/* zigzags */}
-                  <Image
-                    src={slide.zigzagsImg}
-                    alt=""
-                    width={230}
-                    height={40}
-                    className="mt-[10px] mr-1 sm:-mr-[50px] w-[140px] lg:w-[230px] h-[15px] lg:h-[25px] object-contain"
-                  />
-
-                  {/* piece ice */}
+                  {/* piece ice — desktop/tablet only (avoids overlapping the CTA on mobile) */}
                   <Image
                     src={slide.pieceImg}
                     alt=""
                     width={155}
                     height={155}
-                    className="right-[-10px] sm:right-[-79px] md:right-[-123px] lg:right-[-230px] 2xl:right-[-230px] absolute w-[75px] sm:w-[80px] md:w-[85px] lg:w-[120px] 2xl:w-[130px] h-[75px] sm:h-[80px] md:h-[85px] lg:h-[120px] 2xl:h-[130px] object-contain hover:scale-105 transition-transform translate-y-[39px] sm:-translate-y-[10px] md:-translate-y-[25px] lg:-translate-y-[50px] 2xl:-translate-y-[25px] duration-[1500ms]"
+                    className="hidden md:block right-[-79px] md:right-[-123px] lg:right-[-230px] 2xl:right-[-230px] absolute w-[80px] md:w-[85px] lg:w-[120px] 2xl:w-[130px] h-[80px] md:h-[85px] lg:h-[120px] 2xl:h-[130px] object-contain hover:scale-105 transition-transform -translate-y-[10px] md:-translate-y-[25px] lg:-translate-y-[50px] 2xl:-translate-y-[25px] duration-[1500ms]"
                   />
 
-                  {/* square points */}
-                  <Image
-                    src={squarePointsImg}
-                    alt=""
-                    width={85}
-                    height={85}
-                    className="flex mt-[5px] mr-auto ml-[10px] sm:-ml-[20px] w-[50px] lg:w-[80px] 2xl:w-[85px] h-[50px] lg:h-[80px] 2xl:h-[85px] object-contain"
-                    style={{
-                      animation: "rotateS 45s normal linear infinite",
-                    }}
-                  />
-
-                  {/* wriggling arrow */}
-                  <Image
-                    src={wrigglingArrow}
-                    alt=""
-                    width={100}
-                    height={140}
-                    className="top-[291px] sm:top-[287px] lg:top-[200px] left-1/2 absolute h-[140px] sm:h-[189px] lg:h-[400px] 2xl:h-[250px] -rotate-[15deg] sm:-rotate-[30deg] -translate-x-1/2"
-                  />
-
-                  {/* browse menu button */}
-                  <Link href="/menu">
-                    <div className="bottom-[-150px] md:bottom-[-110px] lg:bottom-[-70px] absolute w-max -translate-x-[-50px] md:translate-x-[180px] lg:translate-x-[130px]">
-                      <div className="relative flex justify-center items-center w-[250px] lg:w-[240px] 2xl:w-[280px] h-[70px] sm:h-[75px] lg:h-[90px] 2xl:h-[105px]">
+                  {/* order now button — centered in flow */}
+                  <div className="z-[200] relative flex justify-center mt-8 sm:mt-10 lg:mt-12 mb-6 sm:mb-8 lg:mb-10">
+                    <Link href="/menu" className="inline-flex">
+                      <div className="relative flex justify-center items-center w-[300px] sm:w-[270px] lg:w-[260px] 2xl:w-[300px] h-[96px] sm:h-[82px] lg:h-[92px] 2xl:h-[110px]">
                         <Image
                           src={imgBtn}
                           alt=""
@@ -239,47 +204,14 @@ export default function HeroSection({
                           className="object-fill"
                         />
                         <h2
-                          className="z-10 relative mb-0 text-[#f4e451] text-[30px] lg:text-[34px] 2xl:text-[38px]"
+                          className="z-10 relative mb-0 text-[#f4e451] text-[38px] sm:text-[32px] lg:text-[36px] 2xl:text-[40px]"
                           style={{ textShadow: "1px 1px #00000071" }}
                         >
                           اطلب الان
                         </h2>
                       </div>
-                    </div>
-                  </Link>
-
-                  {/* strawberry */}
-                  <Image
-                    src={strawberryImg}
-                    alt=""
-                    width={50}
-                    height={50}
-                    className="bottom-[10px] sm:bottom-0 2xl:bottom-[10px] left-[56%] sm:left-[70%] 2xl:left-[75%] absolute w-[27px] sm:w-[30px] md:w-[35px] 2xl:w-[40px]"
-                  />
-
-                  {/* ice decoration 1 */}
-                  <Image
-                    src={iceImg1}
-                    alt=""
-                    width={70}
-                    height={70}
-                    className="bottom-[-84px] lg:bottom-[-60px] left-[-4px] lg:left-[-138px] absolute w-[32px] lg:w-[54px] 2xl:w-[60px]"
-                    style={{
-                      animation: "rotateU 15s normal linear infinite",
-                    }}
-                  />
-
-                  {/* ice decoration 2 */}
-                  <Image
-                    src={iceImg2}
-                    alt=""
-                    width={110}
-                    height={110}
-                    className="hidden sm:block top-[171px] lg:top-[140px] 2xl:top-[220px] xl:top-[180px] right-[-125px] lg:right-[-250px] 2xl:right-[-290px] xl:right-[-250px] sm:absolute w-[55px] lg:w-[70px] 2xl:w-[85px] xl:w-[75px]"
-                    style={{
-                      animation: "rotateU 15s normal linear infinite",
-                    }}
-                  />
+                    </Link>
+                  </div>
                 </div>
               </div>
             </SwiperSlide>
