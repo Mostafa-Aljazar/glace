@@ -19,7 +19,12 @@ const schema = z.object({
 
 export default function ContactClientPage() {
   const [successOpen, setSuccessOpen] = useState(false);
-  const { mutateAsync: sendMessage, isPending } = useSendContactMessage();
+  const {
+    mutateAsync: sendMessage,
+    isPending,
+    error,
+    reset: resetMutation,
+  } = useSendContactMessage();
 
   const form = useForm<IContactRequest>({
     resolver: zodResolver(schema),
@@ -27,26 +32,46 @@ export default function ContactClientPage() {
   });
 
   async function onSubmit(data: IContactRequest) {
-    const result = await sendMessage(data);
-    if (!result.success) return;
+    resetMutation();
+    try {
+      await sendMessage(data);
+    } catch {
+      // Surfaced to the user through `errorMessage` below.
+      return;
+    }
     form.reset();
     setSuccessOpen(true);
   }
 
   return (
-    <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
+    <div className="relative min-h-screen overflow-x-hidden bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)]">
       <ContactBackground />
 
-      <div className="z-90 relative flex justify-center px-4 py-12.5 pt-22.5 lg:pt-26.5">
-        <div className="bg-white/17 backdrop-blur-[15px] mb-12.5 rounded-[30px] w-[90%] max-w-275 overflow-hidden">
-          <div className="mx-auto p-3.75 sm:p-5 pb-7.5 w-full max-w-237.5 min-h-100 text-white">
-            <div className="mt-5 mb-4 text-center">
-              <h1 className="text-white sm:text-[45px] text-4xl">تواصل معنا</h1>
+      <div className="relative z-90 flex justify-center px-4 py-12.5 pt-22.5 lg:pt-26.5">
+        <div className="mb-12.5 w-full max-w-275 overflow-x-hidden rounded-[30px] border border-white/15 bg-white/17 shadow-[0_20px_60px_rgba(0,0,0,0.12)] backdrop-blur-[15px] sm:w-[92%]">
+          <div className="mx-auto w-full max-w-237.5 p-5 pb-8 text-white sm:p-7 sm:pb-10">
+            <div className="mb-6 text-center sm:mb-8">
+              <h1 className="text-4xl leading-tight text-white sm:text-[42px]">
+                تواصل معنا
+              </h1>
+              <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-white/70 sm:text-[15px]">
+                أرسل استفسارك وسنرد عليك في أقرب وقت
+              </p>
             </div>
 
             <ContactForm
               form={form}
               isSubmitting={isPending}
+              errorMessage={
+                error
+                  ? ((
+                      error as {
+                        response?: { data?: { message?: string } };
+                      }
+                    ).response?.data?.message ??
+                    "تعذّر إرسال الرسالة، حاول مرة أخرى")
+                  : null
+              }
               onSubmit={onSubmit}
             />
           </div>

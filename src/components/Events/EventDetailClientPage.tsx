@@ -9,9 +9,25 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import EventsBackground from "@/components/Events/EventsBackground";
+import DataError from "@/components/Common/DataError";
 import { useEvent } from "@/hooks/events/useEvent";
 import { useEvents } from "@/hooks/events/useEvents";
-import type { IEvent } from "@/types/events.types";
+import { hasRealMedia } from "@/lib/media";
+import { resolveEventImageSrc, type IEvent } from "@/types/events.types";
+
+/**
+ * The detail gallery is `images[]`, entirely separate from the card thumbnail
+ * `listImage` — but the backend currently ships every event's `images[]` as
+ * placeholder-only, even for events that do have a real `listImage`. Falling
+ * back to it beats a swiper full of blank slides when a real photo already
+ * exists for this exact event; nothing is invented, it's the same photo the
+ * API sent, just for a different field.
+ */
+function galleryImages(event: IEvent): string[] {
+  const real = event.images.filter(hasRealMedia);
+  if (real.length > 0) return real;
+  return hasRealMedia(event.listImage) ? [event.listImage] : [];
+}
 
 interface EventDetailClientPageProps {
   id: number;
@@ -25,7 +41,7 @@ function RelatedCard({ event }: { event: IEvent }) {
     >
       <div className="relative w-full h-40 overflow-hidden">
         <Image
-          src={event.listImage}
+          src={resolveEventImageSrc(event.listImage)}
           alt={event.title}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -51,11 +67,34 @@ function RelatedCard({ event }: { event: IEvent }) {
 export default function EventDetailClientPage({
   id,
 }: EventDetailClientPageProps) {
-  const { data: event } = useEvent(id);
+  const { data: event, isLoading, isError, refetch } = useEvent(id);
   const { data: list } = useEvents({ page: 1, perPage: 20 });
   const otherEvents = (list?.items ?? [])
     .filter((e) => e.id !== id)
     .slice(0, 6);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen">
+        <div className="border-4 border-white/40 border-t-white rounded-full w-12 h-12 animate-spin" />
+      </div>
+    );
+  }
+
+  // A failed request is not the same as a deleted event — don't claim it's gone.
+  if (isError) {
+    return (
+      <div className="flex justify-center items-center bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] px-4 min-h-screen">
+        <DataError
+          title="تعذّر تحميل الفعالية"
+          description="لم نتمكن من الوصول إلى الخادم، حاول مرة أخرى"
+          onRetry={() => void refetch()}
+        />
+      </div>
+    );
+  }
+
+  const gallery = event ? galleryImages(event) : [];
 
   if (!event) {
     return (
@@ -98,10 +137,10 @@ export default function EventDetailClientPage({
                   pagination={{ clickable: true }}
                   className="absolute inset-0 w-full h-full [--swiper-navigation-color:#fff] [--swiper-navigation-size:15px] [--swiper-pagination-color:#f4e451] [--swiper-pagination-bullet-inactive-color:rgba(255,255,255,0.35)] [--swiper-pagination-bullet-inactive-opacity:1]"
                 >
-                  {event.images.map((img, i) => (
+                  {(gallery.length > 0 ? gallery : [undefined]).map((img, i) => (
                     <SwiperSlide key={i}>
                       <Image
-                        src={img}
+                        src={resolveEventImageSrc(img)}
                         alt={event.title}
                         fill
                         className="object-cover"
@@ -112,7 +151,7 @@ export default function EventDetailClientPage({
 
                 <span className="top-2 right-2 z-20 absolute flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-full font-medium text-[11px] text-white/90 pointer-events-none">
                   <span className="inline-block bg-glace-yellow rounded-full size-1.5" />
-                  {event.images.length} صور
+                  {gallery.length} صور
                 </span>
               </div>
             </div>
@@ -142,7 +181,7 @@ export default function EventDetailClientPage({
                 </div>
               </div>
 
-              <p className="text-[14px] text-white/78 sm:text-[16px] text-justify leading-[200%]">
+              <p className="text-[18px] text-white/78 text-justify leading-[1.5]">
                 {event.description}
               </p>
             </div>

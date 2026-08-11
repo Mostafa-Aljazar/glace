@@ -1,10 +1,13 @@
 import type { StaticIMG } from "@/assets/images";
+import { resolveMediaSrc } from "@/lib/media";
 
-/** Image from API (URL string) or bundled static asset (fake fallback). */
-export type MenuImage = StaticIMG | string;
+/** Image from the API (URL / storage path string) or a bundled static asset
+ *  (e.g. flavor list assets the backend does not serve yet). */
+export type MenuImage = StaticIMG | string | null | undefined;
 
 export function resolveMenuImageSrc(image: MenuImage): string {
-  return typeof image === "string" ? image : image.src;
+  if (image && typeof image !== "string") return image.src;
+  return resolveMediaSrc(image);
 }
 
 /** Client-only key into ONE Lucide icon lookup table — see MenuIcon.tsx. */
@@ -24,12 +27,13 @@ export interface IMenuCategory {
   gradientFrom: string;
   gradientTo: string;
   sortOrder: number;
+  /** Absent or `true` = shown. `false` hides the whole section from the menu. */
+  available?: boolean;
 }
 
 /**
- * Flavor catalog feeding the builder order pages' flavor-ball picker —
- * replaces CLASSIC_FLAVORS/SPECIAL_FLAVORS + ApiFlavorCard[] duplication,
- * and isPistachioFlavor()'s fragile substring match.
+ * One flavor ball in the builder order flow. Delivered inline on the product
+ * detail payload (`IBuilderProduct.flavors`) — see the note there.
  */
 export interface IFlavorOption {
   id: string; // "pistachio", "lotus", ...
@@ -42,6 +46,9 @@ export interface IFlavorOption {
 }
 
 export interface IProductVariant {
+  /** Stable, dashboard-safe identifier. Mixes reference items by this id, so
+   *  renaming `label` from the dashboard never breaks a mix rule. */
+  id: string;
   label: string;
   price: number;
   description?: string;
@@ -76,7 +83,11 @@ export interface IMixRule {
   basePrice: number;
   flavorPrice: number;
   premiumFlavorPrice: number; // was: pistachioPrice, hand-duplicated per category
-  flavorOptionIds: string[]; // refs into IFlavorOption[] or item labels for flat-list mixes
+  /** Ids of the `items[]` this mix can be built from — NOT flavor ids and NOT
+   *  labels. Must match `IProductVariant.id` on the same product. */
+  itemIds: string[];
+  /** Absent or `true` = offered. `false` hides this mix rule for the product. */
+  available?: boolean;
 }
 
 export interface IPriceCell {
@@ -93,6 +104,13 @@ export interface ISizeOption {
    *  صغير" has no special-price cell and only exists under the "biscuit"
    *  container. Absent means the size applies regardless of container. */
   containerId?: string;
+  /** Absent or `true` = orderable. `false` renders the size greyed with a
+   *  "غير متوفر" badge. Lets one size be stopped independently of its
+   *  container — e.g. Family's merged step can disable "1 لتر فلين" alone. */
+  available?: boolean;
+  /** Thumbnail for this size row (e.g. family "1/2 لتر بلاستيك"). Preferred
+   *  over `IContainerOption.image` when both exist. */
+  image?: MenuImage;
 }
 
 export type SelectionMode = "repeatable" | "toggle";
@@ -144,8 +162,9 @@ export interface IBuilderProduct extends IProductBase {
   /** Cup/Family only: an extra-biscuit quantity addon at a flat unit price. */
   hasExtraBiscuitAddon?: boolean;
   /** Heading for the price table when sizes aren't split per container (e.g.
-   *  brad/brad-boza's "أسعار البراد", shared regardless of which برادة
-   *  flavor is picked). Unused when sizes carry their own containerId. */
+   *  brad/brad-boza). May be the full title ("أسعار البراد") or just the noun
+   *  ("البراد") — the UI prefixes "أسعار" only when missing. Unused when sizes
+   *  carry their own containerId. */
   pricingLabel?: string;
   sizes: ISizeOption[];
   /**
@@ -156,6 +175,17 @@ export interface IBuilderProduct extends IProductBase {
    */
   selectionMode?: SelectionMode;
   flavorFamilies?: Array<"classic" | "special" | "mix">;
+  /**
+   * The flavor balls this product offers, served inline by
+   * `GET /menu/products/{slug}` — there is no separate flavors endpoint.
+   *
+   * Scoped per product on purpose: two builder products may offer different
+   * flavors. Only the detail payload carries it; the `/menu/products` list
+   * omits it to avoid repeating the catalog on every row.
+   *
+   * Absent/empty means the picker renders its empty state.
+   */
+  flavors?: IFlavorOption[];
 }
 
 /**
@@ -177,6 +207,17 @@ export function isBuilderProduct(p: IProduct): p is IBuilderProduct {
 
 export function isFlatListProduct(p: IProduct): p is IFlatListProduct {
   return p.kind === "flat-list";
+}
+
+/** The product items a mix rule can be built from, in the rule's own order.
+ *  Ids with no matching item are dropped rather than rendered as ghosts. */
+export function resolveMixItems(
+  mix: IMixRule,
+  items: IProductVariant[],
+): IProductVariant[] {
+  return mix.itemIds
+    .map((id) => items.find((i) => i.id === id))
+    .filter((i): i is IProductVariant => i !== undefined);
 }
 
 /** Per-unit price of one flavor/variant inside a mix rule. */

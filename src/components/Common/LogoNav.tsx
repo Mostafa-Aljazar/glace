@@ -34,9 +34,14 @@ const navItems: NavItem[] = [
   { label: "الرئيسية", href: "/", icon: Home },
   { label: "المنيو", href: "/menu", icon: UtensilsCrossed },
   { label: "العروض", href: "/offers", icon: Tag },
-  { label: "موقعنا و ساعات العمل", href: "/#location", icon: MapPin },
+  {
+    label: "موقعنا و ساعات العمل",
+    shortLabel: "موقعنا",
+    href: "/#location",
+    icon: MapPin,
+  },
   { label: "الفعاليات", href: "/events", icon: CalendarDays },
-  { label: "تواصل معنا", href: "/contact", icon: Phone },
+  { label: "تواصل معنا", shortLabel: "تواصل", href: "/contact", icon: Phone },
 ];
 
 export default function LogoNav() {
@@ -132,7 +137,19 @@ export default function LogoNav() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    onClick={() => setDrawerOpen(false)}
+                    onClick={(e) => {
+                      setDrawerOpen(false);
+                      const hashIdx = item.href.indexOf("#");
+                      if (hashIdx === -1 || pathname !== "/") return;
+                      const id = item.href.slice(hashIdx + 1);
+                      const el = document.getElementById(id);
+                      if (!el) return;
+                      e.preventDefault();
+                      window.history.pushState(null, "", `/#${id}`);
+                      const top =
+                        el.getBoundingClientRect().top + window.scrollY - 96;
+                      window.scrollTo({ top, behavior: "smooth" });
+                    }}
                     className={`flex items-center justify-end gap-3 px-4 py-3 rounded-[16px] text-[16px] font-semibold transition-all touch-manipulation
                       ${
                         isActive(item.href)
@@ -203,35 +220,55 @@ export default function LogoNav() {
 
       {/* ── Main header bar ──────────────────────────────────────── */}
       <header
-        className={`${isMenuPage ? "absolute top-4 inset-x-0" : "top-4 fixed inset-x-0"} z-[9999999] px-4 lg:px-6 w-full`}
+        className={`${isMenuPage ? "absolute top-3 inset-x-0" : "top-3 fixed inset-x-0"} z-[9999999] px-3 lg:px-5 w-full`}
       >
-        <div className="mx-auto max-w-[1100px]">
-          <div className="flex items-center gap-3 bg-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-xl px-4 py-2.5 border border-white/25 rounded-[24px] transition-all duration-200">
+        <div className="mx-auto max-w-[1180px]">
+          <div className="flex items-center gap-2 bg-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-xl px-3 py-1.5 lg:px-3.5 lg:py-2 border border-white/25 rounded-[22px] transition-all duration-200">
             {/* ── RIGHT: logo (first in DOM = right in RTL) ── */}
             <Link href="/" className="shrink-0">
               <Image
                 src={logo}
                 alt="جلاسيه الأمير"
-                height={64}
-                className="w-auto h-[54px] lg:h-[64px] object-contain"
+                height={48}
+                className="w-auto h-[42px] lg:h-[48px] object-contain"
               />
             </Link>
 
             {/* ── CENTER: desktop nav links ── */}
-            <nav className="hidden lg:flex flex-1 justify-center items-center gap-0.5">
+            <nav className="hidden lg:flex flex-1 justify-center items-center gap-0.5 min-w-0">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-3.5 py-1.5 rounded-full text-[14px] font-medium transition-all flex items-center gap-2
+                  title={item.label}
+                  onClick={(e) => {
+                    const hashIdx = item.href.indexOf("#");
+                    if (hashIdx === -1) return;
+                    // Only intercept when already on the home page — otherwise
+                    // let Next navigate to `/#…` and HomeClientPage will scroll.
+                    if (pathname !== "/") return;
+                    const id = item.href.slice(hashIdx + 1);
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    e.preventDefault();
+                    window.history.pushState(null, "", `/#${id}`);
+                    const top =
+                      el.getBoundingClientRect().top + window.scrollY - 96;
+                    window.scrollTo({ top, behavior: "smooth" });
+                  }}
+                  className={`px-2.5 py-1 rounded-full text-[12.5px] xl:text-[13px] font-medium transition-all flex items-center gap-1.5 whitespace-nowrap
                     ${
                       isActive(item.href)
                         ? "bg-glace-yellow text-[#1e6a7f] font-bold shadow-[0_2px_12px_rgba(244,228,81,0.4)]"
                         : "text-white/80 hover:text-white hover:bg-white/10"
                     }`}
                 >
-                  {item.icon && <item.icon size={16} className="text-white" />}
-                  <span className="text-white">{item.label}</span>
+                  {item.icon && (
+                    <item.icon size={14} className="shrink-0 text-white" />
+                  )}
+                  <span className="text-white">
+                    {item.shortLabel ?? item.label}
+                  </span>
                 </Link>
               ))}
             </nav>
@@ -240,7 +277,7 @@ export default function LogoNav() {
             <div className="lg:hidden flex-1" />
 
             {/* ── LEFT: action icons ── */}
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
               {/* Mobile hamburger to open drawer */}
               <button
                 type="button"
@@ -253,17 +290,17 @@ export default function LogoNav() {
               {/* Cart — visible on desktop only; hidden on mobile */}
               <Link
                 href="/cart"
-                className="hidden relative lg:flex items-center gap-1.5 bg-white/10 hover:bg-white/20 p-2 lg:px-3 lg:py-1.5 border border-white/15 rounded-full text-white/80 hover:text-white transition-all"
+                className="hidden relative lg:flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2.5 py-1 border border-white/15 rounded-full text-white/80 hover:text-white transition-all"
               >
                 <div className="relative">
-                  <ShoppingCart size={16} />
+                  <ShoppingCart size={15} />
                   {cartCount > 0 && (
                     <span className="-top-2 -left-2 absolute flex justify-center items-center bg-glace-yellow rounded-full w-4 h-4 font-bold text-[#1e6a7f] text-[9px]">
                       {cartCount}
                     </span>
                   )}
                 </div>
-                <span className="hidden lg:inline font-medium text-[13px]">
+                <span className="hidden lg:inline font-medium text-[12px]">
                   السلة
                 </span>
               </Link>
@@ -271,10 +308,10 @@ export default function LogoNav() {
               {/* Wallet — visible on desktop only; hidden on mobile */}
               <Link
                 href="/my-wallet"
-                className="hidden lg:flex items-center gap-1.5 bg-white/10 hover:bg-white/20 p-2 lg:px-3 lg:py-1.5 border border-white/15 rounded-full text-white/80 hover:text-white transition-all"
+                className="hidden lg:flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2.5 py-1 border border-white/15 rounded-full text-white/80 hover:text-white transition-all"
               >
-                <Wallet size={16} />
-                <span className="hidden lg:inline font-medium text-[13px]">
+                <Wallet size={15} />
+                <span className="hidden lg:inline font-medium text-[12px]">
                   {walletBalance > 0 ? (
                     <span className="font-bold text-glace-yellow">
                       {walletBalance.toFixed(0)} ₪
@@ -288,10 +325,10 @@ export default function LogoNav() {
               {/* Account — visible on desktop only; hidden on mobile */}
               <Link
                 href="/my-account"
-                className="hidden lg:flex items-center gap-1.5 bg-white/10 hover:bg-white/20 p-2 lg:px-3 lg:py-1.5 border border-white/15 rounded-full text-white/80 hover:text-white transition-all"
+                className="hidden lg:flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2.5 py-1 border border-white/15 rounded-full text-white/80 hover:text-white transition-all"
               >
-                <User size={16} />
-                <span className="hidden lg:inline font-medium text-[13px]">
+                <User size={15} />
+                <span className="hidden lg:inline font-medium text-[12px]">
                   حسابي
                 </span>
               </Link>
@@ -309,12 +346,12 @@ export default function LogoNav() {
                       router.back();
                     }
                   }}
-                  className="hidden lg:flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2.5 lg:px-3 py-1.5 border border-white/15 rounded-full text-white/80 hover:text-white transition-all cursor-pointer"
+                  className="hidden lg:flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2.5 py-1 border border-white/15 rounded-full text-white/80 hover:text-white transition-all cursor-pointer"
                 >
-                  <span className="hidden lg:inline font-medium text-[13px]">
+                  <span className="hidden lg:inline font-medium text-[12px]">
                     رجوع
                   </span>
-                  <ChevronLeft size={15} />
+                  <ChevronLeft size={14} />
                 </button>
               )}
             </div>

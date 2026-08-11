@@ -2,19 +2,44 @@ openapi: 3.0.3
 info:
   title: Glace API
   description: |
-    API specification for the Glace application.
-    Endpoints will be added as they are defined.
-  version: 1.0.0
+    API specification for the Glace storefront (Next.js) and Filament admin.
+
+    **Source of truth for open backend work:** `docs/backend-handoff/`
+    (`01` … `07` + README). This file encodes the agreed contract.
+
+    ### Media URLs (handoff 01 · 03 · 04)
+    Every image field (`format: uri`) MUST be an **absolute** URL from
+    `Storage::disk('public')->url(...)` (or a real CDN), e.g.
+    `https://host/storage/products/….png`.
+    - Relative paths (`products/…`, `hero-slides/…`) are **rejected by contract**.
+    - Dead hosts (`cdn.example.com`, `example.com`) are **rejected**.
+
+    ### Dashboard-driven catalogs (handoff 05 · 07 · 01)
+    Builder `containerOptions` / `sizes` / prices, flat-list `items` (+ images),
+    and flat-list `mixes` are edited in Filament and reflected immediately on
+    `GET /menu/products` and `GET /menu/products/{slug}`.
+
+    ### Booleans
+    Never drop `false` fields. Especially `flavors[].available` and
+    `mixes[].available` — omit-when-false breaks the frontend parse.
+
+    ### Brad-boza media (handoff 06)
+    Product has a **single** hero `image`. Do **not** send `secondaryImage`
+    or any companion cup/scoop asset.
+  version: 1.1.0
   contact:
     name: Glace Team
 
 servers:
-  - url: http://localhost:3000/api
-    description: Next.js local mock (Swagger Try it out)
+  - url: http://acw348d983gr8x01lb5myd3x.64.176.172.179.sslip.io/api
+    description: Current backend (NEXT_PUBLIC_API_URL)
+  - url: https://glace-bzjj.onrender.com/api
+    description: Staging (Render)
   - url: http://localhost:8000/api
     description: Backend API (local)
-  - url: https://api.example.com/api
-    description: Production (update when ready)
+  # NOTE: never use `cdn.example.com` / `api.example.com` in live payloads.
+  # Examples below use `cdn.glace.ps` as the intended production CDN shape;
+  # storage absolute URLs (`…/storage/…`) are equally valid.
 
 tags:
   - name: Home
@@ -35,6 +60,13 @@ paths:
         Public aggregate endpoint for the entire home page.
         Returns hero slides, about, why-glace, branches, and events
         in a single response so the frontend can load the page with one request.
+
+        **Contract notes (handoff 04):**
+        - All image fields = absolute URLs (`Storage::url` / real CDN).
+        - `about.paragraphs` = `string[]` (NOT `[{ "text": "..." }]`).
+        - `events.items` length up to **10** (latest first), each with a real
+          card image when available.
+        - `whyGlace.features[]` = `{ label }` only — do not send `image`.
       operationId: getHomePage
       security: []
       responses:
@@ -47,9 +79,9 @@ paths:
               example:
                 hero:
                   slides:
-                    - manImg: https://cdn.example.com/home/hero/man-1.png
-                      pieceImg: https://cdn.example.com/home/hero/piece-1.png
-                      zigzagsImg: https://cdn.example.com/home/hero/zigzags.png
+                    - manImg: https://cdn.glace.ps/home/hero/man-1.png
+                      pieceImg: https://cdn.glace.ps/home/hero/piece-1.png
+                      zigzagsImg: https://cdn.glace.ps/home/hero/zigzags.png
                       titleH1: جلاسية الأمير
                       titleH2: لإنتاج الآيس كريم و البراد و العصائر و الحلويات
                       bgColor: "#51C9F4"
@@ -61,7 +93,7 @@ paths:
                   paragraphs:
                     - تأسس جلاسيه الأمير عام 2015 كأحد أفرع شركة أسكمو الأمير...
                     - تعمل الشركة على تقديم أجود أنواع الآيس كريم والبراد...
-                  image: https://cdn.example.com/home/about/character.png
+                  image: https://cdn.glace.ps/home/about/character.png
                   ctaLabel: اعرف أكثر
                   ctaHref: /about
                 whyGlace:
@@ -69,11 +101,9 @@ paths:
                   description: جلاسيه الأمير حاصلة على شهادة الجودة العالمية لسلامة الغذاء ISO 22000
                   features:
                     - label: جودة عالية
-                      image: https://cdn.example.com/home/why/feature-p.png
                     - label: أمانة وثقة
-                      image: https://cdn.example.com/home/why/feature-b.png
                   videoUrl: https://www.youtube.com/embed/ShMr0XzIqSM
-                  videoThumbnail: https://cdn.example.com/home/why/video-thumb.png
+                  videoThumbnail: https://cdn.glace.ps/home/why/video-thumb.png
                 branches:
                   title: ننتظركم في المواعيد التالية
                   branches:
@@ -93,7 +123,7 @@ paths:
                   items:
                     - id: 1
                       title: مشارك معرض الصناعات الغذائية الفلسطينية
-                      image: https://cdn.example.com/home/events/1.png
+                      image: https://cdn.glace.ps/home/events/1.png
                       href: /events/1
         "500":
           $ref: "#/components/responses/ServerError"
@@ -105,6 +135,10 @@ paths:
       description: |
         Public paginated list of events for `/events`.
         Matches TypeScript `IEventsListResponse` / `IEvent`.
+
+        **Contract (handoff 04):** every listed event SHOULD have a non-null
+        `listImage` absolute URL. `images` must be a string array with **no
+        `null` entries** (empty `[]` if no gallery yet).
       operationId: getEvents
       security: []
       parameters:
@@ -138,10 +172,10 @@ paths:
                     title: أجواء العيد مع جلاسيه غير
                     date: "11/06/2020"
                     description: كل عام وانتم بخير بحلول عيد الفطر المبارك...
-                    listImage: https://cdn.example.com/events/2-list.png
+                    listImage: https://cdn.glace.ps/events/2-list.png
                     images:
-                      - https://cdn.example.com/events/2-a.png
-                      - https://cdn.example.com/events/2-b.png
+                      - https://cdn.glace.ps/events/2-a.png
+                      - https://cdn.glace.ps/events/2-b.png
                 total: 10
                 page: 1
                 perPage: 8
@@ -156,6 +190,10 @@ paths:
       description: |
         Public event detail for `/events/{id}`.
         Matches TypeScript `IEvent`.
+
+        **Contract (handoff 04):** `images` is the detail gallery — absolute
+        URL strings only. Never return `[null, null, …]`. Manage uploads from
+        Filament (multi-file / repeater), not card image alone.
       operationId: getEventById
       security: []
       parameters:
@@ -178,12 +216,12 @@ paths:
                 title: أجواء العيد مع جلاسيه غير
                 date: "11/06/2020"
                 description: كل عام وانتم بخير بحلول عيد الفطر المبارك احتفالنا معكم بالعيد أجمل...
-                listImage: https://cdn.example.com/events/2-list.png
+                listImage: https://cdn.glace.ps/events/2-list.png
                 images:
-                  - https://cdn.example.com/events/2-a.png
-                  - https://cdn.example.com/events/2-b.png
-                  - https://cdn.example.com/events/2-c.png
-                  - https://cdn.example.com/events/2-d.png
+                  - https://cdn.glace.ps/events/2-a.png
+                  - https://cdn.glace.ps/events/2-b.png
+                  - https://cdn.glace.ps/events/2-c.png
+                  - https://cdn.glace.ps/events/2-d.png
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -261,13 +299,25 @@ paths:
         Public list of orderable/reference products, optionally filtered by
         category. Matches TypeScript `IProduct` — a discriminated union on
         `kind` (`builder` | `flat-list`).
+
+        **Contract (handoff 01 · 02 · 03 · 05 · 07):**
+        - Filter query is **`category`** (= `IMenuCategory.id`). Do **not**
+          treat `categoryId` as a silent alias — return **422** (or ignore
+          explicitly). Never return the full unfiltered catalog when a wrong
+          filter key was sent as if filtering succeeded.
+        - List rows MUST **omit** `flavors[]` (detail-only).
+        - Flat-list `items[].image` is **required** on every item.
+        - Builder `containerOptions` / `sizes` and flat-list `mixes` are
+          Filament-managed and must round-trip here.
       operationId: getMenuProducts
       security: []
       parameters:
         - name: category
           in: query
           required: false
-          description: Filter by `IMenuCategory.id`
+          description: |
+            Filter by `IMenuCategory.id`. Wrong key `categoryId` is not
+            supported — respond 422 ValidationError (handoff 03).
           schema:
             type: string
           example: pancake
@@ -287,7 +337,7 @@ paths:
                   kind: flat-list
                   name: بان كيك
                   description: بان كيك طازج بنكهات متنوعة
-                  image: https://cdn.example.com/menu/pancake.jpg
+                  image: https://cdn.glace.ps/menu/pancake.jpg
                   sortOrder: 1
                   available: true
                   inStoreOnly: true
@@ -303,31 +353,38 @@ paths:
                       price: 4
                       available: true
                   items:
-                    - label: نوتيلا
+                    - id: nutella
+                      label: نوتيلا
                       price: 11
                       available: true
                       description: بان كيك بصوص النوتيلا
-                    - label: لوتس
+                      image: https://cdn.glace.ps/menu/pancake-nutella.jpg
+                    - id: lotus
+                      label: لوتس
                       price: 13
                       available: true
-                    - label: بيستاشيو
+                      image: https://cdn.glace.ps/menu/pancake-lotus.jpg
+                    - id: pistachio
+                      label: بيستاشيو
                       price: 17
                       available: true
                       isPremiumMixFlavor: true
+                      image: https://cdn.glace.ps/menu/pancake-pistachio.jpg
                   mixes:
                     - id: mix
-                      label: مكس
+                      label: مكس (اختر طعمين)
+                      available: true
                       pick: 2
                       basePrice: 14
                       flavorPrice: 7
                       premiumFlavorPrice: 11
-                      flavorOptionIds: [نوتيلا, لوتس, بيستاشيو]
+                      itemIds: [nutella, lotus, pistachio]
                 - id: "b7f1c2a4-9e3d-4a10-8c21-3f5a2d1e9b04"
                   slug: cup
                   categoryId: ice-cream
                   kind: builder
                   name: بوظة كاسة
-                  image: https://cdn.example.com/menu/cup.jpg
+                  image: https://cdn.glace.ps/menu/cup.jpg
                   sortOrder: 1
                   available: true
                   selectionMode: repeatable
@@ -341,7 +398,7 @@ paths:
                       label: بسكوت
                       available: true
                       name: بوظة بسكوت
-                      image: https://cdn.example.com/menu/biscuit.jpg
+                      image: https://cdn.glace.ps/menu/biscuit.jpg
                   sizes:
                     - id: cup-small
                       label: صغير
@@ -352,6 +409,8 @@ paths:
                           price: 2
                         - flavorFamily: special
                           price: 4
+        "422":
+          $ref: "#/components/responses/ValidationError"
         "500":
           $ref: "#/components/responses/ServerError"
 
@@ -365,6 +424,17 @@ paths:
         primary key). In Laravel: `Route::get('products/{product:slug}', ...)`.
         The response's `id` is still the internal PK to send back when
         POSTing cart/order data. Matches TypeScript `IProduct`.
+
+        **Contract (handoff 02 · 05 · 06 · 07):**
+        - Builder products with a flavor step (`cup`, `family`, `brad-boza`)
+          MUST include `flavors[]`; every flavor includes `available` even when
+          `false`. List endpoint omits `flavors`.
+        - `family` detail MUST return a non-empty `flavors[]`.
+        - Brad-boza: single product `image` only — **no** `secondaryImage`.
+          `pricingLabel` may already include «أسعار» (frontend does not
+          double-prefix).
+        - `containerOptions` / `sizes` / `iceCreamAddonPrices` / `mixes` are
+          Filament CRUD surfaces; changes appear here without a frontend deploy.
       operationId: getMenuProductBySlug
       security: []
       parameters:
@@ -388,7 +458,7 @@ paths:
                 categoryId: ice-cream
                 kind: builder
                 name: بوظة كاسة
-                image: https://cdn.example.com/menu/cup.jpg
+                image: https://cdn.glace.ps/menu/cup.jpg
                 sortOrder: 1
                 available: true
                 selectionMode: repeatable
@@ -403,7 +473,7 @@ paths:
                     label: بسكوت
                     available: true
                     name: بوظة بسكوت
-                    image: https://cdn.example.com/menu/biscuit.jpg
+                    image: https://cdn.glace.ps/menu/biscuit.jpg
                     pricingLabel: البسكوت
                 sizes:
                   - id: cup-small
@@ -683,9 +753,9 @@ components:
       example:
         hero:
           slides:
-            - manImg: https://cdn.example.com/home/hero/man-1.png
-              pieceImg: https://cdn.example.com/home/hero/piece-1.png
-              zigzagsImg: https://cdn.example.com/home/hero/zigzags.png
+            - manImg: https://cdn.glace.ps/home/hero/man-1.png
+              pieceImg: https://cdn.glace.ps/home/hero/piece-1.png
+              zigzagsImg: https://cdn.glace.ps/home/hero/zigzags.png
               titleH1: جلاسية الأمير
               titleH2: لإنتاج الآيس كريم و البراد و العصائر و الحلويات
               bgColor: "#51C9F4"
@@ -697,7 +767,7 @@ components:
           paragraphs:
             - تأسس جلاسيه الأمير عام 2015...
             - تعمل الشركة على تقديم أجود أنواع الآيس كريم...
-          image: https://cdn.example.com/home/about/character.png
+          image: https://cdn.glace.ps/home/about/character.png
           ctaLabel: اعرف أكثر
           ctaHref: /about
         whyGlace:
@@ -705,9 +775,8 @@ components:
           description: جلاسيه الأمير حاصلة على شهادة الجودة العالمية لسلامة الغذاء ISO 22000
           features:
             - label: جودة عالية
-              image: https://cdn.example.com/home/why/feature-p.png
           videoUrl: https://www.youtube.com/embed/ShMr0XzIqSM
-          videoThumbnail: https://cdn.example.com/home/why/video-thumb.png
+          videoThumbnail: https://cdn.glace.ps/home/why/video-thumb.png
         branches:
           title: ننتظركم في المواعيد التالية
           branches:
@@ -727,7 +796,7 @@ components:
           items:
             - id: 1
               title: مشارك معرض الصناعات الغذائية الفلسطينية
-              image: https://cdn.example.com/home/events/1.png
+              image: https://cdn.glace.ps/home/events/1.png
               href: /events/1
 
     IHomeHero:
@@ -758,18 +827,21 @@ components:
         manImg:
           type: string
           format: uri
-          description: Character / person image URL
-          example: https://cdn.example.com/home/hero/man-1.png
+          description: |
+            Character / person image — **absolute** URL
+            (`Storage::disk('public')->url(...)` or real CDN). Relative paths
+            like `hero-slides/…` are invalid (handoff 04).
+          example: https://cdn.glace.ps/home/hero/man-1.png
         pieceImg:
           type: string
           format: uri
-          description: Ice cream piece decoration URL
-          example: https://cdn.example.com/home/hero/piece-1.png
+          description: Ice cream piece decoration — absolute URL (handoff 04)
+          example: https://cdn.glace.ps/home/hero/piece-1.png
         zigzagsImg:
           type: string
           format: uri
-          description: Zigzag decoration URL
-          example: https://cdn.example.com/home/hero/zigzags.png
+          description: Zigzag decoration — absolute URL (handoff 04)
+          example: https://cdn.glace.ps/home/hero/zigzags.png
         titleH1:
           type: string
           example: جلاسية الأمير
@@ -804,6 +876,10 @@ components:
           example: موهوبون في صناعة الأيسكريم !
         paragraphs:
           type: array
+          description: |
+            Plain string paragraphs (handoff 04).
+            **Required shape:** `["نص…", "نص…"]`
+            **Forbidden:** `[{ "text": "…" }]` — that shape breaks About.
           items:
             type: string
           example:
@@ -812,8 +888,8 @@ components:
         image:
           type: string
           format: uri
-          description: About section character image URL
-          example: https://cdn.example.com/home/about/character.png
+          description: About section character image — absolute URL (handoff 04)
+          example: https://cdn.glace.ps/home/about/character.png
         ctaLabel:
           type: string
           example: اعرف أكثر
@@ -823,19 +899,18 @@ components:
 
     IHomeWhyFeature:
       type: object
-      description: Matches TypeScript `IHomeWhyFeature`
+      description: |
+        Matches TypeScript `IHomeWhyFeature`.
+
+        Label only — do NOT send an image. The coloured blob behind each label
+        is fixed frontend decoration (alternating blue/brown by position), not
+        content. Sending an `image` here has no effect; it is ignored.
       required:
         - label
-        - image
       properties:
         label:
           type: string
           example: جودة عالية
-        image:
-          type: string
-          format: uri
-          description: Feature badge background image URL
-          example: https://cdn.example.com/home/why/feature-p.png
 
     IHomeWhyGlaceData:
       type: object
@@ -865,7 +940,7 @@ components:
           type: string
           format: uri
           description: Thumbnail shown for the video CTA
-          example: https://cdn.example.com/home/why/video-thumb.png
+          example: https://cdn.glace.ps/home/why/video-thumb.png
 
     IHomeBranch:
       type: object
@@ -928,7 +1003,9 @@ components:
 
     IHomeEvent:
       type: object
-      description: Matches TypeScript `IHomeEvent`
+      description: |
+        Matches TypeScript `IHomeEvent` — card in `home.events.items`.
+        Prefer mapping from the events catalog `listImage` (absolute URL).
       required:
         - id
         - title
@@ -944,14 +1021,19 @@ components:
         image:
           type: string
           format: uri
-          example: https://cdn.example.com/home/events/1.png
+          description: |
+            Card thumbnail — absolute URL (handoff 04). Should not be null for
+            events shown on the home carousel.
+          example: https://cdn.glace.ps/home/events/1.png
         href:
           type: string
           example: /events/1
 
     IHomeEventsData:
       type: object
-      description: Matches TypeScript `IHomeEventsData`
+      description: |
+        Matches TypeScript `IHomeEventsData`.
+        `items` should include up to **10** latest events (handoff 04) — not 3.
       required:
         - title
         - items
@@ -963,6 +1045,8 @@ components:
           example: الفعاليات و المناسبات
         items:
           type: array
+          maxItems: 10
+          description: Up to 10 latest events (newest first)
           items:
             $ref: "#/components/schemas/IHomeEvent"
         moreLabel:
@@ -999,28 +1083,34 @@ components:
         listImage:
           type: string
           format: uri
-          description: Card thumbnail image URL
-          example: https://cdn.example.com/events/2-list.png
+          description: |
+            Card thumbnail — absolute URL (handoff 04). Upload from Filament
+            «صورة البطاقة». Must not be null for published events.
+          example: https://cdn.glace.ps/events/2-list.png
         images:
           type: array
-          description: Gallery images for the detail page
+          description: |
+            Detail gallery (handoff 04). Absolute URL strings only.
+            **No `null` entries** — use `[]` when empty. Managed via Filament
+            multi-upload / repeater (not the card image field alone).
           items:
             type: string
             format: uri
+            nullable: false
           example:
-            - https://cdn.example.com/events/2-a.png
-            - https://cdn.example.com/events/2-b.png
+            - https://cdn.glace.ps/events/2-a.png
+            - https://cdn.glace.ps/events/2-b.png
       example:
         id: 2
         title: أجواء العيد مع جلاسيه غير
         date: "11/06/2020"
         description: كل عام وانتم بخير بحلول عيد الفطر المبارك احتفالنا معكم بالعيد أجمل...
-        listImage: https://cdn.example.com/events/2-list.png
+        listImage: https://cdn.glace.ps/events/2-list.png
         images:
-          - https://cdn.example.com/events/2-a.png
-          - https://cdn.example.com/events/2-b.png
-          - https://cdn.example.com/events/2-c.png
-          - https://cdn.example.com/events/2-d.png
+          - https://cdn.glace.ps/events/2-a.png
+          - https://cdn.glace.ps/events/2-b.png
+          - https://cdn.glace.ps/events/2-c.png
+          - https://cdn.glace.ps/events/2-d.png
 
     IEventsListResponse:
       type: object
@@ -1054,9 +1144,9 @@ components:
             title: أجواء العيد مع جلاسيه غير
             date: "11/06/2020"
             description: كل عام وانتم بخير...
-            listImage: https://cdn.example.com/events/2-list.png
+            listImage: https://cdn.glace.ps/events/2-list.png
             images:
-              - https://cdn.example.com/events/2-a.png
+              - https://cdn.glace.ps/events/2-a.png
         total: 10
         page: 1
         perPage: 8
@@ -1077,6 +1167,13 @@ components:
           type: string
           enum: [ice-cream, cup-soda, cake, glass-water, milk, apple]
           example: cake
+        available:
+          type: boolean
+          default: true
+          description: |
+            Omit or `true` when the category is shown. `false` hides the whole
+            section from the menu (e.g. hot drinks during summer).
+          example: true
         accentColor:
           type: string
           example: "#f4a851"
@@ -1092,7 +1189,13 @@ components:
 
     IFlavorOption:
       type: object
-      description: Matches TypeScript `IFlavorOption`
+      description: |
+        Matches TypeScript `IFlavorOption`.
+
+        **handoff 02:** `available` is always required — send `false` for
+        paused flavors. Do not omit the key when false (breaks frontend parse
+        on cup / brad-boza). `family` detail must return a non-empty
+        `flavors[]` with the same shape.
       required: [id, nameAr, nameEn, image, family, available]
       properties:
         id:
@@ -1107,20 +1210,37 @@ components:
         image:
           type: string
           format: uri
+          description: Absolute flavor image URL — no `cdn.example.com` (handoff 03)
         family:
           type: string
           enum: [classic, special, stevia]
         available:
           type: boolean
+          description: |
+            Always present. `true` = orderable; `false` = shown disabled.
+            Never drop this field when false.
+          example: false
         isPremiumMixFlavor:
           type: boolean
           description: Priced at a mix's premiumFlavorPrice instead of flavorPrice
 
     IProductVariant:
       type: object
-      description: Matches TypeScript `IProductVariant`
-      required: [label, price, available]
+      description: |
+        Matches TypeScript `IProductVariant` — one row in a flat-list product.
+
+        **handoff 01:** `image` is required for every item (all 15 flat-list
+        products / 69 variants). Used on the order list AND inside the mix /
+        super-mix modal. Upload per item from Filament (not only product.image).
+      required: [id, label, price, available, image]
       properties:
+        id:
+          type: string
+          description: |
+            Stable, dashboard-safe identifier, unique within the product.
+            Mixes reference items by THIS id (`IMixRule.itemIds`), so renaming
+            `label` from the dashboard never breaks a mix rule.
+          example: nutella
         label:
           type: string
           example: نوتيلا
@@ -1132,22 +1252,41 @@ components:
         image:
           type: string
           format: uri
+          description: |
+            Per-item thumbnail — absolute URL. Required on every `items[]`
+            entry (handoff 01). Empty/missing → blank circle in UI.
+          example: https://cdn.glace.ps/menu/pancake-nutella.jpg
         available:
           type: boolean
         isPremiumMixFlavor:
           type: boolean
+          description: |
+            When true inside a mix, charge `premiumFlavorPrice` instead of
+            `flavorPrice`. Toggle from Filament on the item (handoff 07).
 
     IMixRule:
       type: object
-      description: Matches TypeScript `IMixRule`
-      required: [id, label, pick, basePrice, flavorPrice, premiumFlavorPrice, flavorOptionIds]
+      description: |
+        Matches TypeScript `IMixRule` — مكس / سوبر مكس on flat-list products.
+
+        **handoff 07:** full CRUD from Filament (label, pick, prices, itemIds,
+        available). `itemIds` reference `items[].id` on the same product only.
+      required: [id, label, pick, basePrice, flavorPrice, premiumFlavorPrice, itemIds]
       properties:
         id:
           type: string
+          description: Stable seed id (`mix`, `super-mix`) — do not rename after orders exist
           example: mix
         label:
           type: string
-          example: مكس
+          example: مكس (اختر طعمين)
+        available:
+          type: boolean
+          default: true
+          description: |
+            Prefer always sending the field. `false` hides this mix on the
+            order page. Omit or `true` = offered.
+          example: true
         pick:
           type: integer
           example: 2
@@ -1160,11 +1299,18 @@ components:
         premiumFlavorPrice:
           type: number
           example: 11
-        flavorOptionIds:
+        itemIds:
           type: array
+          description: |
+            Ids of the `items[]` this mix can be built from — these are
+            `IProductVariant.id` values on the SAME product.
+
+            NOT flavor ids, and NOT labels. (This field was previously named
+            `flavorOptionIds` and held Arabic labels; matching by label broke
+            whenever an item was renamed from the dashboard.)
           items:
             type: string
-          example: [نوتيلا, لوتس, بيستاشيو]
+          example: [nutella, lotus, pistachio]
 
     IPriceCell:
       type: object
@@ -1180,7 +1326,12 @@ components:
 
     IContainerOption:
       type: object
-      description: Matches TypeScript `IContainerOption`
+      description: |
+        Matches TypeScript `IContainerOption` — builder "type" pills
+        (كاسة/بسكوت, ليمون/مانجا, بلاستيك/فلين…).
+
+        **handoff 05:** full Filament CRUD (add / edit / delete / available /
+        image / pricingLabel). Not step titles — those stay frontend-only.
       required: [id, label, available]
       properties:
         id:
@@ -1198,6 +1349,7 @@ components:
         image:
           type: string
           format: uri
+          description: Absolute URL — fallback thumbnail when size.image is missing
         pricingLabel:
           type: string
           description: Heading for this container's price table, e.g. "الكاسة"
@@ -1205,18 +1357,22 @@ components:
 
     ISizeOption:
       type: object
-      description: Matches TypeScript `ISizeOption`
+      description: |
+        Matches TypeScript `ISizeOption`.
+
+        **handoff 05:** Filament CRUD for sizes + `prices[]` + optional
+        `image` (strongly preferred for family merged rows).
       required: [id, label, maxBalls, prices]
       properties:
         id:
           type: string
-          example: cup-small
+          example: plastic-half
         label:
           type: string
-          example: صغير
+          example: 1/2 لتر
         maxBalls:
           type: integer
-          example: 1
+          example: 8
         prices:
           type: array
           items:
@@ -1224,7 +1380,26 @@ components:
         containerId:
           type: string
           description: Restricts this size to one IContainerOption id
-          example: cup
+          example: plastic
+        available:
+          type: boolean
+          default: true
+          description: |
+            Omit or `true` when the size is orderable. `false` renders the size
+            greyed with a "غير متوفر" badge instead of removing it.
+
+            Needed to stop a single size independently of its container — e.g.
+            بوظة عائلي merges container+size into one step, so disabling
+            "1 لتر فلين" must be possible without disabling "1/2 لتر فلين".
+          example: true
+        image:
+          type: string
+          format: uri
+          description: |
+            Thumbnail for this size on the order page (especially family
+            merged "نوع + حجم" rows). Preferred over `containerOptions[].image`
+            when both are set. Absolute URL via Storage::url(...) (handoff 05).
+          example: https://cdn.glace.ps/menu/sizes/family-plastic-half.png
 
     IProductBase:
       type: object
@@ -1258,6 +1433,10 @@ components:
         image:
           type: string
           format: uri
+          description: |
+            Product hero image — absolute URL. Brad-boza uses **this field only**
+            (no companion / secondary cup image — handoff 06).
+          example: https://cdn.glace.ps/menu/pancake.jpg
         sortOrder:
           type: integer
           example: 1
@@ -1321,7 +1500,14 @@ components:
           example: 10
 
     IBuilderProduct:
-      description: Matches TypeScript `IBuilderProduct` — the size/flavor "wizard" template (cup, family, brad, brad-boza)
+      description: |
+        Matches TypeScript `IBuilderProduct` — size/flavor wizard
+        (cup, family, brad, brad-boza).
+
+        **handoff 05 · 06:** Filament manages `containerOptions`, `sizes`
+        (+ images/prices), and brad-boza `iceCreamAddonPrices`. Do **not**
+        send `secondaryImage`. Step titles («اختر النوع» / «اختر الحجم») are
+        frontend-only — not API fields.
       allOf:
         - $ref: "#/components/schemas/IProductBase"
         - type: object
@@ -1332,13 +1518,17 @@ components:
               enum: [builder]
             containerOptions:
               type: array
+              description: Types managed from Filament (handoff 05)
               items:
                 $ref: "#/components/schemas/IContainerOption"
             includesIceCreamStep:
               type: boolean
-              description: Brad-boza only — renders an extra ice-type + flavor-ball step
+              description: |
+                Brad-boza only — renders the extra ice-type + flavor-ball step.
+                Does NOT imply a second hero image.
             iceCreamAddonPrices:
               type: array
+              description: Brad-boza additive prices — Filament-editable (handoff 05)
               items:
                 $ref: "#/components/schemas/IPriceCell"
             hasExtraBiscuitAddon:
@@ -1346,13 +1536,15 @@ components:
             pricingLabel:
               type: string
               description: |
-                Heading for the price table when sizes aren't split per
-                container (e.g. برادة's "أسعار البراد"). Unused when sizes
-                carry their own containerId — the container's own
-                pricingLabel wins in that case.
-              example: البراد
+                Price-table heading when sizes aren't split per container
+                (handoff 06). Prefer the full title already including "أسعار"
+                (e.g. "أسعار البراد"), or just the noun ("البراد") —
+                the frontend only prefixes "أسعار" when missing.
+                Unused when sizes carry containerId (container.pricingLabel wins).
+              example: أسعار البراد
             sizes:
               type: array
+              description: Sizes + prices (+ optional image) — Filament CRUD (handoff 05)
               items:
                 $ref: "#/components/schemas/ISizeOption"
             selectionMode:
@@ -1363,9 +1555,28 @@ components:
               items:
                 type: string
                 enum: [classic, special, mix]
+            flavors:
+              type: array
+              description: |
+                Flavor balls served INLINE — no separate `/menu/flavors` endpoint.
+
+                Returned by `GET /menu/products/{slug}` (detail) ONLY. The
+                `GET /menu/products` list MUST omit it (handoff 02).
+
+                Required for builder products with a non-empty `flavorFamilies`
+                (`cup`, `family`, `brad-boza`). `family` MUST return a non-empty
+                array. `brad` has no flavor step and does not need it.
+                Every element must include `available` even when `false`.
+              items:
+                $ref: "#/components/schemas/IFlavorOption"
 
     IFlatListProduct:
-      description: Matches TypeScript `IFlatListProduct` — the flat items + optional mixes template
+      description: |
+        Matches TypeScript `IFlatListProduct` — flat items + optional mixes
+        (milkshake, pancake, waffle, …).
+
+        **handoff 01 · 07:** every `items[]` row requires `image`. `mixes[]`
+        (مكس / سوبر مكس) are Filament-managed when the product offers them.
       allOf:
         - $ref: "#/components/schemas/IProductBase"
         - type: object
@@ -1376,10 +1587,16 @@ components:
               enum: [flat-list]
             items:
               type: array
+              description: |
+                Variants shown on the order page. Each item MUST include
+                `image` (handoff 01) — also used inside the mix modal.
               items:
                 $ref: "#/components/schemas/IProductVariant"
             mixes:
               type: array
+              description: |
+                Optional mix rules (handoff 07). Filament CRUD; `available: false`
+                hides the rule. `itemIds` → same product's `items[].id`.
               items:
                 $ref: "#/components/schemas/IMixRule"
 

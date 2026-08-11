@@ -1,7 +1,8 @@
-import type { StaticIMG } from "@/assets/images";
+import { resolveMediaSrc } from "@/lib/media";
 
-/** Image from API (URL string) or bundled static asset (fake fallback). */
-export type HomeImage = StaticIMG | string;
+/** Home image as served by the API — a URL, a storage-relative path, or `null`
+ *  when nothing has been uploaded yet. `resolveHomeImageSrc` handles all three. */
+export type HomeImage = string | null | undefined;
 
 export interface ISlideData {
   manImg: HomeImage;
@@ -23,9 +24,11 @@ export interface IHomeAboutData {
   ctaHref: string;
 }
 
+/** A "why Glace" pill. Only the text comes from the backend — the coloured
+ *  blob behind it is fixed frontend decoration, alternating blue/brown by
+ *  position, so the design stays consistent whatever the dashboard says. */
 export interface IHomeWhyFeature {
   label: string;
-  image: HomeImage;
 }
 
 export interface IHomeWhyGlaceData {
@@ -79,5 +82,5 @@ export interface IHomePageData {
 }
 
 export function resolveHomeImageSrc(image: HomeImage): string {
-  return typeof image === "string" ? image : image.src;
+  return resolveMediaSrc(image);
 }

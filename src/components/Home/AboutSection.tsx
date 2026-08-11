@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { bgWA, imgBtn } from "@/assets/images";
-import type { IHomeAboutData } from "@/types/home.types";
+import { resolveHomeImageSrc, type IHomeAboutData } from "@/types/home.types";
 
 export default function AboutSection({
   bgColor = "#BEBB49",
@@ -20,7 +20,7 @@ export default function AboutSection({
         {/* Character image */}
         <div className="mt-[47px] lg:mt-0 w-full lg:w-[40%]">
           <Image
-            src={about.image}
+            src={resolveHomeImageSrc(about.image)}
             alt="جلاسيه الأمير"
             width={550}
             height={600}
@@ -32,7 +32,7 @@ export default function AboutSection({
         <div className="w-full lg:w-[60%] text-white">
           <div className="max-w-[700px]">
             <h1
-              className="text-[#f4e451] text-[36px] md:text-[36px] lg:text-[45px] xl:text-[60px]"
+              className="text-[#f4e451] text-[32px] md:text-[36px] lg:text-[45px]"
               style={{ textShadow: "2px 2px #00000046" }}
             >
               {about.title}
@@ -40,14 +40,14 @@ export default function AboutSection({
             {about.paragraphs.map((paragraph) => (
               <p
                 key={paragraph.slice(0, 24)}
-                className="text-[24px] md:text-[24px] lg:text-[26px]"
+                className="text-[20px] md:text-[24px] lg:text-[26px] text-justify"
               >
                 {paragraph}
               </p>
             ))}
             <Link
               href={about.ctaHref}
-              className="inline-block relative mt-5 cursor-pointer"
+              className="inline-block relative mt-10 cursor-pointer"
             >
               <Image
                 src={imgBtn}

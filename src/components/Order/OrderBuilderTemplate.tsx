@@ -13,9 +13,8 @@ import { ExtraBiscuitCounter } from "@/components/Order/BiscuitAddons";
 import StepCard from "@/components/Order/shared/StepCard";
 import Pill from "@/components/Order/shared/Pill";
 import { useLeavePageGuard, useAddToCartFeedback } from "@/hooks/order";
+import { useMenuAddons } from "@/hooks/menu";
 import { useCartStore, type CartSelection } from "@/store/cartStore";
-import { FAKE_FLAVORS } from "@/data/fake-data/menu";
-import { iceCreamCup } from "@/assets/images";
 import {
   resolveBuilderPrice,
   resolveMenuImageSrc,
@@ -23,7 +22,19 @@ import {
   type IFlavorOption,
 } from "@/types/menu.types";
 
-const EXTRA_BISCUIT_UNIT_PRICE = 1;
+/** Backend id of the extra-biscuit addon inside `GET /menu/addons`. */
+const EXTRA_BISCUIT_ADDON_ID = "extra-biscuit";
+
+/** Full price-table heading from API labels (avoid "أسعار أسعار …"). */
+function priceTableTitle(
+  label: string | undefined,
+  fallbackName: string,
+): string {
+  const raw = (label ?? fallbackName).trim();
+  if (!raw) return "الأسعار";
+  if (/^أسعار(\s|$)/.test(raw)) return raw;
+  return `أسعار ${raw}`;
+}
 
 type FlavorFamily = "classic" | "special" | "mix";
 
@@ -33,10 +44,18 @@ const FAMILY_LABELS: Record<FlavorFamily, string> = {
   mix: "مكس",
 };
 
-function flavorPoolFor(family: FlavorFamily): IFlavorOption[] {
-  if (family === "classic") return FAKE_FLAVORS.filter((f) => f.family === "classic" || f.family === "stevia");
-  if (family === "special") return FAKE_FLAVORS.filter((f) => f.family === "special");
-  return FAKE_FLAVORS.filter((f) => f.family !== undefined); // mix: all families combined
+/** Narrows the backend flavor catalog to the balls offered for one family. */
+function flavorPoolFor(
+  catalog: IFlavorOption[],
+  family: FlavorFamily,
+): IFlavorOption[] {
+  if (family === "classic")
+    return catalog.filter(
+      (f) => f.family === "classic" || f.family === "stevia",
+    );
+  if (family === "special")
+    return catalog.filter((f) => f.family === "special");
+  return catalog; // mix: all families combined
 }
 
 /** One size×flavor-family price table for one container group (or the whole
@@ -52,36 +71,52 @@ function PriceTable({
 }) {
   return (
     <div className="bg-white/10 border border-white/15 rounded-[20px] overflow-hidden">
-      <h3 className="px-4 pt-3.5 pb-2 font-bold text-[14px] text-white/85">{title}</h3>
+      <h3 className="px-4 pt-3.5 pb-2 font-bold text-[14px] text-white/85">
+        {title}
+      </h3>
       <div
-        className="grid gap-y-1 px-4 pb-3 text-[13px]"
+        className="gap-y-1 grid px-4 pb-3 text-[13px]"
         style={{
-          gridTemplateColumns: showFamilySplit ? "1.4fr 0.8fr 0.8fr 0.8fr" : "1.4fr 0.9fr",
+          gridTemplateColumns: showFamilySplit
+            ? "1.4fr 0.8fr 0.8fr 0.8fr"
+            : "1.4fr 0.9fr",
         }}
       >
-        <div className="pb-1.5 font-bold text-white/50 text-[11px]">الحجم</div>
-        {showFamilySplit && <div className="pb-1.5 font-bold text-white/50 text-[11px] text-center">كرات</div>}
-        <div className="pb-1.5 font-bold text-white/50 text-[11px] text-center">
+        <div className="pb-1.5 font-bold text-[11px] text-white/50">الحجم</div>
+        {showFamilySplit && (
+          <div className="pb-1.5 font-bold text-[11px] text-white/50 text-center">
+            كرات
+          </div>
+        )}
+        <div className="pb-1.5 font-bold text-[11px] text-white/50 text-center">
           {showFamilySplit ? "كلاسيك" : "السعر"}
         </div>
-        {showFamilySplit && <div className="pb-1.5 font-bold text-white/50 text-[11px] text-center">سبيشال</div>}
+        {showFamilySplit && (
+          <div className="pb-1.5 font-bold text-[11px] text-white/50 text-center">
+            سبيشال
+          </div>
+        )}
 
         {sizes.map((size) => {
-          const classic = size.prices.find((p) => p.flavorFamily === "classic")?.price;
-          const special = size.prices.find((p) => p.flavorFamily === "special")?.price;
+          const classic = size.prices.find(
+            (p) => p.flavorFamily === "classic",
+          )?.price;
+          const special = size.prices.find(
+            (p) => p.flavorFamily === "special",
+          )?.price;
           return (
             <div key={size.id} className="contents">
               <div className="py-1 text-white">{size.label}</div>
               {showFamilySplit && (
-                <div className="py-1 text-white/70 text-center tabular-nums">
+                <div className="py-1 tabular-nums text-white/70 text-center">
                   {size.maxBalls > 0 ? `×${size.maxBalls}` : "—"}
                 </div>
               )}
-              <div className="py-1 font-bold text-[#a8e8f8] text-center tabular-nums">
+              <div className="py-1 font-bold tabular-nums text-[#a8e8f8] text-center">
                 {classic !== undefined ? `${classic} ₪` : "—"}
               </div>
               {showFamilySplit && (
-                <div className="py-1 font-bold text-glace-yellow text-center tabular-nums">
+                <div className="py-1 font-bold tabular-nums text-glace-yellow text-center">
                   {special !== undefined ? `${special} ₪` : "—"}
                 </div>
               )}
@@ -93,26 +128,50 @@ function PriceTable({
   );
 }
 
-export default function OrderBuilderTemplate({ product }: { product: IBuilderProduct }) {
+export default function OrderBuilderTemplate({
+  product,
+}: {
+  product: IBuilderProduct;
+}) {
   const searchParams = useSearchParams();
   const requestedContainer = searchParams.get("container");
+
+  // Extra-biscuit pricing is backend-owned — never hardcode a charge.
+  const { data: sharedAddons } = useMenuAddons();
+  const extraBiscuitAddon = sharedAddons?.find(
+    (a) => a.id === EXTRA_BISCUIT_ADDON_ID,
+  );
+  // Until the catalog loads (or if the backend dropped the addon) the step is
+  // hidden rather than shown at a guessed price.
+  const showExtraBiscuit =
+    !!product.hasExtraBiscuitAddon &&
+    !!extraBiscuitAddon &&
+    extraBiscuitAddon.available !== false;
+  const extraBiscuitPrice = extraBiscuitAddon?.price ?? 0;
 
   const firstAvailableContainer =
     product.containerOptions?.find((c) => c.available)?.id ??
     product.containerOptions?.[0]?.id ??
     "";
   const [containerId, setContainerId] = useState(
-    (requestedContainer && product.containerOptions?.some((c) => c.id === requestedContainer)
+    (requestedContainer &&
+    product.containerOptions?.some((c) => c.id === requestedContainer)
       ? requestedContainer
       : firstAvailableContainer) || "",
   );
 
   const availableSizes = useMemo(
-    () => product.sizes.filter((s) => !s.containerId || s.containerId === containerId),
+    () =>
+      product.sizes.filter(
+        (s) => !s.containerId || s.containerId === containerId,
+      ),
     [product.sizes, containerId],
   );
-  const [sizeId, setSizeId] = useState(availableSizes[0]?.id ?? "");
-  const selectedSize = availableSizes.find((s) => s.id === sizeId) ?? availableSizes[0];
+  const firstOrderableSize =
+    availableSizes.find((s) => s.available !== false) ?? availableSizes[0];
+  const [sizeId, setSizeId] = useState(firstOrderableSize?.id ?? "");
+  const selectedSize =
+    availableSizes.find((s) => s.id === sizeId) ?? availableSizes[0];
 
   const hasFlavorStep = !!product.flavorFamilies?.length;
   const [flavorFamily, setFlavorFamily] = useState<FlavorFamily | "">(
@@ -122,12 +181,26 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
   const [extraBiscuitCount, setExtraBiscuitCount] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
-  const { addedToCart, validationMsg, showValidation, markAdded, toastMsg, dismissToast } =
-    useAddToCartFeedback();
+  const {
+    addedToCart,
+    validationMsg,
+    showValidation,
+    markAdded,
+    toastMsg,
+    dismissToast,
+  } = useAddToCartFeedback();
 
-  const selectedContainer = product.containerOptions?.find((c) => c.id === containerId);
+  const selectedContainer = product.containerOptions?.find(
+    (c) => c.id === containerId,
+  );
   const maxBalls = selectedSize?.maxBalls ?? 0;
-  const flavorPool = hasFlavorStep && flavorFamily ? flavorPoolFor(flavorFamily) : [];
+
+  // Flavor balls ride along on the product detail payload — one request, and
+  // each product can offer its own set.
+  const catalog = useMemo(() => product.flavors ?? [], [product.flavors]);
+
+  const flavorPool =
+    hasFlavorStep && flavorFamily ? flavorPoolFor(catalog, flavorFamily) : [];
   const isRepeatable = product.selectionMode === "repeatable";
 
   // A مكس only makes sense when the size allows more than one ball — a
@@ -136,13 +209,27 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
   const availableFlavorFamilies = (product.flavorFamilies ?? []).filter(
     (f) => f !== "mix" || maxBalls > 1,
   );
-  const mixClassicPool = useMemo(() => flavorPoolFor("classic"), []);
-  const mixSpecialPool = useMemo(() => flavorPoolFor("special"), []);
-  const mixClassicIds = useMemo(() => new Set(mixClassicPool.map((f) => f.id)), [mixClassicPool]);
-  const mixSpecialIds = useMemo(() => new Set(mixSpecialPool.map((f) => f.id)), [mixSpecialPool]);
+  const mixClassicPool = useMemo(
+    () => flavorPoolFor(catalog, "classic"),
+    [catalog],
+  );
+  const mixSpecialPool = useMemo(
+    () => flavorPoolFor(catalog, "special"),
+    [catalog],
+  );
+  const mixClassicIds = useMemo(
+    () => new Set(mixClassicPool.map((f) => f.id)),
+    [mixClassicPool],
+  );
+  const mixSpecialIds = useMemo(
+    () => new Set(mixSpecialPool.map((f) => f.id)),
+    [mixSpecialPool],
+  );
 
   const hasPendingSelections =
-    (product.containerOptions ? containerId !== firstAvailableContainer : false) ||
+    (product.containerOptions
+      ? containerId !== firstAvailableContainer
+      : false) ||
     sizeId !== (availableSizes[0]?.id ?? "") ||
     selectedFlavorIds.length > 0 ||
     extraBiscuitCount > 0 ||
@@ -180,7 +267,9 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
 
   function selectContainer(id: string) {
     setContainerId(id);
-    const nextSizes = product.sizes.filter((s) => !s.containerId || s.containerId === id);
+    const nextSizes = product.sizes.filter(
+      (s) => !s.containerId || s.containerId === id,
+    );
     setSizeId(nextSizes[0]?.id ?? "");
     setSelectedFlavorIds([]);
   }
@@ -217,8 +306,12 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
         // once only one slot is left, refuse to spend it on a family that
         // already has a representative, so the other family keeps a slot.
         if (flavorFamily === "mix" && maxBalls - prev.length === 1) {
-          const classicCount = prev.filter((id) => mixClassicIds.has(id)).length;
-          const specialCount = prev.filter((id) => mixSpecialIds.has(id)).length;
+          const classicCount = prev.filter((id) =>
+            mixClassicIds.has(id),
+          ).length;
+          const specialCount = prev.filter((id) =>
+            mixSpecialIds.has(id),
+          ).length;
           if (mixClassicIds.has(flavorId) && specialCount === 0) return prev;
           if (mixSpecialIds.has(flavorId) && classicCount === 0) return prev;
         }
@@ -239,9 +332,13 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
   }
 
   const unitBasePrice = selectedSize
-    ? resolveBuilderPrice(product, selectedSize, (flavorFamily || "classic") as FlavorFamily)
+    ? resolveBuilderPrice(
+        product,
+        selectedSize,
+        (flavorFamily || "classic") as FlavorFamily,
+      )
     : 0;
-  const addonSum = product.hasExtraBiscuitAddon ? extraBiscuitCount * EXTRA_BISCUIT_UNIT_PRICE : 0;
+  const addonSum = showExtraBiscuit ? extraBiscuitCount * extraBiscuitPrice : 0;
   const totalPrice = (unitBasePrice + addonSum) * quantity;
 
   function handleBeforeBack(): boolean {
@@ -252,10 +349,12 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
     if (containerSizesList.length > 0) {
       if (!containerId || !sizeId) return showValidation("اختر النوع و الحجم");
     } else {
-      if (product.containerOptions && !containerId) return showValidation("اختر النوع");
+      if (product.containerOptions && !containerId)
+        return showValidation("اختر النوع");
       if (!selectedSize) return showValidation("اختر الحجم");
     }
-    if (hasFlavorStep && selectedFlavorIds.length === 0) return showValidation("اختر الأطعمة");
+    if (hasFlavorStep && selectedFlavorIds.length === 0)
+      return showValidation("اختر الأطعمة");
     if (flavorFamily === "mix") {
       const hasClassic = selectedFlavorIds.some((id) => mixClassicIds.has(id));
       const hasSpecial = selectedFlavorIds.some((id) => mixSpecialIds.has(id));
@@ -265,23 +364,26 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
     }
 
     const flavorCounts = new Map<string, number>();
-    for (const id of selectedFlavorIds) flavorCounts.set(id, (flavorCounts.get(id) ?? 0) + 1);
+    for (const id of selectedFlavorIds)
+      flavorCounts.set(id, (flavorCounts.get(id) ?? 0) + 1);
 
-    const selections: CartSelection[] = Array.from(flavorCounts.entries()).map(([id, qty]) => ({
-      kind: "flavor",
-      id,
-      label: flavorPool.find((f) => f.id === id)?.nameAr ?? id,
-      qty,
-      unitPrice: 0,
-    }));
+    const selections: CartSelection[] = Array.from(flavorCounts.entries()).map(
+      ([id, qty]) => ({
+        kind: "flavor",
+        id,
+        label: flavorPool.find((f) => f.id === id)?.nameAr ?? id,
+        qty,
+        unitPrice: 0,
+      }),
+    );
 
-    if (extraBiscuitCount > 0) {
+    if (showExtraBiscuit && extraBiscuitCount > 0) {
       selections.push({
         kind: "addon",
-        id: "extra-biscuit",
-        label: "بسكوت إضافي",
+        id: EXTRA_BISCUIT_ADDON_ID,
+        label: extraBiscuitAddon?.label ?? "بسكوت إضافي",
         qty: extraBiscuitCount,
-        unitPrice: EXTRA_BISCUIT_UNIT_PRICE,
+        unitPrice: extraBiscuitPrice,
       });
     }
 
@@ -292,8 +394,12 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
       name: cartName,
       image: resolveMenuImageSrc(selectedContainer?.image ?? product.image),
       size: selectedSize.label,
-      container: product.containerOptions ? selectedContainer?.label : undefined,
-      flavorFamily: hasFlavorStep ? (flavorFamily as "classic" | "special" | "mix") : undefined,
+      container: product.containerOptions
+        ? selectedContainer?.label
+        : undefined,
+      flavorFamily: hasFlavorStep
+        ? (flavorFamily as "classic" | "special" | "mix")
+        : undefined,
       type: hasFlavorStep
         ? FAMILY_LABELS[flavorFamily as FlavorFamily]
         : selectedContainer?.label,
@@ -318,16 +424,31 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
   const isFamilyProduct = product.slug === "family";
   const containerSizesList = useMemo(() => {
     if (!isFamilyProduct || !product.containerOptions?.length) return [];
-    const composite: Array<{ containerId: string; sizeId: string; label: string; available: boolean; image?: string }> = [];
+    const composite: Array<{
+      containerId: string;
+      sizeId: string;
+      label: string;
+      available: boolean;
+      image?: string;
+    }> = [];
     for (const container of product.containerOptions) {
-      const containerSizes = product.sizes.filter((s) => !s.containerId || s.containerId === container.id);
+      const containerSizes = product.sizes.filter(
+        (s) => !s.containerId || s.containerId === container.id,
+      );
       for (const size of containerSizes) {
         composite.push({
           containerId: container.id,
           sizeId: size.id,
           label: `${size.label} ${container.label}`,
-          available: container.available,
-          image: container.image ? resolveMenuImageSrc(container.image) : undefined,
+          // Off when the container OR the size alone is stopped, so e.g.
+          // "1 لتر فلين" can be disabled while "1/2 لتر فلين" stays orderable.
+          available: container.available && size.available !== false,
+          // Per-size image wins; fall back to container image when absent.
+          image: size.image
+            ? resolveMenuImageSrc(size.image)
+            : container.image
+              ? resolveMenuImageSrc(container.image)
+              : undefined,
         });
       }
     }
@@ -341,8 +462,13 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
       byContainer.set(key, [...(byContainer.get(key) ?? []), size]);
     }
     return Array.from(byContainer.entries()).map(([containerKey, sizes]) => {
-      const container = product.containerOptions?.find((c) => c.id === containerKey);
-      const title = `أسعار ${container?.pricingLabel ?? product.pricingLabel ?? product.name}`;
+      const container = product.containerOptions?.find(
+        (c) => c.id === containerKey,
+      );
+      const title = priceTableTitle(
+        container?.pricingLabel ?? product.pricingLabel,
+        product.name,
+      );
       return { key: containerKey ?? "shared", title, sizes };
     });
   }, [product]);
@@ -350,7 +476,8 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
   // Only the table for the currently selected container (or the single
   // shared table when sizes aren't split per container at all).
   const activePriceGroup =
-    priceGroups.find((g) => g.key === (containerId || "shared")) ?? priceGroups[0];
+    priceGroups.find((g) => g.key === (containerId || "shared")) ??
+    priceGroups[0];
 
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
@@ -366,7 +493,11 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
                 <h1 className="font-bold text-[24px] text-white sm:text-[28px] leading-tight">
                   {product.name}
                 </h1>
-                <p className="text-[13px] text-white/55">{product.description || "خصّص طلبك خطوة بخطوة"}</p>
+                {product.description ? (
+                  <p className="text-[16px] text-white/55 md:text-[18px]">
+                    {product.description}
+                  </p>
+                ) : null}
               </div>
               <div className="flex items-end gap-1">
                 <Image
@@ -376,26 +507,27 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
                   height={160}
                   className="drop-shadow-xl w-28 sm:w-32 h-28 sm:h-32 object-contain"
                 />
-                {product.includesIceCreamStep && (
-                  <Image
-                    src={resolveMenuImageSrc(iceCreamCup)}
-                    alt=""
-                    width={90}
-                    height={90}
-                    className="drop-shadow-xl w-16 sm:w-20 h-16 sm:h-20 object-contain"
-                  />
-                )}
               </div>
 
               {hasFlavorStep && hasFamilySplit && (
                 <div className="space-y-2 mt-1 w-full text-start">
-                  <p className="text-[12px] text-white/60 leading-relaxed">
-                    <span className="font-bold text-glace-yellow">كلاسيك: </span>
-                    {flavorPoolFor("classic").map((f) => f.nameAr).join("، ")} ...
+                  <p className="text-[16px] text-white/60 md:text-[18px] leading-relaxed">
+                    <span className="font-bold text-glace-yellow">
+                      كلاسيك:{" "}
+                    </span>
+                    {mixClassicPool
+                      .slice(0, 5)
+                      .map((f) => f.nameAr)
+                      .join("، ")}{" "}
+                    ...
                   </p>
-                  <p className="text-[12px] text-white/60 leading-relaxed">
+                  <p className="text-[16px] text-white/60 md:text-[18px] leading-relaxed">
                     <span className="font-bold text-glace-yellow">سبيشل: </span>
-                    {flavorPoolFor("special").map((f) => f.nameAr).join("، ")} ...
+                    {mixSpecialPool
+                      .slice(0, 5)
+                      .map((f) => f.nameAr)
+                      .join("، ")}{" "}
+                    ...
                   </p>
                 </div>
               )}
@@ -408,7 +540,9 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
                   key={activePriceGroup.key}
                   title={activePriceGroup.title}
                   sizes={activePriceGroup.sizes}
-                  showFamilySplit={activePriceGroup.sizes.some((s) => s.prices.some((p) => p.flavorFamily === "special"))}
+                  showFamilySplit={activePriceGroup.sizes.some((s) =>
+                    s.prices.some((p) => p.flavorFamily === "special"),
+                  )}
                 />
               )}
             </div>
@@ -416,45 +550,70 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
         </div>
 
         {containerSizesList.length > 0 ? (
-          <StepCard step={stepNumber++} title="اختر النوع و الحجم" done={!!containerId && !!sizeId}>
+          <StepCard
+            step={stepNumber++}
+            title="اختر النوع و الحجم"
+            done={!!containerId && !!sizeId}
+          >
             <div className="flex flex-col gap-3">
               {containerSizesList.map((option) => (
                 <button
                   key={`${option.containerId}-${option.sizeId}`}
                   type="button"
                   disabled={!option.available}
-                  onClick={() => option.available && selectContainerAndSize(option.containerId, option.sizeId)}
-                  className={`flex items-center justify-between p-4 rounded-[16px] border-2 transition-all ${
+                  onClick={() =>
+                    option.available &&
+                    selectContainerAndSize(option.containerId, option.sizeId)
+                  }
+                  className={`flex items-center justify-between gap-3 p-4 rounded-[16px] border-2 transition-all ${
                     !option.available
                       ? "bg-white/5 border-red-400/50 cursor-not-allowed"
-                      : containerId === option.containerId && sizeId === option.sizeId
+                      : containerId === option.containerId &&
+                          sizeId === option.sizeId
                         ? "bg-glace-yellow border-glace-yellow"
                         : "bg-white/10 border-white/20 hover:bg-white/15"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    {option.image && (
+                  <div className="flex flex-1 items-center gap-3 min-w-0">
+                    {option.image ? (
                       <img
                         src={option.image}
                         alt={option.label}
                         className={`w-14 h-14 object-contain shrink-0 ${!option.available ? "opacity-60" : ""}`}
                       />
+                    ) : (
+                      <div
+                        className={`w-14 h-14 rounded-lg border border-dashed shrink-0 ${
+                          !option.available
+                            ? "border-white/15 bg-white/5"
+                            : containerId === option.containerId &&
+                                sizeId === option.sizeId
+                              ? "border-[#1e6a7f]/30 bg-white/20"
+                              : "border-white/25 bg-white/5"
+                        }`}
+                        aria-hidden
+                      />
                     )}
-                    <div className="flex flex-col items-start">
-                      <span className={`text-[14px] font-medium ${
+                    <span
+                      className={`text-[14px] font-medium ${
                         !option.available
                           ? "text-white/70"
-                          : containerId === option.containerId && sizeId === option.sizeId
+                          : containerId === option.containerId &&
+                              sizeId === option.sizeId
                             ? "text-[#1e6a7f] font-bold"
                             : "text-white"
-                      }`}>
-                        {option.label}
-                      </span>
-                    </div>
+                      }`}
+                    >
+                      {option.label}
+                    </span>
                   </div>
                   {!option.available && (
-                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-500/90 shrink-0">
-                      <span className="text-white text-[9px] font-bold text-center leading-tight">غير<br/>متوفر</span>
+                    <div className="flex justify-center items-center bg-red-500/90 rounded-full w-12 h-12 shrink-0">
+                      <span className="font-bold text-[9px] text-white text-center leading-tight">
+                        غير
+                        <br />
+                        متوفر
+                      </span>
                     </div>
                   )}
                 </button>
@@ -463,26 +622,37 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
           </StepCard>
         ) : (
           <>
-            {product.containerOptions && product.containerOptions.length > 0 && (
-              <StepCard step={stepNumber++} title="اختر النوع" done={!!containerId}>
-                <div className="flex flex-wrap gap-2.5">
-                  {product.containerOptions.map((c) => (
-                    <Pill
-                      key={c.id}
-                      label={c.label}
-                      active={containerId === c.id}
-                      unavailable={!c.available}
-                      onClick={() => c.available && selectContainer(c.id)}
-                    />
-                  ))}
-                </div>
-              </StepCard>
-            )}
+            {product.containerOptions &&
+              product.containerOptions.length > 0 && (
+                <StepCard
+                  step={stepNumber++}
+                  title="اختر النوع"
+                  done={!!containerId}
+                >
+                  <div className="flex flex-wrap gap-2.5">
+                    {product.containerOptions.map((c) => (
+                      <Pill
+                        key={c.id}
+                        label={c.label}
+                        active={containerId === c.id}
+                        unavailable={!c.available}
+                        onClick={() => c.available && selectContainer(c.id)}
+                      />
+                    ))}
+                  </div>
+                </StepCard>
+              )}
 
             <StepCard step={stepNumber++} title="اختر الحجم" done={!!sizeId}>
               <div className="flex flex-wrap gap-2.5">
                 {availableSizes.map((s) => (
-                  <Pill key={s.id} label={s.label} active={sizeId === s.id} onClick={() => selectSize(s.id)} />
+                  <Pill
+                    key={s.id}
+                    label={s.label}
+                    active={sizeId === s.id}
+                    unavailable={s.available === false}
+                    onClick={() => selectSize(s.id)}
+                  />
                 ))}
               </div>
             </StepCard>
@@ -511,33 +681,58 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
             <StepCard
               step={stepNumber++}
               title="اختر الأطعمة"
-              subtitle={isRepeatable ? `${selectedFlavorIds.length}/${maxBalls} كورة` : undefined}
+              subtitle={
+                isRepeatable
+                  ? `${selectedFlavorIds.length}/${maxBalls} كورة`
+                  : undefined
+              }
               done={selectedFlavorIds.length > 0}
             >
-              {flavorFamily === "mix" ? (
+              {catalog.length === 0 ? (
+                <p className="bg-white/8 py-6 border border-white/15 rounded-[16px] text-[14px] text-white/60 text-center">
+                  لا توجد أطعمة متاحة حالياً
+                </p>
+              ) : flavorFamily === "mix" ? (
                 <div className="space-y-4">
                   {(() => {
-                    const classicCount = selectedFlavorIds.filter((id) => mixClassicIds.has(id)).length;
-                    const specialCount = selectedFlavorIds.filter((id) => mixSpecialIds.has(id)).length;
+                    const classicCount = selectedFlavorIds.filter((id) =>
+                      mixClassicIds.has(id),
+                    ).length;
+                    const specialCount = selectedFlavorIds.filter((id) =>
+                      mixSpecialIds.has(id),
+                    ).length;
                     const remaining = maxBalls - selectedFlavorIds.length;
-                    const classicFull = remaining <= 0 || (remaining === 1 && specialCount === 0);
-                    const specialFull = remaining <= 0 || (remaining === 1 && classicCount === 0);
+                    const classicFull =
+                      remaining <= 0 || (remaining === 1 && specialCount === 0);
+                    const specialFull =
+                      remaining <= 0 || (remaining === 1 && classicCount === 0);
                     return (
                       <>
                         <div>
-                          <p className="mb-2 font-bold text-[12px] text-glace-yellow">كلاسيك</p>
+                          <p className="mb-2 font-bold text-[12px] text-glace-yellow">
+                            كلاسيك
+                          </p>
                           <div className="flex flex-wrap gap-4">
                             {mixClassicPool.map((flavor) => {
-                              const count = selectedFlavorIds.filter((id) => id === flavor.id).length;
+                              const count = selectedFlavorIds.filter(
+                                (id) => id === flavor.id,
+                              ).length;
                               return (
                                 <FlavorBall
                                   key={flavor.id}
                                   flavor={flavor}
-                                  count={isRepeatable ? count : selectedFlavorIds.includes(flavor.id) ? 1 : 0}
+                                  count={
+                                    isRepeatable
+                                      ? count
+                                      : selectedFlavorIds.includes(flavor.id)
+                                        ? 1
+                                        : 0
+                                  }
                                   isFull={
                                     isRepeatable
                                       ? classicFull
-                                      : classicFull && !selectedFlavorIds.includes(flavor.id)
+                                      : classicFull &&
+                                        !selectedFlavorIds.includes(flavor.id)
                                   }
                                   onAdd={() => addFlavor(flavor.id)}
                                   onRemove={(e) => {
@@ -550,19 +745,30 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
                           </div>
                         </div>
                         <div>
-                          <p className="mb-2 font-bold text-[12px] text-white/85">سبيشل</p>
+                          <p className="mb-2 font-bold text-[12px] text-white/85">
+                            سبيشل
+                          </p>
                           <div className="flex flex-wrap gap-4">
                             {mixSpecialPool.map((flavor) => {
-                              const count = selectedFlavorIds.filter((id) => id === flavor.id).length;
+                              const count = selectedFlavorIds.filter(
+                                (id) => id === flavor.id,
+                              ).length;
                               return (
                                 <FlavorBall
                                   key={flavor.id}
                                   flavor={flavor}
-                                  count={isRepeatable ? count : selectedFlavorIds.includes(flavor.id) ? 1 : 0}
+                                  count={
+                                    isRepeatable
+                                      ? count
+                                      : selectedFlavorIds.includes(flavor.id)
+                                        ? 1
+                                        : 0
+                                  }
                                   isFull={
                                     isRepeatable
                                       ? specialFull
-                                      : specialFull && !selectedFlavorIds.includes(flavor.id)
+                                      : specialFull &&
+                                        !selectedFlavorIds.includes(flavor.id)
                                   }
                                   onAdd={() => addFlavor(flavor.id)}
                                   onRemove={(e) => {
@@ -581,14 +787,26 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
               ) : (
                 <div className="flex flex-wrap gap-4">
                   {flavorPool.map((flavor) => {
-                    const count = selectedFlavorIds.filter((id) => id === flavor.id).length;
+                    const count = selectedFlavorIds.filter(
+                      (id) => id === flavor.id,
+                    ).length;
                     const isFull = selectedFlavorIds.length >= maxBalls;
                     return (
                       <FlavorBall
                         key={flavor.id}
                         flavor={flavor}
-                        count={isRepeatable ? count : selectedFlavorIds.includes(flavor.id) ? 1 : 0}
-                        isFull={isRepeatable ? isFull : isFull && !selectedFlavorIds.includes(flavor.id)}
+                        count={
+                          isRepeatable
+                            ? count
+                            : selectedFlavorIds.includes(flavor.id)
+                              ? 1
+                              : 0
+                        }
+                        isFull={
+                          isRepeatable
+                            ? isFull
+                            : isFull && !selectedFlavorIds.includes(flavor.id)
+                        }
                         onAdd={() => addFlavor(flavor.id)}
                         onRemove={(e) => {
                           e.stopPropagation();
@@ -603,11 +821,13 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
           </>
         )}
 
-        {product.hasExtraBiscuitAddon && (
+        {showExtraBiscuit && (
           <StepCard step={stepNumber++} title="إضافات">
             <ExtraBiscuitCounter
               count={extraBiscuitCount}
-              unitPrice={EXTRA_BISCUIT_UNIT_PRICE}
+              unitPrice={extraBiscuitPrice}
+              label={extraBiscuitAddon?.label}
+              maxQty={extraBiscuitAddon?.maxQty}
               onChange={setExtraBiscuitCount}
             />
           </StepCard>
@@ -624,7 +844,9 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
             >
               −
             </button>
-            <span className="min-w-5 font-bold text-[15px] text-white text-center">{quantity}</span>
+            <span className="min-w-5 font-bold text-[15px] text-white text-center">
+              {quantity}
+            </span>
             <button
               type="button"
               onClick={() => setQuantity((q) => q + 1)}
@@ -658,7 +880,6 @@ export default function OrderBuilderTemplate({ product }: { product: IBuilderPro
         onClose={handleCancelLeave}
         onConfirm={handleConfirmLeave}
       />
-
     </div>
   );
 }

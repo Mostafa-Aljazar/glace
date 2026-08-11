@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
+import DataError from "@/components/Common/DataError";
 import OrderBuilderTemplate from "@/components/Order/OrderBuilderTemplate";
 import OrderFlatListTemplate from "@/components/Order/OrderFlatListTemplate";
 import { useMenuProduct } from "@/hooks/menu/useMenuProduct";
@@ -13,12 +14,11 @@ interface OrderTypeClientPageProps {
 }
 
 /**
- * Fetches the product client-side via `useMenuProduct` (real API first, fake
- * data fallback — same pattern as `useEvent` on the events detail page) and
- * dispatches to the matching order template once it resolves.
+ * Fetches the product client-side via `useMenuProduct` (`GET /menu/products/
+ * {slug}`) and dispatches to the matching order template once it resolves.
  */
 export default function OrderTypeClientPage({ productId }: OrderTypeClientPageProps) {
-  const { data: product, isLoading } = useMenuProduct(productId);
+  const { data: product, isLoading, isError, refetch } = useMenuProduct(productId);
 
   if (isLoading) {
     return (
@@ -54,6 +54,22 @@ export default function OrderTypeClientPage({ productId }: OrderTypeClientPagePr
 
           {/* Button skeleton */}
           <div className="h-12 bg-glace-yellow/50 rounded-full animate-pulse mt-8" />
+        </div>
+      </div>
+    );
+  }
+
+  // Distinguish "the backend is unreachable" from "this product doesn't exist".
+  if (isError) {
+    return (
+      <div className="flex justify-center items-center bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] px-4 min-h-screen">
+        <EventsBackground />
+        <div className="z-10 relative">
+          <DataError
+            title="تعذّر تحميل المنتج"
+            description="لم نتمكن من الوصول إلى الخادم، حاول مرة أخرى"
+            onRetry={() => void refetch()}
+          />
         </div>
       </div>
     );

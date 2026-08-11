@@ -4,6 +4,8 @@ import type { HomeImage } from "./home.types";
 
 export interface NavItem {
   label: string;
+  /** Optional shorter label for the compact desktop header bar. */
+  shortLabel?: string;
   href: string;
   icon?: React.ElementType;
 }

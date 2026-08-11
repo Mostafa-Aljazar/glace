@@ -16,7 +16,6 @@ import {
 import EventsBackground from "@/components/Events/EventsBackground";
 import CustomizeAdditionsDialog from "@/components/Cart/CustomizeAdditionsDialog";
 import { useMenuProducts, useMenuAddons } from "@/hooks/menu";
-import { findFakeProductById } from "@/data/fake-data/menu";
 import type { IAddonOption } from "@/types/menu.types";
 import {
   useCartStore,
@@ -386,8 +385,8 @@ export default function CartClientPage() {
     return persistApi.onFinishHydration(() => setHydrated(true));
   }, []);
 
-  // Shared additions catalog from the backend (GET /menu/addons), with a
-  // fake-data fallback — the options offered in the "تخصيص الإضافات" flow.
+  // Shared additions catalog from the backend (GET /menu/addons) — the options
+  // offered in the "تخصيص الإضافات" flow.
   const { data: sharedAddons } = useMenuAddons();
 
   // A product MAY still ship its own addons catalog (overrides the shared one).
@@ -399,10 +398,8 @@ export default function CartClientPage() {
   );
 
   function resolveAddons(productId: string): IAddonOption[] {
-    // Product-specific override wins (query first, then fake data — robust
-    // against a stale query cache); otherwise the shared backend catalog.
-    const productSpecific =
-      addonsByProductId.get(productId) ?? findFakeProductById(productId)?.addons;
+    // A product's own catalog overrides the shared one; both come from the API.
+    const productSpecific = addonsByProductId.get(productId);
     if (productSpecific && productSpecific.length > 0) return productSpecific;
     return sharedAddons ?? [];
   }

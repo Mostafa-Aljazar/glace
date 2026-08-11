@@ -5,17 +5,24 @@ import { Minus, Plus } from "lucide-react";
 export function ExtraBiscuitCounter({
   count,
   unitPrice,
+  label = "بسكوت إضافي",
+  maxQty,
   onChange,
 }: {
   count: number;
   unitPrice: number;
+  label?: string;
+  /** Per-unit cap from the backend addon catalog; unbounded when omitted. */
+  maxQty?: number;
   onChange: (count: number) => void;
 }) {
+  const atMax = maxQty !== undefined && count >= maxQty;
+
   return (
     <div className="flex items-center justify-between gap-4 bg-white/10 px-4 py-4 border border-white/20 rounded-[16px]">
       {/* Label on the right (RTL start) */}
       <div className="flex-1">
-        <p className="font-medium text-[15px] text-white">بسكوت إضافي</p>
+        <p className="font-medium text-[15px] text-white">{label}</p>
         <p className="text-[12px] text-white/50">{unitPrice} ₪ / حبة</p>
       </div>
 
@@ -39,8 +46,9 @@ export function ExtraBiscuitCounter({
         </span>
         <button
           type="button"
-          onClick={() => onChange(count + 1)}
-          className="flex justify-center items-center bg-white/15 hover:bg-white/25 border border-white/25 rounded-full w-9 h-9 text-white transition-colors cursor-pointer"
+          onClick={() => onChange(maxQty !== undefined ? Math.min(maxQty, count + 1) : count + 1)}
+          disabled={atMax}
+          className="flex justify-center items-center bg-white/15 hover:bg-white/25 disabled:opacity-40 border border-white/25 rounded-full w-9 h-9 text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
         >
           <Plus size={14} />
         </button>

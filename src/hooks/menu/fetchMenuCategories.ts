@@ -1,6 +1,9 @@
 import { guestApi } from "@/lib/axios";
-import { FAKE_MENU_CATEGORIES } from "@/data/fake-data/menu";
 import type { IMenuCategory } from "@/types/menu.types";
+
+/** Query key. Lives here, not in the `"use client"` hook, so Server
+ *  Components can prefetch with it. */
+export const MENU_CATEGORIES_QUERY_KEY = ["menu-categories"] as const;
 
 function isMenuCategory(value: unknown): value is IMenuCategory {
   if (!value || typeof value !== "object") return false;
@@ -18,22 +21,25 @@ function isMenuCategory(value: unknown): value is IMenuCategory {
 
 /**
  * Fetches the menu category list from `GET /menu/categories`.
- * Falls back to `FAKE_MENU_CATEGORIES` when the API fails or returns invalid
- * data. Malformed rows are dropped individually so one bad category doesn't
- * blank the whole browse grid.
+ * Backend is the only source — network/shape failures reject so the UI can
+ * surface an error instead of rendering data the backend never sent.
  */
 export async function fetchMenuCategories(): Promise<IMenuCategory[]> {
-  try {
-    const res = await guestApi.get<IMenuCategory[]>("/menu/categories");
-    if (Array.isArray(res?.data)) {
-      const valid = res.data.filter(isMenuCategory);
-      if (valid.length > 0) return valid;
-    }
-    return FAKE_MENU_CATEGORIES;
-  } catch (e) {
-    console.error("[fetchMenuCategories]", e);
-    return FAKE_MENU_CATEGORIES;
+  const res = await guestApi.get<IMenuCategory[]>("/menu/categories");
+
+  if (!Array.isArray(res?.data)) {
+    throw new Error("Invalid /menu/categories response shape");
   }
+
+  const invalid = res.data.filter((c) => !isMenuCategory(c));
+  if (invalid.length > 0) {
+    // Dropping records silently hides backend regressions — fail loudly.
+    throw new Error(
+      `Invalid category records in /menu/categories (${invalid.length}/${res.data.length})`,
+    );
+  }
+
+  return res.data;
 }
 
 export default fetchMenuCategories;

@@ -41,7 +41,7 @@ import {
   pistachioIce,
   blueberryIce,
   energyIce,
-} from "@/assets/images";
+} from "../../../src/assets/images";
 import type {
   IAddonOption,
   IBuilderProduct,
@@ -49,7 +49,7 @@ import type {
   IFlavorOption,
   IMenuCategory,
   IProduct,
-} from "@/types/menu.types";
+} from "../../../src/types/menu.types";
 
 // ─── Categories (16, ported 1:1 from menuApiData.ts's FAKE_CATEGORIES +
 // MenuClientPage.tsx's CATEGORY_ICONS/CATEGORY_GRADIENTS/CATEGORY_ACCENT) ────
@@ -232,11 +232,11 @@ const coldDrinksProduct: IFlatListProduct = {
   hasImageZoom: true,
   hasNotes: true,
   items: [
-    { label: "آيس كوفي كراميل", price: 8, description: "قهوة باردة مع كراميل منعش", image: caramelIce, available: true },
-    { label: "آيس موكا", price: 8, description: "قهوة مع نكهة شوكولاتة باردة", image: nescafeIce, available: true },
-    { label: "سبانش لاتيه كراميل", price: 10, description: "لاتيه إسباني برد مع كراميل", image: caramelIce, available: true },
-    { label: "بوبا شيك كوفي/فراولة", price: 12, description: "شيك لذيذ مع كرات الشاي", image: chocolateIce, available: true },
-    { label: "مياه صغيرة", price: 1, description: "مياه باردة ومنعشة", image: coconutIce, available: true },
+    { id: "iced-coffee-caramel", label: "آيس كوفي كراميل", price: 8, description: "قهوة باردة مع كراميل منعش", image: caramelIce, available: true },
+    { id: "iced-mocha", label: "آيس موكا", price: 8, description: "قهوة مع نكهة شوكولاتة باردة", image: nescafeIce, available: true },
+    { id: "spanish-latte-caramel", label: "سبانش لاتيه كراميل", price: 10, description: "لاتيه إسباني برد مع كراميل", image: caramelIce, available: true },
+    { id: "boba-shake", label: "بوبا شيك كوفي/فراولة", price: 12, description: "شيك لذيذ مع كرات الشاي", image: chocolateIce, available: true },
+    { id: "small-water", label: "مياه صغيرة", price: 1, description: "مياه باردة ومنعشة", image: coconutIce, available: true },
   ],
 };
 
@@ -254,10 +254,10 @@ const hotDrinksProduct: IFlatListProduct = {
   hasImageZoom: true,
   hasNotes: true,
   items: [
-    { label: "قهوة عربية", price: 5, description: "قهوة عربية تقليدية دافئة", image: caramelIce, available: true },
-    { label: "نسكافيه حار", price: 6, description: "مشروب نسكافيه ساخن لذيذ", image: nescafeIce, available: true },
-    { label: "شاي", price: 4, description: "شاي ساخن مريح وشهي", image: lemonIce, available: true },
-    { label: "هوت شوكولاتة", price: 8, description: "شوكولاتة ساخنة غنية وسميكة", image: chocolateIce, available: true },
+    { id: "arabic-coffee", label: "قهوة عربية", price: 5, description: "قهوة عربية تقليدية دافئة", image: caramelIce, available: true },
+    { id: "hot-nescafe", label: "نسكافيه حار", price: 6, description: "مشروب نسكافيه ساخن لذيذ", image: nescafeIce, available: true },
+    { id: "tea", label: "شاي", price: 4, description: "شاي ساخن مريح وشهي", image: lemonIce, available: true },
+    { id: "hot-chocolate", label: "هوت شوكولاتة", price: 8, description: "شوكولاتة ساخنة غنية وسميكة", image: chocolateIce, available: true },
   ],
 };
 
@@ -275,9 +275,9 @@ const juicesProduct: IFlatListProduct = {
   hasImageZoom: true,
   hasNotes: true,
   items: [
-    { label: "فراولة", price: 5, description: "عصير فراولة طازة وطبيعية", image: strawberryIce, available: true },
-    { label: "بلوليمونادا", price: 6, description: "عصير بلو ليمون منعش", image: lemonIce, available: true },
-    { label: "مانجا", price: 7, description: "عصير مانجا حلو وعطري", image: mangoIce, available: true },
+    { id: "strawberry", label: "فراولة", price: 5, description: "عصير فراولة طازة وطبيعية", image: strawberryIce, available: true },
+    { id: "blue-lemonade", label: "بلوليمونادا", price: 6, description: "عصير بلو ليمون منعش", image: lemonIce, available: true },
+    { id: "mango", label: "مانجا", price: 7, description: "عصير مانجا حلو وعطري", image: mangoIce, available: true },
   ],
 };
 
@@ -295,9 +295,9 @@ const cornProduct: IFlatListProduct = {
   hasImageZoom: true,
   hasNotes: true,
   items: [
-    { label: "ذرة سادة", price: 5, description: "ذرة طازة وشهية بدون إضافات", image: corn, available: true },
-    { label: "ذرة بالجبنة", price: 7, description: "ذرة مع نكهة جبن لذيذة", image: corn, available: true },
-    { label: "ذرة بالشوكولاتة", price: 8, description: "ذرة حلوة مع شوكولاتة", image: chocolateIce, available: true },
+    { id: "plain", label: "ذرة سادة", price: 5, description: "ذرة طازة وشهية بدون إضافات", image: corn, available: true },
+    { id: "cheese", label: "ذرة بالجبنة", price: 7, description: "ذرة مع نكهة جبن لذيذة", image: corn, available: true },
+    { id: "chocolate", label: "ذرة بالشوكولاتة", price: 8, description: "ذرة حلوة مع شوكولاتة", image: chocolateIce, available: true },
   ],
 };
 
@@ -322,22 +322,22 @@ const milkshakeProduct: IFlatListProduct = {
     { id: "whipped-cream", label: "كريمة مخفوقة", price: 2, available: true },
   ],
   items: [
-    { label: "كلاسيك شوكولاته", price: 8, description: "شيك شوكولاتة ناعم ولذيذ", image: chocolateIce, available: true },
-    { label: "كلاسيك فانيلا", price: 8, description: "شيك فانيلا كلاسيكي", image: vanillaaIce, available: true },
-    { label: "كلاسيك فراولة", price: 8, description: "شيك فراولة طازة", image: strawberryIce, available: false },
-    { label: "كلاسيك كاراميل", price: 8, description: "شيك كاراميل حلو وشهي", image: caramelIce, available: true },
-    { label: "كلاسيك نسكافيه", price: 8, description: "شيك نسكافيه دافئ", image: nescafeIce, available: true },
-    { label: "كلاسيك باروكا", price: 8, description: "شيك بطعم باروكا لذيذ", image: caramelIce, available: false },
-    { label: "سبيشال نوتيلا", price: 10, description: "شيك نوتيلا غنية", image: nutellaIce, available: true },
-    { label: "سبيشال لوتس", price: 10, description: "شيك بطعم لوتس فريد", image: lotusIce, available: true },
-    { label: "سبيشال كندر", price: 10, description: "شيك كندر بوينو", image: kinderBuenoIce, available: true },
-    { label: "سبيشال أوريو", price: 10, description: "شيك أوريو مع قطع البسكوت", image: oreoIce, available: false },
-    { label: "سبيشال كت كات", price: 10, description: "شيك كت كات المقرمش", image: kitKatIce, available: true },
-    { label: "سبيشال فيتنس", price: 10, description: "شيك فيتنس صحي", image: nescafeIce, available: true },
-    { label: "سبيشال شوفان", price: 10, description: "شيك شوفان غني وصحي", image: nutellaIce, available: true },
-    { label: "سيرلاك (أطعم خاصة)", price: 8, description: "شيك سيرلاك تقليدي", image: marioIce, available: true },
-    { label: "اينشتاين (أطعم خاصة)", price: 9, description: "شيك اينشتاين حلو", image: marioIce, available: true },
-    { label: "بيستاشيو (أطعم خاصة)", price: 13, description: "شيك بيستاشيو فاخر", image: pistachioIce, available: true },
+    { id: "chocolate", label: "كلاسيك شوكولاته", price: 8, description: "شيك شوكولاتة ناعم ولذيذ", image: chocolateIce, available: true },
+    { id: "vanilla", label: "كلاسيك فانيلا", price: 8, description: "شيك فانيلا كلاسيكي", image: vanillaaIce, available: true },
+    { id: "strawberry", label: "كلاسيك فراولة", price: 8, description: "شيك فراولة طازة", image: strawberryIce, available: false },
+    { id: "caramel", label: "كلاسيك كاراميل", price: 8, description: "شيك كاراميل حلو وشهي", image: caramelIce, available: true },
+    { id: "nescafe", label: "كلاسيك نسكافيه", price: 8, description: "شيك نسكافيه دافئ", image: nescafeIce, available: true },
+    { id: "bazooka", label: "كلاسيك باروكا", price: 8, description: "شيك بطعم باروكا لذيذ", image: caramelIce, available: false },
+    { id: "nutella", label: "سبيشال نوتيلا", price: 10, description: "شيك نوتيلا غنية", image: nutellaIce, available: true },
+    { id: "lotus", label: "سبيشال لوتس", price: 10, description: "شيك بطعم لوتس فريد", image: lotusIce, available: true },
+    { id: "kinder", label: "سبيشال كندر", price: 10, description: "شيك كندر بوينو", image: kinderBuenoIce, available: true },
+    { id: "oreo", label: "سبيشال أوريو", price: 10, description: "شيك أوريو مع قطع البسكوت", image: oreoIce, available: false },
+    { id: "kitkat", label: "سبيشال كت كات", price: 10, description: "شيك كت كات المقرمش", image: kitKatIce, available: true },
+    { id: "fitness", label: "سبيشال فيتنس", price: 10, description: "شيك فيتنس صحي", image: nescafeIce, available: true },
+    { id: "oat", label: "سبيشال شوفان", price: 10, description: "شيك شوفان غني وصحي", image: nutellaIce, available: true },
+    { id: "cerelac", label: "سيرلاك (أطعم خاصة)", price: 8, description: "شيك سيرلاك تقليدي", image: marioIce, available: true },
+    { id: "einstein", label: "اينشتاين (أطعم خاصة)", price: 9, description: "شيك اينشتاين حلو", image: marioIce, available: true },
+    { id: "pistachio", label: "بيستاشيو (أطعم خاصة)", price: 13, description: "شيك بيستاشيو فاخر", image: pistachioIce, available: true },
   ],
 };
 
@@ -354,12 +354,12 @@ const kunafaProduct: IFlatListProduct = {
   hasFavorites: true,
   hasNotes: true,
   items: [
-    { label: "كنافة عربية", price: 8, description: "كنافة مقرمشة مع بوظة عربية", image: arabianIce, available: true },
-    { label: "كنافة لوتس", price: 8, description: "كنافة لذيذة مع طعم لوتس", image: lotusIce, available: true },
-    { label: "كنافة نوتيلا", price: 8, description: "كنافة شهية مع نوتيلا", image: nutellaIce, available: true },
-    { label: "كنافة بلوبيري", price: 8, description: "كنافة مع نكهة التوت الأزرق", image: blueberryIce, available: false },
-    { label: "كنافة دوندورما بيستاشيو", price: 12, description: "كنافة فاخرة مع دوندورما بيستاشيو", image: pistachioIce, available: true, isPremiumMixFlavor: true },
-    { label: "كنافة طاقة (كل خميس)", price: 12, description: "كنافة خاصة متوفرة يوم الخميس", image: energyIce, available: false },
+    { id: "arabian", label: "كنافة عربية", price: 8, description: "كنافة مقرمشة مع بوظة عربية", image: arabianIce, available: true },
+    { id: "lotus", label: "كنافة لوتس", price: 8, description: "كنافة لذيذة مع طعم لوتس", image: lotusIce, available: true },
+    { id: "nutella", label: "كنافة نوتيلا", price: 8, description: "كنافة شهية مع نوتيلا", image: nutellaIce, available: true },
+    { id: "blueberry", label: "كنافة بلوبيري", price: 8, description: "كنافة مع نكهة التوت الأزرق", image: blueberryIce, available: false },
+    { id: "dondurma-pistachio", label: "كنافة دوندورما بيستاشيو", price: 12, description: "كنافة فاخرة مع دوندورما بيستاشيو", image: pistachioIce, available: true, isPremiumMixFlavor: true },
+    { id: "energy", label: "كنافة طاقة (كل خميس)", price: 12, description: "كنافة خاصة متوفرة يوم الخميس", image: energyIce, available: false },
   ],
   mixes: [
     {
@@ -369,7 +369,7 @@ const kunafaProduct: IFlatListProduct = {
       basePrice: 10,
       flavorPrice: 5,
       premiumFlavorPrice: 8,
-      flavorOptionIds: ["كنافة عربية", "كنافة لوتس", "كنافة نوتيلا", "كنافة بلوبيري", "كنافة دوندورما بيستاشيو", "كنافة طاقة (كل خميس)"],
+      itemIds: ["arabian", "lotus", "nutella", "blueberry", "dondurma-pistachio", "energy"],
     },
   ],
 };
@@ -387,12 +387,12 @@ const loqaimatProduct: IFlatListProduct = {
   hasFavorites: true,
   hasNotes: true,
   items: [
-    { label: "لقيمة عربية", price: 8, description: "لقيمة طرية مع طعم عربي", image: arabianIce, available: true },
-    { label: "لقيمة لوتس", price: 8, description: "لقيمة شهية مع نكهة لوتس", image: lotusIce, available: true },
-    { label: "لقيمة نوتيلا", price: 8, description: "لقيمة لذيذة مع نوتيلا", image: nutellaIce, available: true },
-    { label: "لقيمة بلوبيري", price: 8, description: "لقيمة مع طعم التوت الأزرق", image: blueberryIce, available: false },
-    { label: "لقيمة دوندورما بيستاشيو", price: 12, description: "لقيمة فاخرة مع دوندورما بيستاشيو", image: pistachioIce, available: true, isPremiumMixFlavor: true },
-    { label: "لقيمة طاقة (كل خميس)", price: 12, description: "لقيمة خاصة متوفرة يوم الخميس", image: energyIce, available: false },
+    { id: "arabian", label: "لقيمة عربية", price: 8, description: "لقيمة طرية مع طعم عربي", image: arabianIce, available: true },
+    { id: "lotus", label: "لقيمة لوتس", price: 8, description: "لقيمة شهية مع نكهة لوتس", image: lotusIce, available: true },
+    { id: "nutella", label: "لقيمة نوتيلا", price: 8, description: "لقيمة لذيذة مع نوتيلا", image: nutellaIce, available: true },
+    { id: "blueberry", label: "لقيمة بلوبيري", price: 8, description: "لقيمة مع طعم التوت الأزرق", image: blueberryIce, available: false },
+    { id: "dondurma-pistachio", label: "لقيمة دوندورما بيستاشيو", price: 12, description: "لقيمة فاخرة مع دوندورما بيستاشيو", image: pistachioIce, available: true, isPremiumMixFlavor: true },
+    { id: "energy", label: "لقيمة طاقة (كل خميس)", price: 12, description: "لقيمة خاصة متوفرة يوم الخميس", image: energyIce, available: false },
   ],
   mixes: [
     {
@@ -402,7 +402,7 @@ const loqaimatProduct: IFlatListProduct = {
       basePrice: 10,
       flavorPrice: 5,
       premiumFlavorPrice: 8,
-      flavorOptionIds: ["لقيمة عربية", "لقيمة لوتس", "لقيمة نوتيلا", "لقيمة بلوبيري", "لقيمة دوندورما بيستاشيو", "لقيمة طاقة (كل خميس)"],
+      itemIds: ["arabian", "lotus", "nutella", "blueberry", "dondurma-pistachio", "energy"],
     },
     {
       id: "super-mix",
@@ -411,7 +411,7 @@ const loqaimatProduct: IFlatListProduct = {
       basePrice: 15,
       flavorPrice: 5,
       premiumFlavorPrice: 8,
-      flavorOptionIds: ["لقيمة عربية", "لقيمة لوتس", "لقيمة نوتيلا", "لقيمة بلوبيري", "لقيمة دوندورما بيستاشيو", "لقيمة طاقة (كل خميس)"],
+      itemIds: ["arabian", "lotus", "nutella", "blueberry", "dondurma-pistachio", "energy"],
     },
   ],
 };
@@ -422,12 +422,12 @@ function dessertMixes(
   options: string[],
 ) {
   return [
-    { id: "mix", label: "مكس", pick: 2, basePrice: base2, flavorPrice: flavor2, premiumFlavorPrice: premium2, flavorOptionIds: options },
-    { id: "super-mix", label: "سوبر مكس", pick: 3, basePrice: base3, flavorPrice: flavor3, premiumFlavorPrice: premium3, flavorOptionIds: options },
+    { id: "mix", label: "مكس", pick: 2, basePrice: base2, flavorPrice: flavor2, premiumFlavorPrice: premium2, itemIds: options },
+    { id: "super-mix", label: "سوبر مكس", pick: 3, basePrice: base3, flavorPrice: flavor3, premiumFlavorPrice: premium3, itemIds: options },
   ];
 }
 
-const NUTELLA_LOTUS_PISTACHIO = ["نوتيلا", "لوتس", "بيستاشيو"];
+const NUTELLA_LOTUS_PISTACHIO = ["nutella", "lotus", "pistachio"];
 
 const pancakeProduct: IFlatListProduct = {
   id: "pancake",
@@ -443,9 +443,9 @@ const pancakeProduct: IFlatListProduct = {
   hasFavorites: true,
   hasNotes: true,
   items: [
-    { label: "نوتيلا", price: 11, description: "بان كيك ناعم مع نوتيلا غنية", image: nutellaIce, available: true },
-    { label: "لوتس", price: 13, description: "بان كيك لذيذ مع طعم لوتس", image: lotusIce, available: true },
-    { label: "بيستاشيو", price: 17, description: "بان كيك فاخر مع بيستاشيو", image: pistachioIce, available: true, isPremiumMixFlavor: true },
+    { id: "nutella", label: "نوتيلا", price: 11, description: "بان كيك ناعم مع نوتيلا غنية", image: nutellaIce, available: true },
+    { id: "lotus", label: "لوتس", price: 13, description: "بان كيك لذيذ مع طعم لوتس", image: lotusIce, available: true },
+    { id: "pistachio", label: "بيستاشيو", price: 17, description: "بان كيك فاخر مع بيستاشيو", image: pistachioIce, available: true, isPremiumMixFlavor: true },
   ],
   mixes: dessertMixes(14, 7, 11, 18, 6, 10, NUTELLA_LOTUS_PISTACHIO),
 };
@@ -464,9 +464,9 @@ const waffleProduct: IFlatListProduct = {
   hasFavorites: true,
   hasNotes: true,
   items: [
-    { label: "نوتيلا", price: 10, description: "وافل مقرمش مع نوتيلا", image: nutellaIce, available: true },
-    { label: "لوتس", price: 12, description: "وافل فاخر مع طعم لوتس", image: lotusIce, available: true },
-    { label: "بيستاشيو", price: 14, description: "وافل مميز مع بيستاشيو فاخر", image: pistachioIce, available: true, isPremiumMixFlavor: true },
+    { id: "nutella", label: "نوتيلا", price: 10, description: "وافل مقرمش مع نوتيلا", image: nutellaIce, available: true },
+    { id: "lotus", label: "لوتس", price: 12, description: "وافل فاخر مع طعم لوتس", image: lotusIce, available: true },
+    { id: "pistachio", label: "بيستاشيو", price: 14, description: "وافل مميز مع بيستاشيو فاخر", image: pistachioIce, available: true, isPremiumMixFlavor: true },
   ],
   mixes: dessertMixes(14, 7, 11, 15, 5, 9, NUTELLA_LOTUS_PISTACHIO),
 };
@@ -485,9 +485,9 @@ const crepeProduct: IFlatListProduct = {
   hasFavorites: true,
   hasNotes: true,
   items: [
-    { label: "نوتيلا", price: 9, description: "كريب رقيق وناعم مع نوتيلا", image: nutellaIce, available: true },
-    { label: "لوتس", price: 11, description: "كريب لذيذ مع طعم لوتس شهي", image: lotusIce, available: true },
-    { label: "بيستاشيو", price: 13, description: "كريب فاخر مع بيستاشيو متميز", image: pistachioIce, available: true, isPremiumMixFlavor: true },
+    { id: "nutella", label: "نوتيلا", price: 9, description: "كريب رقيق وناعم مع نوتيلا", image: nutellaIce, available: true },
+    { id: "lotus", label: "لوتس", price: 11, description: "كريب لذيذ مع طعم لوتس شهي", image: lotusIce, available: true },
+    { id: "pistachio", label: "بيستاشيو", price: 13, description: "كريب فاخر مع بيستاشيو متميز", image: pistachioIce, available: true, isPremiumMixFlavor: true },
   ],
   mixes: dessertMixes(12, 6, 10, 15, 5, 9, NUTELLA_LOTUS_PISTACHIO),
 };
@@ -506,9 +506,9 @@ const pizzaProduct: IFlatListProduct = {
   hasFavorites: true,
   hasNotes: true,
   items: [
-    { label: "نوتيلا", price: 12, description: "بيتزا حلوة مع نوتيلا لذيذة", image: nutellaIce, available: true },
-    { label: "لوتس", price: 14, description: "بيتزا شهية مع طعم لوتس فريد", image: lotusIce, available: true },
-    { label: "بيستاشيو", price: 16, description: "بيتزا فاخرة مع بيستاشيو متميز", image: pistachioIce, available: true, isPremiumMixFlavor: true },
+    { id: "nutella", label: "نوتيلا", price: 12, description: "بيتزا حلوة مع نوتيلا لذيذة", image: nutellaIce, available: true },
+    { id: "lotus", label: "لوتس", price: 14, description: "بيتزا شهية مع طعم لوتس فريد", image: lotusIce, available: true },
+    { id: "pistachio", label: "بيستاشيو", price: 16, description: "بيتزا فاخرة مع بيستاشيو متميز", image: pistachioIce, available: true, isPremiumMixFlavor: true },
   ],
   mixes: dessertMixes(16, 8, 12, 18, 6, 10, NUTELLA_LOTUS_PISTACHIO),
 };
@@ -527,9 +527,9 @@ const moltenProduct: IFlatListProduct = {
   hasFavorites: true,
   hasNotes: true,
   items: [
-    { label: "نوتيلا", price: 8, description: "كيك دافئ بقلب نوتيلا وبوظة", image: nutellaIce, available: true },
-    { label: "لوتس", price: 12, description: "كيك دافئ بقلب لوتس وبوظة", image: lotusIce, available: true },
-    { label: "بستاشيو", price: 12, description: "كيك دافئ بقلب بيستاشيو وبوظة", image: pistachioIce, available: true },
+    { id: "nutella", label: "نوتيلا", price: 8, description: "كيك دافئ بقلب نوتيلا وبوظة", image: nutellaIce, available: true },
+    { id: "lotus", label: "لوتس", price: 12, description: "كيك دافئ بقلب لوتس وبوظة", image: lotusIce, available: true },
+    { id: "pistachio", label: "بستاشيو", price: 12, description: "كيك دافئ بقلب بيستاشيو وبوظة", image: pistachioIce, available: true },
   ],
 };
 
@@ -546,9 +546,9 @@ const brownieProduct: IFlatListProduct = {
   hasFavorites: true,
   hasImageZoom: true,
   items: [
-    { label: "براونيز عادي", price: 8, description: "براونيز شوكولاتة غنية وطرية", image: chocolateIce, available: true },
-    { label: "براونيز نوتيلا", price: 10, description: "براونيز مع نوتيلا لذيذة", image: nutellaIce, available: true },
-    { label: "براونيز لوتس", price: 10, description: "براونيز بطعم لوتس فريد", image: lotusIce, available: true },
+    { id: "plain", label: "براونيز عادي", price: 8, description: "براونيز شوكولاتة غنية وطرية", image: chocolateIce, available: true },
+    { id: "nutella", label: "براونيز نوتيلا", price: 10, description: "براونيز مع نوتيلا لذيذة", image: nutellaIce, available: true },
+    { id: "lotus", label: "براونيز لوتس", price: 10, description: "براونيز بطعم لوتس فريد", image: lotusIce, available: true },
   ],
 };
 
@@ -565,10 +565,10 @@ const cookiesProduct: IFlatListProduct = {
   hasFavorites: true,
   hasImageZoom: true,
   items: [
-    { label: "كوكيز نوتيلا", price: 8, description: "كوكيز طري مع نوتيلا شهية", image: nutellaIce, available: true },
-    { label: "كوكيز لوتس", price: 10, description: "كوكيز لذيذ مع طعم لوتس", image: lotusIce, available: true },
-    { label: "كوكيز بيستاشيو", price: 12, description: "كوكيز فاخر مع بيستاشيو", image: pistachioIce, available: true },
-    { label: "كوكيز مكس", price: 10, description: "كوكيز مع نكهات متعددة", image: chocolateIce, available: true },
+    { id: "nutella", label: "كوكيز نوتيلا", price: 8, description: "كوكيز طري مع نوتيلا شهية", image: nutellaIce, available: true },
+    { id: "lotus", label: "كوكيز لوتس", price: 10, description: "كوكيز لذيذ مع طعم لوتس", image: lotusIce, available: true },
+    { id: "pistachio", label: "كوكيز بيستاشيو", price: 12, description: "كوكيز فاخر مع بيستاشيو", image: pistachioIce, available: true },
+    { id: "mix", label: "كوكيز مكس", price: 10, description: "كوكيز مع نكهات متعددة", image: chocolateIce, available: true },
   ],
 };
 
@@ -585,10 +585,10 @@ const cheesecakeProduct: IFlatListProduct = {
   hasFavorites: true,
   hasImageZoom: true,
   items: [
-    { label: "تشيز كيك فراولة", price: 12, description: "تشيز كيك كريمي مع فراولة", image: strawberryIce, available: true },
-    { label: "تشيز كيك لوتس", price: 14, description: "تشيز كيك لذيذ مع طعم لوتس", image: lotusIce, available: true },
-    { label: "تشيز كيك بيستاشيو", price: 16, description: "تشيز كيك فاخر مع بيستاشيو", image: pistachioIce, available: true },
-    { label: "تشيز كيك مكس", price: 14, description: "تشيز كيك مع نكهات متعددة", image: chocolateIce, available: true },
+    { id: "strawberry", label: "تشيز كيك فراولة", price: 12, description: "تشيز كيك كريمي مع فراولة", image: strawberryIce, available: true },
+    { id: "lotus", label: "تشيز كيك لوتس", price: 14, description: "تشيز كيك لذيذ مع طعم لوتس", image: lotusIce, available: true },
+    { id: "pistachio", label: "تشيز كيك بيستاشيو", price: 16, description: "تشيز كيك فاخر مع بيستاشيو", image: pistachioIce, available: true },
+    { id: "mix", label: "تشيز كيك مكس", price: 14, description: "تشيز كيك مع نكهات متعددة", image: chocolateIce, available: true },
   ],
 };
 

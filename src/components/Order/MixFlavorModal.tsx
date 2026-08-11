@@ -8,6 +8,7 @@ import {
   getMixFlavorUnitPrice,
   getMixSelectionPrice,
   resolveMenuImageSrc,
+  resolveMixItems,
   type IMixRule,
   type IProductVariant,
 } from "@/types/menu.types";
@@ -17,7 +18,8 @@ interface MixFlavorModalProps {
   mix: IMixRule;
   items?: IProductVariant[];
   onClose: () => void;
-  onConfirm: (flavors: string[], unitPrice: number) => void;
+  /** Selected item ids, one entry per picked ball (repeats allowed). */
+  onConfirm: (itemIds: string[], unitPrice: number) => void;
 }
 
 export default function MixFlavorModal({
@@ -36,7 +38,7 @@ export default function MixFlavorModal({
 
   useEffect(() => {
     if (open) setSelected([]);
-  }, [open, mix.label]);
+  }, [open, mix.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -49,8 +51,11 @@ export default function MixFlavorModal({
 
   if (!open || !mounted) return null;
 
+  // The mix references items by id, so a dashboard rename never breaks it.
+  const mixItems = resolveMixItems(mix, items);
   const selectedItems = selected.map(
-    (label) => items.find((item) => item.label === label) ?? { label, isPremiumMixFlavor: false },
+    (id) =>
+      items.find((item) => item.id === id) ?? { isPremiumMixFlavor: false },
   );
   const total = getMixSelectionPrice(mix, selectedItems);
   const canConfirm = selected.length === mix.pick;
@@ -61,18 +66,18 @@ export default function MixFlavorModal({
 
   const MAX_SAME_FLAVOR = mix.pick >= 3 ? 2 : 1;
 
-  function addFlavor(flavor: string) {
+  function addFlavor(itemId: string) {
     setSelected((prev) => {
       if (prev.length >= mix.pick) return prev;
-      const sameCount = prev.filter((f) => f === flavor).length;
+      const sameCount = prev.filter((f) => f === itemId).length;
       if (sameCount >= MAX_SAME_FLAVOR) return prev;
-      return [...prev, flavor];
+      return [...prev, itemId];
     });
   }
 
-  function removeOneFlavor(flavor: string) {
+  function removeOneFlavor(itemId: string) {
     setSelected((prev) => {
-      const idx = prev.lastIndexOf(flavor);
+      const idx = prev.lastIndexOf(itemId);
       if (idx === -1) return prev;
       return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
     });
@@ -125,19 +130,20 @@ export default function MixFlavorModal({
         </div>
 
         <div className="space-y-2 mb-5">
-          {mix.flavorOptionIds.map((flavor) => {
-            const count = selected.filter((f) => f === flavor).length;
-            const flavorItem = items.find((item) => item.label === flavor);
-            const unavailable = flavorItem?.available === false;
-            const flavorPrice = getMixFlavorUnitPrice(mix, flavorItem?.isPremiumMixFlavor);
-            const flavorImage = flavorItem?.image;
-            const special = !!flavorItem?.isPremiumMixFlavor;
+          {mixItems.map((flavorItem) => {
+            const flavor = flavorItem.label;
+            const itemId = flavorItem.id;
+            const count = selected.filter((f) => f === itemId).length;
+            const unavailable = flavorItem.available === false;
+            const flavorPrice = getMixFlavorUnitPrice(mix, flavorItem.isPremiumMixFlavor);
+            const flavorImage = flavorItem.image;
+            const special = !!flavorItem.isPremiumMixFlavor;
             const canAdd =
               !unavailable && !isFull && count < MAX_SAME_FLAVOR;
 
             return (
               <div
-                key={flavor}
+                key={itemId}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[16px] border transition ${
                   unavailable
                     ? "opacity-40 bg-white/8 border-white/10"
@@ -187,7 +193,7 @@ export default function MixFlavorModal({
                     <button
                       type="button"
                       disabled={count === 0}
-                      onClick={() => removeOneFlavor(flavor)}
+                      onClick={() => removeOneFlavor(itemId)}
                       className={`flex justify-center items-center rounded-full w-7 h-7 border transition ${
                         count > 0
                           ? "bg-white/15 border-white/25 text-white hover:bg-white/25"
@@ -200,7 +206,7 @@ export default function MixFlavorModal({
                     <button
                       type="button"
                       disabled={!canAdd}
-                      onClick={() => addFlavor(flavor)}
+                      onClick={() => addFlavor(itemId)}
                       className={`flex justify-center items-center rounded-full w-7 h-7 border transition ${
                         canAdd
                           ? "bg-glace-yellow border-glace-yellow text-[#1e6a7f] hover:brightness-105"

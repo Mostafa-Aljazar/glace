@@ -1,7 +1,4 @@
-export {
-  sendContactMessage,
-  submitContact,
-} from "./sendContactMessage";
+export { sendContactMessage } from "./sendContactMessage";
 export {
   useSendContactMessage,
   useSubmitContact,

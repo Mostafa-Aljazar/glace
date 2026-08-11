@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CalendarX } from "lucide-react";
-import type { IEvent } from "@/types/events.types";
+import { resolveEventImageSrc, type IEvent } from "@/types/events.types";
 
 interface EventsGridProps {
   items: IEvent[];
@@ -32,7 +32,7 @@ export default function EventsGrid({ items }: EventsGridProps) {
         >
           <div className="rounded-[20px] w-full h-50 overflow-hidden">
             <Image
-              src={ev.listImage}
+              src={resolveEventImageSrc(ev.listImage)}
               alt={ev.title}
               width={330}
               height={200}

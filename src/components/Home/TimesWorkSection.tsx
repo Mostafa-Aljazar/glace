@@ -18,8 +18,8 @@ export default function TimesWorkSection({
 
   return (
     <section
-      id="timesWork"
-      className="relative z-[2] -mt-[50px] lg:-mt-[50px] max-lg:mt-0 pt-52 lg:pt-52 max-lg:pt-25 pb-28 max-lg:pb-24 min-h-125 overflow-hidden"
+      id="location"
+      className="z-[2] relative -mt-[50px] lg:-mt-[50px] max-lg:mt-0 pt-52 lg:pt-52 max-lg:pt-25 pb-28 max-lg:pb-24 min-h-125 overflow-hidden"
       style={{
         background:
           "radial-gradient(circle, rgba(136,103,91,1) 6%, rgba(83,53,42,1) 100%)",
@@ -61,7 +61,7 @@ export default function TimesWorkSection({
 
         {/* Title row */}
         <div className="relative">
-          <h1 className="text-[38px] text-white sm:text-[45px] lg:text-[45px] xl:text-[55px]">
+          <h1 className="text-[32px] text-white sm:text-[36px] lg:text-[45px]">
             {branchesData.title}
           </h1>
           {/* imgpp2 — hidden on mobile per original */}
@@ -104,11 +104,13 @@ export default function TimesWorkSection({
             </div>
             <div className="flex items-center gap-[5px]">
               <Phone size={20} className="shrink-0" />
-              <span className="text-[24px] lg:text-[30px]">{branch.phone}</span>
+              <span dir="ltr" className="text-[24px] lg:text-[30px]">
+                {branch.phone}
+              </span>
             </div>
             <div className="flex items-center gap-[5px]">
               <MessageCircle size={20} className="shrink-0" />
-              <span className="text-[24px] lg:text-[30px]">
+              <span dir="ltr" className="text-[24px] lg:text-[30px]">
                 {branch.whatsapp}
               </span>
             </div>
@@ -147,7 +149,7 @@ export default function TimesWorkSection({
       <img
         src={imgbgBS.src}
         alt=""
-        className="-bottom-px left-0 z-[5] absolute w-full h-auto pointer-events-none select-none brightness-0 invert"
+        className="-bottom-px left-0 z-[5] absolute brightness-0 invert w-full h-auto pointer-events-none select-none"
       />
     </section>
   );

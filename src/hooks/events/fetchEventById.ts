@@ -1,32 +1,29 @@
+import axios from "axios";
 import { guestApi } from "@/lib/axios";
-import { findFakeEventById } from "@/data/fake-data/events";
+import { isEvent } from "@/hooks/events/fetchEvents";
 import type { IEvent } from "@/types/events.types";
 
-function isEvent(value: unknown): value is IEvent {
-  if (!value || typeof value !== "object") return false;
-  const e = value as Partial<IEvent>;
-  return (
-    typeof e.id === "number" &&
-    typeof e.title === "string" &&
-    typeof e.date === "string" &&
-    typeof e.description === "string" &&
-    e.listImage != null &&
-    Array.isArray(e.images)
-  );
+/** Query key. Lives here, not in the `"use client"` hook, so Server
+ *  Components can prefetch with it. */
+export function eventQueryKey(id: number) {
+  return ["events", id] as const;
 }
 
 /**
  * Fetches a single event from `GET /events/{id}`.
- * Falls back to fake data when the API fails; returns `null` if not found.
+ * Resolves to `null` only on a genuine 404; any other failure rejects so the
+ * UI can tell "this event doesn't exist" apart from "the API is down".
  */
 export async function fetchEventById(id: number): Promise<IEvent | null> {
   try {
     const res = await guestApi.get<IEvent>(`/events/${id}`);
-    if (isEvent(res?.data)) return res.data;
-    return findFakeEventById(id) ?? null;
+    if (!isEvent(res?.data)) {
+      throw new Error(`Invalid /events/${id} response shape`);
+    }
+    return res.data;
   } catch (e) {
-    console.error(`[fetchEventById:${id}]`, e);
-    return findFakeEventById(id) ?? null;
+    if (axios.isAxiosError(e) && e.response?.status === 404) return null;
+    throw e;
   }
 }
 

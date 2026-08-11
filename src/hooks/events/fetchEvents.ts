@@ -1,16 +1,23 @@
 import { guestApi } from "@/lib/axios";
 import {
-  FAKE_EVENTS,
   EVENTS_PER_PAGE,
-  paginateEvents,
-} from "@/data/fake-data/events";
-import type {
-  IEvent,
-  IEventsListParams,
-  IEventsListResponse,
+  type IEvent,
+  type IEventsListParams,
+  type IEventsListResponse,
 } from "@/types/events.types";
 
-function isEvent(value: unknown): value is IEvent {
+export const EVENTS_QUERY_KEY = ["events"] as const;
+
+/** Query key. Lives here, not in the `"use client"` hook, so Server
+ *  Components can prefetch with it. */
+export function eventsQueryKey(params: IEventsListParams = {}) {
+  return [
+    ...EVENTS_QUERY_KEY,
+    { page: params.page ?? 1, perPage: params.perPage ?? EVENTS_PER_PAGE },
+  ] as const;
+}
+
+export function isEvent(value: unknown): value is IEvent {
   if (!value || typeof value !== "object") return false;
   const e = value as Partial<IEvent>;
   return (
@@ -18,7 +25,6 @@ function isEvent(value: unknown): value is IEvent {
     typeof e.title === "string" &&
     typeof e.date === "string" &&
     typeof e.description === "string" &&
-    e.listImage != null &&
     Array.isArray(e.images)
   );
 }
@@ -36,26 +42,22 @@ function isEventsListResponse(value: unknown): value is IEventsListResponse {
   );
 }
 
-/**
- * Fetches paginated events from `GET /events`.
- * Falls back to `FAKE_EVENTS` when the API fails or returns invalid data.
- */
+/** Fetches paginated events from `GET /events`. Backend is the only source. */
 export async function fetchEvents(
   params: IEventsListParams = {},
 ): Promise<IEventsListResponse> {
   const page = params.page ?? 1;
   const perPage = params.perPage ?? EVENTS_PER_PAGE;
 
-  try {
-    const res = await guestApi.get<IEventsListResponse>("/events", {
-      params: { page, perPage },
-    });
-    if (isEventsListResponse(res?.data)) return res.data;
-    return paginateEvents(FAKE_EVENTS, page, perPage);
-  } catch (e) {
-    console.error("[fetchEvents]", e);
-    return paginateEvents(FAKE_EVENTS, page, perPage);
+  const res = await guestApi.get<IEventsListResponse>("/events", {
+    params: { page, perPage },
+  });
+
+  if (!isEventsListResponse(res?.data)) {
+    throw new Error("Invalid /events response shape");
   }
+
+  return res.data;
 }
 
 export default fetchEvents;

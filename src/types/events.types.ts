@@ -1,7 +1,11 @@
-import type { StaticIMG } from "@/assets/images";
+import { resolveMediaSrc } from "@/lib/media";
 
-/** Image from API (URL string) or bundled static asset (fake fallback). */
-export type EventImage = StaticIMG | string;
+/** Event image as served by the API — a URL, a storage-relative path, or `null`
+ *  when nothing has been uploaded yet. `resolveEventImageSrc` handles all three. */
+export type EventImage = string | null | undefined;
+
+/** Default page size requested from `GET /events`. */
+export const EVENTS_PER_PAGE = 8;
 
 /** Full event — list cards + detail page. Matches `GET /events` items & `GET /events/{id}`. */
 export interface IEvent {
@@ -28,5 +32,5 @@ export interface IEventsListParams {
 }
 
 export function resolveEventImageSrc(image: EventImage): string {
-  return typeof image === "string" ? image : image.src;
+  return resolveMediaSrc(image);
 }

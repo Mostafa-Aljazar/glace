@@ -1,6 +1,7 @@
 import axios, { type AxiosRequestHeaders } from "axios";
+import { getApiBaseUrl } from "@/lib/dataSource";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+const BASE = getApiBaseUrl();
 
 // Public axios instance (no auth header, suitable for public fetches)
 const guestApi = axios.create({

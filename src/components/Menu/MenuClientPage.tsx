@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import EventsBackground from "@/components/Events/EventsBackground";
+import DataError from "@/components/Common/DataError";
 import { MenuIcon } from "@/components/Menu/MenuIcon";
 import {
   imgIesPP,
@@ -18,20 +19,26 @@ import {
 import { ShoppingCart } from "lucide-react";
 import { useMenuCategories } from "@/hooks/menu/useMenuCategories";
 import { useMenuProducts } from "@/hooks/menu/useMenuProducts";
-import { resolveMenuImageSrc, type IMenuCategory, type IProduct } from "@/types/menu.types";
+import {
+  resolveMenuImageSrc,
+  type IMenuCategory,
+  type IProduct,
+} from "@/types/menu.types";
 
 // ── Product card ────────────────────────────────────────────────────────────
 
 function MenuProductCard({ product }: { product: IProduct }) {
   const priceTeaser =
-    product.kind === "builder" ? product.sizes[0]?.prices[0]?.price : product.items[0]?.price;
+    product.kind === "builder"
+      ? product.sizes[0]?.prices[0]?.price
+      : product.items[0]?.price;
 
   return (
     <Link
       href={`/menu/order/${product.slug}`}
       className="group relative flex flex-col items-center text-white text-center cursor-pointer select-none"
     >
-      <div className="relative bg-white/14 hover:bg-white/22 backdrop-blur-md border border-glace-yellow/80 hover:border-glace-yellow rounded-2xl w-full overflow-hidden transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.25)] duration-300">
+      <div className="relative bg-white/14 hover:bg-white/22 hover:shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur-md border border-glace-yellow/80 hover:border-glace-yellow rounded-2xl w-full overflow-hidden transition-all hover:-translate-y-1 duration-300">
         <div className="relative flex justify-center items-center bg-white/8 px-4 pt-6 pb-2 overflow-hidden">
           <div className="absolute inset-0 bg-radial-[ellipse_at_50%_60%] from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
           <Image
@@ -49,7 +56,9 @@ function MenuProductCard({ product }: { product: IProduct }) {
           </h2>
 
           {priceTeaser !== undefined && (
-            <p className="mb-3 text-[13px] text-white/60">يبدأ من {priceTeaser} ₪</p>
+            <p className="mb-3 text-[13px] text-white/60">
+              يبدأ من {priceTeaser} ₪
+            </p>
           )}
 
           <div className="flex justify-center">
@@ -67,15 +76,46 @@ function MenuProductCard({ product }: { product: IProduct }) {
 // ── Category section (products grid) ────────────────────────────────────────
 
 function MenuCategorySection({ categoryId }: { categoryId: string }) {
-  const { data: products = [], isLoading } = useMenuProducts(categoryId);
+  // One shared products query for the whole page — filtering here keeps the
+  // menu at a single `/menu/products` request instead of one per category.
+  const {
+    data: allProducts,
+    isLoading,
+    isError,
+    refetch,
+  } = useMenuProducts();
+  const products = (allProducts ?? []).filter(
+    (p) => p.categoryId === categoryId,
+  );
 
   if (isLoading) {
     return (
       <div className="gap-4 sm:gap-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white/10 rounded-[24px] h-70 animate-pulse" />
+          <div
+            key={i}
+            className="bg-white/10 rounded-[24px] h-70 animate-pulse"
+          />
         ))}
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <DataError
+        title="تعذّر تحميل منتجات هذا القسم"
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
+  // An empty category is a real backend answer, not a failure.
+  if (products.length === 0) {
+    return (
+      <p className="bg-white/8 py-8 border border-white/15 rounded-[24px] text-[14px] text-white/60 text-center">
+        لا توجد منتجات في هذا القسم حالياً
+      </p>
     );
   }
 
@@ -91,16 +131,30 @@ function MenuCategorySection({ categoryId }: { categoryId: string }) {
 // ── Main page ──────────────────────────────────────────────────────────────
 
 export default function MenuClientPage() {
-  const { data: categories = [], isLoading: catsLoading } = useMenuCategories();
+  const {
+    data: allCategories,
+    isLoading: catsLoading,
+    isError: catsError,
+    refetch: refetchCats,
+  } = useMenuCategories();
+  // A category switched off in the dashboard disappears from the menu entirely.
+  const categories = useMemo(
+    () => (allCategories ?? []).filter((c) => c.available !== false),
+    [allCategories],
+  );
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryCategory = searchParams.get("category");
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-  const categoryButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const categoryButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
+    {},
+  );
   const selectorScrollRef = useRef<HTMLDivElement | null>(null);
   const suppressObserverRef = useRef(false);
   const suppressObserverTimeoutRef = useRef<number | undefined>(undefined);
-  const [activeCategory, setActiveCategory] = useState(queryCategory ?? "ice-cream");
+  const [activeCategory, setActiveCategory] = useState(
+    queryCategory ?? "ice-cream",
+  );
 
   useEffect(() => {
     if (!queryCategory) return;
@@ -119,7 +173,8 @@ export default function MenuClientPage() {
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
 
         if (visibleEntry) {
-          const categoryId = visibleEntry.target.getAttribute("data-category-id");
+          const categoryId =
+            visibleEntry.target.getAttribute("data-category-id");
           if (categoryId && categoryId !== activeCategory) {
             setActiveCategory(categoryId);
           }
@@ -144,10 +199,13 @@ export default function MenuClientPage() {
     if (!categories.length) return;
     const handleScrollEnd = () => {
       const scrolledToBottom =
-        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 2;
       if (scrolledToBottom) {
         const lastCategoryId = categories[categories.length - 1].id;
-        setActiveCategory((current) => (current === lastCategoryId ? current : lastCategoryId));
+        setActiveCategory((current) =>
+          current === lastCategoryId ? current : lastCategoryId,
+        );
       }
     };
 
@@ -162,7 +220,9 @@ export default function MenuClientPage() {
     if (!activeButton || !scrollContainer) return;
 
     const targetLeft =
-      activeButton.offsetLeft - scrollContainer.clientWidth / 2 + activeButton.offsetWidth / 2;
+      activeButton.offsetLeft -
+      scrollContainer.clientWidth / 2 +
+      activeButton.offsetWidth / 2;
 
     scrollContainer.scrollTo({ left: targetLeft, behavior: "smooth" });
   }, [activeCategory]);
@@ -217,16 +277,40 @@ export default function MenuClientPage() {
       <div className="z-90 relative mx-auto px-4 sm:px-6 lg:px-8 pt-22.5 lg:pt-26.5 pb-28 lg:pb-8 max-w-screen-2xl">
         <div className="relative flex flex-col items-center pt-8 pb-10 sm:pb-14 text-center">
           <div className="hidden top-0 left-0 absolute sm:flex gap-3 opacity-80 pointer-events-none">
-            <Image src={iceCreamImg1} alt="" width={60} height={60} className="drop-shadow-lg w-14 h-14 object-contain rotate-[-15deg]" />
-            <Image src={iceCreamImg2} alt="" width={50} height={50} className="drop-shadow-lg mt-4 w-12 h-12 object-contain rotate-10" />
+            <Image
+              src={iceCreamImg1}
+              alt=""
+              width={60}
+              height={60}
+              className="drop-shadow-lg w-14 h-14 object-contain rotate-[-15deg]"
+            />
+            <Image
+              src={iceCreamImg2}
+              alt=""
+              width={50}
+              height={50}
+              className="drop-shadow-lg mt-4 w-12 h-12 object-contain rotate-10"
+            />
           </div>
           <div className="hidden top-0 right-0 absolute sm:flex gap-3 opacity-80 pointer-events-none">
-            <Image src={iceCreamImg3} alt="" width={55} height={55} className="drop-shadow-lg w-14 h-14 object-contain rotate-12" />
-            <Image src={iceCreamImg1} alt="" width={45} height={45} className="drop-shadow-lg mt-5 w-11 h-11 object-contain rotate-[-8deg]" />
+            <Image
+              src={iceCreamImg3}
+              alt=""
+              width={55}
+              height={55}
+              className="drop-shadow-lg w-14 h-14 object-contain rotate-12"
+            />
+            <Image
+              src={iceCreamImg1}
+              alt=""
+              width={45}
+              height={45}
+              className="drop-shadow-lg mt-5 w-11 h-11 object-contain rotate-[-8deg]"
+            />
           </div>
 
           <div className="z-10 relative">
-            <h1 className="drop-shadow-lg font-bold text-[42px] text-white sm:text-[56px] lg:text-[68px] leading-tight">
+            <h1 className="drop-shadow-lg font-bold text-[36px] text-white sm:text-[56px] lg:text-[68px] leading-tight">
               منيو جلاسيه الأمير - غزة
             </h1>
             <p className="mx-auto mt-3 max-w-120 text-[17px] text-white/70 sm:text-[19px] leading-relaxed">
@@ -235,17 +319,27 @@ export default function MenuClientPage() {
           </div>
         </div>
 
-        {catsLoading ? (
+        {catsError ? (
+          <DataError
+            title="تعذّر تحميل المنيو"
+            description="لم نتمكن من الوصول إلى الخادم، حاول مرة أخرى"
+            onRetry={() => void refetchCats()}
+            className="mb-8"
+          />
+        ) : catsLoading ? (
           <div className="flex justify-center gap-3 mb-8">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white/10 rounded-[20px] w-36 h-18 animate-pulse" />
+              <div
+                key={i}
+                className="bg-white/10 rounded-[20px] w-36 h-18 animate-pulse"
+              />
             ))}
           </div>
         ) : (
           <div className="top-0 z-50 sticky -mx-4 sm:-mx-6 lg:-mx-8">
             <div
               ref={selectorScrollRef}
-              className="bg-transparent shadow-none border-white/15 backdrop-blur-xl px-3 py-3 border-[1.25px] rounded-none w-full overflow-x-auto no-scrollbar"
+              className="bg-transparent shadow-none backdrop-blur-xl px-3 py-3 border-[1.25px] border-white/15 rounded-none w-full overflow-x-auto no-scrollbar"
             >
               <div className="flex gap-3 sm:gap-4 min-w-max">
                 {categories.map((cat: IMenuCategory) => {
@@ -305,9 +399,15 @@ export default function MenuClientPage() {
                     className="flex justify-center items-center rounded-full w-9 h-9 shrink-0"
                     style={{ backgroundColor: `${cat.accentColor}33` }}
                   >
-                    <MenuIcon name={cat.icon} size={18} style={{ color: cat.accentColor }} />
+                    <MenuIcon
+                      name={cat.icon}
+                      size={18}
+                      style={{ color: cat.accentColor }}
+                    />
                   </div>
-                  <h2 className="font-bold text-[22px] text-white sm:text-[26px]">{cat.label}</h2>
+                  <h2 className="font-bold text-[22px] text-white sm:text-[26px]">
+                    {cat.label}
+                  </h2>
                   <div className="flex-1 bg-white/15 mr-2 h-px" />
                 </div>
 

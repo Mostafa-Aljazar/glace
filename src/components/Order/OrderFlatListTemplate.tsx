@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { Minus, Plus, ShoppingCart, Check, Heart } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
@@ -16,14 +16,35 @@ import MixOrderSection, {
 } from "@/components/Order/MixOrderSection";
 import { useCartStore, type CartSelection } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
-import { getMixFlavorUnitPrice, resolveMenuImageSrc, type IFlatListProduct } from "@/types/menu.types";
+import {
+  getMixFlavorUnitPrice,
+  resolveMenuImageSrc,
+  type IFlatListProduct,
+} from "@/types/menu.types";
 
-export default function OrderFlatListTemplate({ product }: { product: IFlatListProduct }) {
+export default function OrderFlatListTemplate({
+  product,
+}: {
+  product: IFlatListProduct;
+}) {
+  // A mix switched off in the dashboard disappears from the order page.
+  const orderableMixes = useMemo(
+    () => (product.mixes ?? []).filter((m) => m.available !== false),
+    [product.mixes],
+  );
+
+  // Keyed by `IProductVariant.id`, never by label — labels are dashboard-editable.
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [mixSelections, setMixSelections] = useState<MixSelection[]>([]);
-  const [zoomedLabel, setZoomedLabel] = useState<string | null>(null);
-  const { addedToCart, validationMsg, showValidation, markAdded, toastMsg, dismissToast } =
-    useAddToCartFeedback();
+  const [zoomedItemId, setZoomedItemId] = useState<string | null>(null);
+  const {
+    addedToCart,
+    validationMsg,
+    showValidation,
+    markAdded,
+    toastMsg,
+    dismissToast,
+  } = useAddToCartFeedback();
 
   const totalItems = Object.values(counts).reduce((s, c) => s + c, 0);
   const mixItems = mixSelections.filter((m) => m.count > 0).length;
@@ -48,17 +69,19 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
     .reduce((sum, i) => sum + i.quantity, 0);
   const { toggle: toggleFavorite, isFavorite } = useFavoritesStore();
 
-  function increment(label: string) {
-    setCounts((prev) => ({ ...prev, [label]: (prev[label] ?? 0) + 1 }));
+  function increment(itemId: string) {
+    setCounts((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? 0) + 1 }));
   }
 
-  function decrement(label: string) {
+  function decrement(itemId: string) {
     setCounts((prev) => {
-      const next = (prev[label] ?? 0) - 1;
+      const next = (prev[itemId] ?? 0) - 1;
       if (next <= 0) {
-        return Object.fromEntries(Object.entries(prev).filter(([k]) => k !== label));
+        return Object.fromEntries(
+          Object.entries(prev).filter(([k]) => k !== itemId),
+        );
       }
-      return { ...prev, [label]: next };
+      return { ...prev, [itemId]: next };
     });
   }
 
@@ -67,15 +90,15 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
       return showValidation("اختر منتج واحد على الأقل");
     }
 
-    Object.entries(counts).forEach(([label, qty]) => {
+    Object.entries(counts).forEach(([itemId, qty]) => {
       if (qty <= 0) return;
-      const item = product.items.find((i) => i.label === label);
+      const item = product.items.find((i) => i.id === itemId);
       if (!item) return;
       addItem({
         productId: product.id,
-        name: `${product.name} — ${label}`,
+        name: `${product.name} — ${item.label}`,
         image: resolveMenuImageSrc(item.image ?? product.image),
-        type: label,
+        type: item.label,
         selections: [],
         addonTotal: 0,
         unitPrice: item.price,
@@ -85,24 +108,29 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
 
     mixSelections.forEach((mix) => {
       if (mix.count <= 0) return;
-      const mixRule = product.mixes?.find((m) => m.label === mix.mixLabel);
-      const selections: CartSelection[] = countFlavorOccurrences(mix.selectedFlavors).map(
-        ({ label, qty }) => {
-          const flavorItem = product.items.find((i) => i.label === label);
-          return {
-            kind: "mix",
-            id: label,
-            label,
-            qty,
-            unitPrice: mixRule ? getMixFlavorUnitPrice(mixRule, flavorItem?.isPremiumMixFlavor) : 0,
-          };
-        },
-      );
+      const mixRule = product.mixes?.find((m) => m.id === mix.mixId);
+      const selections: CartSelection[] = countFlavorOccurrences(
+        mix.selectedItemIds,
+      ).map(({ id, qty }) => {
+        const flavorItem = product.items.find((i) => i.id === id);
+        return {
+          kind: "mix",
+          id,
+          // Snapshot the label at add-to-cart time so the cart line stays
+          // readable even if the item is renamed afterwards.
+          label: flavorItem?.label ?? id,
+          qty,
+          unitPrice: mixRule
+            ? getMixFlavorUnitPrice(mixRule, flavorItem?.isPremiumMixFlavor)
+            : 0,
+        };
+      });
+      const mixLabel = mixRule?.label ?? "";
       addItem({
         productId: product.id,
-        name: `${product.name} — ${mix.mixLabel}`,
+        name: `${product.name} — ${mixLabel}`,
         image: resolveMenuImageSrc(product.image),
-        type: mix.mixLabel,
+        type: mixLabel,
         selections,
         addonTotal: 0,
         unitPrice: mix.unitPrice,
@@ -110,7 +138,9 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
       });
     });
 
-    const addedQty = totalItems + mixSelections.reduce((sum, m) => sum + Math.max(0, m.count), 0);
+    const addedQty =
+      totalItems +
+      mixSelections.reduce((sum, m) => sum + Math.max(0, m.count), 0);
     markAdded(`تمت إضافة ${addedQty} من ${product.name} إلى السلة`);
     window.scrollTo({ top: 0, behavior: "smooth" });
     clearSelections();
@@ -121,12 +151,15 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
   }
 
   const totalPrice =
-    Object.entries(counts).reduce((sum, [label, qty]) => {
-      const item = product.items.find((i) => i.label === label);
+    Object.entries(counts).reduce((sum, [itemId, qty]) => {
+      const item = product.items.find((i) => i.id === itemId);
       return sum + (item?.price ?? 0) * qty;
-    }, 0) + mixSelections.reduce((sum, mix) => sum + mix.unitPrice * mix.count, 0);
+    }, 0) +
+    mixSelections.reduce((sum, mix) => sum + mix.unitPrice * mix.count, 0);
 
-  const zoomedItem = zoomedLabel ? product.items.find((i) => i.label === zoomedLabel) : null;
+  const zoomedItem = zoomedItemId
+    ? product.items.find((i) => i.id === zoomedItemId)
+    : null;
 
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
@@ -142,7 +175,9 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
                 <h1 className="font-bold text-[28px] text-white sm:text-[34px] leading-tight">
                   {product.name}
                 </h1>
-                <p className="text-[14px] text-white/55">{product.description || "خصّص طلبك خطوة بخطوة"}</p>
+                <p className="text-[14px] text-white/55 text-justify">
+                  {product.description || "خصّص طلبك خطوة بخطوة"}
+                </p>
               </div>
               <Image
                 src={resolveMenuImageSrc(product.image)}
@@ -167,21 +202,25 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
         <div className="bg-white/17 backdrop-blur-[15px] mb-4 rounded-[28px] overflow-hidden">
           <div className="p-5">
             <div className="flex items-center gap-2 mb-4">
-              <h2 className="font-bold text-[18px] text-white">اختر المنتجات</h2>
+              <h2 className="font-bold text-[18px] text-white">
+                اختر المنتجات
+              </h2>
               <div className="inline-flex items-center gap-1.5 bg-green-500/20 px-2.5 py-1 border border-green-500/40 rounded-full">
                 <Check size={13} className="text-green-400" />
-                <span className="font-medium text-[11px] text-green-300">مطلوب</span>
+                <span className="font-medium text-[11px] text-green-300">
+                  مطلوب
+                </span>
               </div>
             </div>
 
             <div className="flex flex-col gap-3 mb-6">
               {product.items.map((item) => {
-                const count = counts[item.label] ?? 0;
+                const count = counts[item.id] ?? 0;
                 const isUnavailable = item.available === false;
-                const favoriteId = `${product.id}-${item.label}`;
+                const favoriteId = `${product.id}-${item.id}`;
                 return (
                   <div
-                    key={item.label}
+                    key={item.id}
                     className={`flex items-center gap-3 border rounded-[16px] px-4 py-4 transition-all ${
                       isUnavailable
                         ? "opacity-50 bg-white/5 border-white/5 cursor-not-allowed"
@@ -194,7 +233,9 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
                       (product.hasImageZoom ? (
                         <button
                           type="button"
-                          onClick={() => !isUnavailable && setZoomedLabel(item.label)}
+                          onClick={() =>
+                            !isUnavailable && setZoomedItemId(item.id)
+                          }
                           disabled={isUnavailable}
                           className={`shrink-0 transition-transform ${!isUnavailable ? "cursor-pointer hover:scale-110" : "cursor-not-allowed"}`}
                         >
@@ -217,9 +258,13 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
                       ))}
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-[15px] text-white mb-1">{item.label}</p>
+                      <p className="mb-1 font-medium text-[15px] text-white">
+                        {item.label}
+                      </p>
                       {item.description && (
-                        <p className="text-[12px] text-white/60 leading-tight line-clamp-2">{item.description}</p>
+                        <p className="text-[12px] text-white/60 line-clamp-2 leading-tight">
+                          {item.description}
+                        </p>
                       )}
                     </div>
 
@@ -246,11 +291,13 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
                     </div>
 
                     {isUnavailable ? (
-                      <span className="text-[12px] font-bold text-white/60 shrink-0">غير متاح</span>
+                      <span className="font-bold text-[12px] text-white/60 shrink-0">
+                        غير متاح
+                      </span>
                     ) : count === 0 ? (
                       <button
                         type="button"
-                        onClick={() => increment(item.label)}
+                        onClick={() => increment(item.id)}
                         className="flex items-center gap-1.5 bg-glace-yellow hover:bg-yellow-300 shadow-md px-4 py-2 border-0 rounded-full font-bold text-[#1e6a7f] text-[13px] transition-all cursor-pointer shrink-0"
                       >
                         <ShoppingCart size={13} />
@@ -260,15 +307,17 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
                       <div className="flex items-center gap-1.5 bg-white/15 px-2 py-1 border border-white/25 rounded-full shrink-0">
                         <button
                           type="button"
-                          onClick={() => decrement(item.label)}
+                          onClick={() => decrement(item.id)}
                           className="flex justify-center items-center hover:bg-white/25 rounded-full w-6 h-6 text-white transition-colors cursor-pointer"
                         >
                           <Minus size={11} />
                         </button>
-                        <span className="min-w-4 font-bold text-[14px] text-white text-center">{count}</span>
+                        <span className="min-w-4 font-bold text-[14px] text-white text-center">
+                          {count}
+                        </span>
                         <button
                           type="button"
-                          onClick={() => increment(item.label)}
+                          onClick={() => increment(item.id)}
                           className="flex justify-center items-center hover:bg-white/25 rounded-full w-6 h-6 text-white transition-colors cursor-pointer"
                         >
                           <Plus size={11} />
@@ -280,9 +329,9 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
               })}
             </div>
 
-            {product.mixes && product.mixes.length > 0 && (
+            {orderableMixes.length > 0 && (
               <MixOrderSection
-                mixes={product.mixes}
+                mixes={orderableMixes}
                 items={product.items}
                 mixSelections={mixSelections}
                 setMixSelections={setMixSelections}
@@ -302,7 +351,8 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
           </div>
 
           <p className="text-[13px] text-white/50 shrink-0">
-            {totalItems + mixItems} {totalItems + mixItems === 1 ? "صنف" : "أصناف"}
+            {totalItems + mixItems}{" "}
+            {totalItems + mixItems === 1 ? "صنف" : "أصناف"}
           </p>
 
           <AddToCartButton
@@ -319,8 +369,8 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
 
       {product.hasImageZoom && zoomedItem?.image && (
         <ImageZoomDialog
-          isOpen={!!zoomedLabel}
-          onClose={() => setZoomedLabel(null)}
+          isOpen={!!zoomedItemId}
+          onClose={() => setZoomedItemId(null)}
           src={resolveMenuImageSrc(zoomedItem.image)}
           alt={zoomedItem.label}
         />
@@ -331,7 +381,6 @@ export default function OrderFlatListTemplate({ product }: { product: IFlatListP
         onClose={handleCancelLeave}
         onConfirm={handleConfirmLeave}
       />
-
     </div>
   );
 }

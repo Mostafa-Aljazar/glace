@@ -2,6 +2,13 @@
 
 **For Laravel Backend Developers**
 
+> **⚠️ Read [`BACKEND_REQUIREMENTS.md`](./BACKEND_REQUIREMENTS.md) alongside this file.**
+> That document is the current source of truth for what is still missing and for
+> decisions taken after this catalog was written (inline `flavors[]`, stable
+> `items[].id`, extra `available` levels). Where the two disagree, it wins.
+> This file remains accurate for the **menu data itself** — every product,
+> item, price and availability flag below was verified against the live API.
+
 This document is the complete specification for the menu API. It defines:
 - Every category, product, flavor, size, price, and item
 - The exact JSON structure the frontend expects
@@ -18,14 +25,19 @@ This document is the complete specification for the menu API. It defines:
 |---|---|---|---|
 | `GET /api/menu/categories` | `useMenuCategories()` | `IMenuCategory[]` | Browse-grid tabs. ~50ms, cache 5min. |
 | `GET /api/menu/products?category={id}` | `useMenuProducts(id)` | `IProduct[]` | All products in category, or all if no param. Filter by `categoryId`. |
-| `GET /api/menu/products/{slug}` | `useMenuProduct(slug)` | `IProduct \| null` | Single product for order page, looked up by **`slug`** (route-model-bind on the `slug` column, NOT the PK). Returns `null` if not found (not 404). |
+| `GET /api/menu/products/{slug}` | `useMenuProduct(slug)` | `IProduct \| null` | Single product for order page, looked up by **`slug`** (route-model-bind on the `slug` column, NOT the PK). **Returns `404` when the slug does not exist** — same as `/events/{id}`. (It currently answers `200 {}`; that is a bug.) |
 | `GET /api/menu/addons` | `useMenuAddons()` | `IAddonOption[]` | Shared additions (إضافات) catalog with prices (sauces, nuts, biscuit…) for the cart's per-unit "تخصيص الإضافات" flow. A product may override via its own `addons`. |
 
+> **Flavors have no endpoint of their own.** They are returned **inline** on the
+> product detail payload as `IBuilderProduct.flavors[]` — see §IFlavorOption.
+> Only `GET /menu/products/{slug}` carries them; the `/menu/products` list must
+> omit them so the catalog is not repeated on every row.
+
 All three endpoints:
-1. Frontend tries the real API **first**.
-2. On network error, timeout, or invalid JSON: `console.error` and return fake data.
-3. Bad rows in a list are dropped individually; one malformed product doesn't blank a category.
-4. **Never returns `null` or empty object on success—always an array or typed object.**
+1. The backend is the **only** source of menu data — the frontend holds no fake copy.
+2. On network error, timeout, or invalid JSON: the query **rejects** and the UI shows an error state with a retry button. Nothing is invented.
+3. A malformed row makes the whole response reject rather than being dropped silently — a backend regression must be visible, not hidden.
+4. **Never returns `null` or empty object on success—always an array or typed object.** An empty array is a valid answer (a category with nothing in it) and is rendered as an empty state.
 
 ---
 
@@ -55,19 +67,26 @@ All three endpoints:
 | `gradientFrom` | hex | "#f4a851" | Top of category-page gradient. |
 | `gradientTo` | hex | "#c97d2a" | Bottom of category-page gradient. |
 | `sortOrder` | int | 11 | Browse-grid order. 1–16. |
+| `available` | boolean | true | Optional, defaults `true`. `false` hides the whole section from the menu (e.g. hot drinks in summer). Unlike items, a switched-off category is removed, not greyed — an empty section has nothing to show. |
 
 ---
 
 ### IFlavorOption
-**Global flavor catalog for builder-template products (cup, family, brad-boza).**
-**23 total. Every one can be toggled available/unavailable via dashboard.**
+**Flavor balls for builder-template products (cup, family, brad-boza).**
+
+Delivered **inline** on the product detail payload as `IBuilderProduct.flavors[]`
+— there is no `/menu/flavors` endpoint. Scoped per product, so two builders may
+offer different sets. `brad` has no flavor step and needs none.
+
+**23 in the reference seed. Full add/edit/delete from the dashboard** — the
+frontend assumes no fixed ids.
 
 ```json
 {
   "id": "pistachio",
   "nameAr": "بيستاشيو",
   "nameEn": "Pistachio",
-  "image": "https://cdn.glace.com/flavors/pistachio.jpg",
+  "image": "https://cdn.glace.ps/flavors/pistachio.jpg",
   "family": "special",
   "available": true,
   "isPremiumMixFlavor": true
@@ -76,11 +95,11 @@ All three endpoints:
 
 | Field | Type | Example | Notes |
 |---|---|---|---|
-| `id` | string | "pistachio" | Stable slug. Used in mix rules' `flavorOptionIds`. |
+| `id` | string | "pistachio" | Stable slug, unique within the product. |
 | `nameAr` | string | "بيستاشيو" | Arabic label on flavor-ball picker. |
 | `nameEn` | string | "Pistachio" | English label (optional, for backend logs). |
 | `image` | string (URL) | "https://..." | Flavor photo. Can be static or CDN. |
-| `family` | enum | "special" | `"classic"` or `"special"` or `"stevia"`. Stevia flavors fold into classic picker. |
+| `family` | enum | "special" | **Exactly one of `classic`, `special`, `stevia`** — the frontend rejects anything else and the whole response fails. Stevia folds into the classic picker. ⚠️ **`mix` and `super-mix` are NOT flavor families** — see the note below. |
 | `available` | boolean | true | If false, flavor renders greyed with "غير متوفر" badge. Still clickable, but can't be picked. |
 | `isPremiumMixFlavor` | boolean | true | If true, charges the mix's `premiumFlavorPrice` instead of `flavorPrice`. Only pistachio has this today. |
 
@@ -101,7 +120,7 @@ All three endpoints:
   "categoryId": "ice-cream",
   "name": "بوظة كاسة",
   "description": "اختر الحاوية والحجم والنكهة المفضلة لديك",
-  "image": "https://cdn.glace.com/products/cup.jpg",
+  "image": "https://cdn.glace.ps/products/cup.jpg",
   "sortOrder": 1,
   "available": true,
   "addons": [
@@ -170,7 +189,7 @@ Extends `IProductBase` with:
       "label": "كاسة",
       "available": true,
       "name": "بوظة كاسة",
-      "image": "https://cdn.glace.com/containers/cup.jpg",
+      "image": "https://cdn.glace.ps/containers/cup.jpg",
       "pricingLabel": "الكاسة"
     }
   ],
@@ -199,8 +218,9 @@ Extends `IProductBase` with:
 | `flavorFamilies` | string[] | Array of `"classic"`, `"special"`, `"mix"`. Order is displayed order. |
 | `pricingLabel` | string | Heading for price table when all sizes share one table (e.g., "أسعار البراد"). Unused if sizes carry `containerId`. |
 | `containerOptions` | array | Containers (e.g., كاسة/بسكوت, بلاستيك/فلين). Each has `id`, `label`, `available`, optional `name` (override product name), optional `image`, optional `pricingLabel`. |
-| `sizes` | array | Size rows. Each has `id`, `label`, `maxBalls` (flavor-ball count; 0 if no picker), `containerId` (optional, filters to one container), `prices` (grid of `{flavorFamily, price}`). |
-| `hasExtraBiscuitAddon` | boolean | If true, qty stepper shows +1/−1 extra-biscuit counter at 1₪ each. |
+| `sizes` | array | Size rows. Each has `id`, `label`, `maxBalls` (flavor-ball count; 0 if no picker), `containerId` (optional, filters to one container), `prices` (grid of `{flavorFamily, price}`), and optional `available`. |
+| `sizes[].available` | boolean | Optional, defaults `true`. `false` greys the size with a "غير متوفر" badge. Lets one size be stopped **independently of its container** — Family merges container+size into a single step, so "1 لتر فلين" must be stoppable while "1/2 لتر فلين" stays orderable. |
+| `hasExtraBiscuitAddon` | boolean | If true, the order page shows an extra-biscuit counter. **The price, label and max quantity come from the `extra-biscuit` entry in `GET /menu/addons`** (currently 3₪, maxQty 10) — never hardcoded. |
 | `includesIceCreamStep` | boolean | Brad-boza only. If true, adds extra "أضف بوظة" step after size. |
 | `iceCreamAddonPrices` | array | Brad-boza only. Additive prices (classic/special/mix) for the ice-cream step, added to base size price. |
 
@@ -216,10 +236,11 @@ Extends `IProductBase` with:
   "kind": "flat-list",
   "items": [
     {
+      "id": "nutella",
       "label": "نوتيلا",
       "price": 11,
       "description": "كيك دافئ مع بوظة",
-      "image": "https://cdn.glace.com/items/nutella-pancake.jpg",
+      "image": "https://cdn.glace.ps/items/nutella-pancake.jpg",
       "available": true,
       "isPremiumMixFlavor": false
     }
@@ -232,7 +253,7 @@ Extends `IProductBase` with:
       "basePrice": 14,
       "flavorPrice": 7,
       "premiumFlavorPrice": 11,
-      "flavorOptionIds": ["nutella", "lotus", "pistachio"]
+      "itemIds": ["nutella", "lotus", "pistachio"]
     }
   ]
 }
@@ -241,8 +262,58 @@ Extends `IProductBase` with:
 | Field | Type | Notes |
 |---|---|---|
 | `kind` | string | Must be `"flat-list"`. |
-| `items` | array | Menu items. Each has `label`, `price`, optional `description`, optional `image`, `available`, optional `isPremiumMixFlavor`. Every item can be toggled available/unavailable. |
-| `mixes` | array | Optional. Mix rules. Each has `id`, `label`, `pick` (how many items to select), `basePrice`, `flavorPrice` (per-item charge), `premiumFlavorPrice` (charge for items with `isPremiumMixFlavor`), `flavorOptionIds` (array of item labels or global flavor ids to choose from). |
+| `items` | array | Menu items. Each has a stable **`id`** (see below), `label`, `price`, **`image` (required)**, optional `description`, `available`, optional `isPremiumMixFlavor`. Every item can be toggled available/unavailable. |
+| `items[].id` | string | **Stable, unique within the product** (e.g. `nutella`). Mixes reference items by this id, so renaming `label` from the dashboard never breaks a mix. Never changes → 🔒 seed-time only. |
+| `mixes` | array | Optional. Mix rules. Each has `id`, `label`, `pick` (how many items to select), `basePrice`, `flavorPrice` (per-item charge), `premiumFlavorPrice` (charge for items with `isPremiumMixFlavor`), **`itemIds`**, and optional `available`. |
+| `mixes[].available` | boolean | Optional, defaults `true`. `false` hides this mix rule for the product. |
+| `mixes[].itemIds` | string[] | Ids of the `items[]` this mix can be built from — **`IProductVariant.id` values on the same product**. NOT flavor ids, NOT labels. (Was `flavorOptionIds` holding Arabic labels; label matching broke on every rename.) |
+
+---
+
+## Item vs Flavor Ball — read this before modelling
+
+Two different entities are easy to confuse because they share names in Arabic.
+
+| | `items[]` — **item** | `flavors[]` — **flavor ball** |
+|---|---|---|
+| Type | `IProductVariant` | `IFlavorOption` |
+| Example | عصير فراولة · ميلك شيك نوتيلا | كرة بوظة فراولة |
+| Price | ✅ **has its own `price`** | ❌ **no price** — comes from the size |
+| Bought | added to the cart directly | placed inside a cup/tub |
+| Quantity | any | capped by `maxBalls` |
+| Lives on | every `flat-list` product | `builder` products only |
+
+The same word can be both: **فراولة** is an item on `juices` (5₪) *and* a flavor
+ball on `cup` (priced by size). They are separate rows in separate tables.
+
+### Which products get what
+
+| Product | `flavors[]` | `mixes[]` |
+|---|---|---|
+| `cup` · `family` · `brad-boza` | ✅ | ❌ |
+| `brad` | ❌ *(no flavor step — `flavorFamilies` is empty)* | ❌ |
+| **`milkshake`** | ❌ | ❌ — flat items only |
+| `pizza` · `crepe` · `waffle` · `pancake` · `loqaimat` | ❌ | ✅ mix + super-mix |
+| `kunafa` | ❌ | ✅ mix only |
+| all other flat-list | ❌ | ❌ |
+
+> **milkshake**: "كلاسيك"/"سبيشال" are part of the item **label**
+> (`"كلاسيك شوكولاته"`), not a field. Do not send it `flavors[]`.
+
+### `mix` and `super-mix` are not flavors
+
+Three separate concepts:
+
+| Concept | Field | Values | Belongs to |
+|---|---|---|---|
+| Flavor family | `flavors[].family` | `classic` · `special` · `stevia` | the flavor |
+| Pricing tier | `flavorFamilies` | `classic` · `special` · `mix` | a `builder` product |
+| Mix rule | `mixes[]` | `mix` · `super-mix` | a `flat-list` product |
+
+🔴 **No flavor ever has `family: "mix"`.** `mix` in `flavorFamilies` is a pricing
+mode meaning "combine classic and special at a special rate" — the balls shown
+are the same ordinary flavors. `super-mix` exists only as an `IMixRule` on
+flat-list products and has nothing to do with `IFlavorOption`.
 
 ---
 
@@ -255,7 +326,7 @@ Extends `IProductBase` with:
 - **Containers:** كاسة (`cup`), بسكوت (`biscuit`), تيك اواي (`takeaway`) — all available
 - **Flavor families:** classic, special, **mix**
 - **selectionMode:** repeatable
-- **hasExtraBiscuitAddon:** true (1₪ each)
+- **hasExtraBiscuitAddon:** true (price from `/menu/addons` → `extra-biscuit`, currently 3₪)
 - **Price table:**
 
 | Container | Size | maxBalls | classic | special |
@@ -270,10 +341,10 @@ Extends `IProductBase` with:
 
 #### 2. بوظة عائلي (`family`)
 - **Flow:** merged container+size selection (بلاستيك/فلين) → flavor family → balls → extra-biscuit addon → qty
-- **Containers:** بلاستيك (available), فلين *(available: false — disabled but shown with "غير متوفر" badge)*
+- **Containers:** `plastic` → بلاستيك (available), `foam` → فلين *(available: false — disabled but shown with "غير متوفر" badge)*
 - **Flavor families:** classic, special, **mix** *(family shows explicit mix column)*
 - **selectionMode:** repeatable
-- **hasExtraBiscuitAddon:** true (1₪ each)
+- **hasExtraBiscuitAddon:** true (price from `/menu/addons` → `extra-biscuit`, currently 3₪)
 - **UI:** Merged container+size selection step displays options as cards:
   - 1/2 لتر بلاستيك
   - 1 لتر بلاستيك
@@ -516,16 +587,34 @@ All favorites ✓, zoom ✓.
 
 ## Dashboard / Admin Features
 
-The backend **must** provide a dashboard allowing **real-time control** over:
+> **The display structure is fixed in the frontend; only data varies.**
+> The step-by-step scenario for each product (بوظة كاسة, بوظة عائلي, براد,
+> ميلك شيك…) is a hard-coded template. The dashboard fills in its values — it
+> must **never** be able to add, remove or reorder a step. See the
+> 🔒 fixed / 🔄 variable table in `BACKEND_REQUIREMENTS.md` §4.
 
-1. **Categories** — view only (ids/labels are stable, but colors/icons/sortOrder can change if needed)
-2. **Flavors** — toggle `available` on/off for each of 23 global flavors
-3. **Products** — toggle `available` on/off, modify `hasNotes`/`hasFavorites`/`hasImageZoom`/`inStoreOnly`
-4. **Items** (flat-list products) — toggle `available`, modify price, modify label/description
-5. **Sizes** (builder products) — toggle `available`, modify `maxBalls`, modify prices per family
-6. **Containers** (builder products) — toggle `available`, modify labels/pricingLabels
-7. **Mixes** — modify pick count, base price, flavor prices, premium prices
-8. **Extra-biscuit addon** — toggle `hasExtraBiscuitAddon` per product
+### 🔄 Editable from the dashboard
+
+1. **Categories** — `available`, label, colors, `sortOrder`
+2. **Flavors** — full add / edit / delete, plus `available` and image
+3. **Products** — `available`, name, description, image, `sortOrder`
+4. **Items** (flat-list) — `available`, price, label, description, image; add/remove items
+5. **Sizes** (builder) — `available`, prices per family, `maxBalls` *(changes the ball limit — edit with care)*
+6. **Containers** (builder) — `available`, label, `pricingLabel`, image
+7. **Mixes** — `available`, base price, flavor prices, premium prices
+8. **Addons** — price, label, `available`, `maxQty` (incl. `extra-biscuit`)
+
+### 🔒 NOT editable — changing these breaks the order flow
+
+`kind` · `slug` · `categoryId` · `selectionMode` · `flavorFamilies` ·
+`includesIceCreamStep` · `hasExtraBiscuitAddon` · `hasNotes` · `hasFavorites` ·
+`hasImageZoom` · `inStoreOnly` · `mixes[].pick` · `category.icon` ·
+and every id: `items[].id`, `flavors[].id`, `sizes[].id`, `containerOptions[].id`,
+`mixes[].id`, `sizes[].containerId`
+
+> Only **`flat-list`** products may be created from the dashboard. The four
+> `builder` products (cup, family, brad, brad-boza) each have a hand-built
+> scenario and cannot be added without frontend work.
 
 ### Key dashboard rule:
 **If you toggle a product/item/flavor `available: false`, it still appears in the API response but is rendered greyed with a "غير متوفر / غير متاح" badge in the frontend.** It doesn't vanish; the frontend filters it post-fetch. This allows the backend to soft-delete without code changes.
@@ -534,8 +623,8 @@ The backend **must** provide a dashboard allowing **real-time control** over:
 
 ## Error Handling & Edge Cases
 
-1. **Invalid response (non-JSON, malformed data):** Frontend logs error, returns fake data. Never crashes.
-2. **Product not found:** `GET /menu/products/{slug}` returns `null` (not 404 or empty object). Frontend renders a graceful "المنتج غير موجود" message.
+1. **Invalid response (non-JSON, malformed data):** the query rejects and the UI shows "تعذّر التحميل" with a retry button. Never crashes, never substitutes fake data.
+2. **Product not found:** `GET /menu/products/{slug}` returns **`404`**. Frontend renders a graceful "المنتج غير موجود" message. A 404 is distinguished from a network failure — the latter shows the retry state instead.
 3. **Missing optional fields:** Frontend treats missing fields as falsy/default. E.g., no `containerOptions` → no container step.
 4. **Empty lists:** A category with zero products returns `[]` (not `null`). Frontend renders an empty state gracefully.
 5. **Stale availability:** If a flavor is toggled unavailable mid-user-interaction, the picker still renders it (greyed). Real-time reactivity is nice-to-have, not required.
@@ -544,31 +633,54 @@ The backend **must** provide a dashboard allowing **real-time control** over:
 
 ## Implementation Checklist for Laravel Backend
 
-- [ ] Schema migration: tables for categories, flavors, products, items, sizes, containers, mixes, dashboard roles/permissions
-- [ ] Endpoints: GET `/api/menu/categories`, `GET /api/menu/products`, `GET /api/menu/products/{slug}` (route-model-bind by `slug`, not PK), `GET /api/menu/addons`
-- [ ] Products carry a distinct opaque `id` (PK) **and** a unique, stable `slug` (URL identifier) — don't reuse the PK as the slug
-- [ ] Shared additions catalog (`GET /menu/addons` → `IAddonOption[]`, with prices, incl. biscuit) for the cart's per-unit additions flow; optional per-product `addons[]` override on the product payload
-- [ ] Data validation: return only fields specified in this doc; drop/ignore unknown fields
-- [ ] Dashboard UI: category/product/item/flavor CRUD with availability toggles
-- [ ] Seed/fixture: load all 19 products, 23 flavors, 16 categories from this spec exactly
-- [ ] Logging: endpoint hit counts, slow queries, malformed-row drops
-- [ ] Testing: verify GET responses match exact JSON structure; test 404 behavior for unknown product ids; test availability toggles
-- [ ] Documentation: generate Swagger/OpenAPI from this spec and share with mobile team
+**Endpoints** (four — flavors are inline, not a fifth route)
+- [ ] `GET /api/menu/categories`
+- [ ] `GET /api/menu/products` — **without** `flavors[]`
+- [ ] `GET /api/menu/products/{slug}` — route-model-bind by `slug` (not PK); **carries `flavors[]`**; `404` when missing
+- [ ] `GET /api/menu/addons`
+
+**Schema**
+- [ ] Tables: categories, flavors, products, items, sizes, containers, mixes, addons
+- [ ] `product_flavor` join table so one flavor can serve several products
+- [ ] Products carry an opaque `id` (PK) **and** a unique stable `slug` — don't reuse the PK as the slug
+- [ ] **Every item carries a stable `id`**, unique within its product; `mixes[].itemIds` reference it
+- [ ] `available` columns on: products, items, flavors, containers, **sizes**, **mixes**, **categories**, addons
+
+**Images**
+- [ ] Dashboard upload returning real URLs for: products, **items** (all 69), flavors, containers
+- [ ] No `example.com` host anywhere in seed data
+
+**Behaviour**
+- [ ] Return only the fields in this doc; reject/ignore unknown fields
+- [ ] An empty category returns `[]`, never `null`
+- [ ] Unavailable rows are still returned (greyed by the frontend), except categories which are hidden
+
+**Dashboard**
+- [ ] CRUD with availability toggles for everything in the 🔄 list above
+- [ ] The 🔒 list must be seed-time only — not exposed as editable fields
+- [ ] Only `flat-list` products can be created; `builder` products are fixed at four
+
+**Seed / QA**
+- [ ] Load 19 products, 69 items (with ids), 23 flavors, 16 categories, 7 addons from `docs/reference/fake-data/menu.ts`
+- [ ] Verify every `mixes[].itemIds` entry resolves to an `items[].id` on the same product
+- [ ] Test `404` for unknown slug, availability toggles, and the `?category=` filter
 
 ---
 
 ## Frontend will call these exact URLs
 
 ```
-GET http://localhost:3000/api/menu/categories
-GET http://localhost:3000/api/menu/products
-GET http://localhost:3000/api/menu/products?category=ice-cream
-GET http://localhost:3000/api/menu/products/cup
-GET http://localhost:3000/api/menu/products/brad-boza
-GET http://localhost:3000/api/menu/addons
+GET {API_BASE}/menu/categories
+GET {API_BASE}/menu/products
+GET {API_BASE}/menu/products?category=ice-cream
+GET {API_BASE}/menu/products/cup          ← carries flavors[]
+GET {API_BASE}/menu/products/brad-boza    ← carries flavors[]
+GET {API_BASE}/menu/addons
 ```
 
-(In production, replace `localhost:3000` with your backend domain.)
+`{API_BASE}` is `https://glace-bzjj.onrender.com/api` on staging. The category
+filter parameter is **`category`** — any other name is ignored and the full list
+is returned.
 
 ---
 
@@ -576,4 +688,5 @@ GET http://localhost:3000/api/menu/addons
 
 - **Frontend type definitions:** `src/types/menu.types.ts` (TypeScript version of this spec)
 - **API contract (OpenAPI):** `docs/swagger.yaml`
-- **Fake data (current test data):** `src/data/fake-data/menu.ts`
+- **Reference seed data:** `docs/reference/fake-data/menu.ts` — all 19 products, 69 items (each with a stable `id`), and 23 flavors, ready to seed from. Reference only: excluded from the build, imported by nothing.
+- **Current gaps & requirements:** `docs/BACKEND_REQUIREMENTS.md`

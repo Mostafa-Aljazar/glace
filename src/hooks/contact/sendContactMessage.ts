@@ -1,9 +1,5 @@
 import { guestApi } from "@/lib/axios";
-import { FAKE_CONTACT_SUBMIT_RESPONSE } from "@/data/fake-data/contact";
-import type {
-  IContactRequest,
-  IContactResponse,
-} from "@/types/contact.types";
+import type { IContactRequest, IContactResponse } from "@/types/contact.types";
 
 function isContactResponse(value: unknown): value is IContactResponse {
   if (!value || typeof value !== "object") return false;
@@ -13,22 +9,23 @@ function isContactResponse(value: unknown): value is IContactResponse {
 
 /**
  * Sends a contact message via `POST /contact`.
- * Falls back to a successful fake response when the backend is unavailable.
+ *
+ * Rejects on any failure — a delivery the backend never accepted must never be
+ * reported to the customer as sent. Callers surface the error via the mutation.
  */
 export async function sendContactMessage(
   payload: IContactRequest,
 ): Promise<IContactResponse> {
-  try {
-    const res = await guestApi.post<IContactResponse>("/contact", payload);
-    if (isContactResponse(res?.data)) return res.data;
-    return FAKE_CONTACT_SUBMIT_RESPONSE;
-  } catch (e) {
-    console.error("[sendContactMessage]", e);
-    return FAKE_CONTACT_SUBMIT_RESPONSE;
-  }
-}
+  const res = await guestApi.post<IContactResponse>("/contact", payload);
 
-/** @deprecated Prefer `sendContactMessage` */
-export const submitContact = sendContactMessage;
+  if (!isContactResponse(res?.data)) {
+    throw new Error("Invalid /contact response shape");
+  }
+  if (!res.data.success) {
+    throw new Error(res.data.message || "تعذّر إرسال الرسالة");
+  }
+
+  return res.data;
+}
 
 export default sendContactMessage;

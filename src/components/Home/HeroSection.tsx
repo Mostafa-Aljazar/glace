@@ -17,7 +17,7 @@ import {
   iceC,
   sunImg,
 } from "@/assets/images";
-import type { ISlideData } from "@/types/home.types";
+import { resolveHomeImageSrc, type ISlideData } from "@/types/home.types";
 
 interface HeroSectionProps {
   slides: ISlideData[];
@@ -147,7 +147,7 @@ export default function HeroSection({
 
                   {/* character */}
                   <Image
-                    src={slide.manImg}
+                    src={resolveHomeImageSrc(slide.manImg)}
                     alt=""
                     width={260}
                     height={200}
@@ -186,7 +186,7 @@ export default function HeroSection({
 
                   {/* piece ice — desktop/tablet only (avoids overlapping the CTA on mobile) */}
                   <Image
-                    src={slide.pieceImg}
+                    src={resolveHomeImageSrc(slide.pieceImg)}
                     alt=""
                     width={155}
                     height={155}

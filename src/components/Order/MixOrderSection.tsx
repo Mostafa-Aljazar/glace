@@ -6,24 +6,32 @@ import MixFlavorModal from "@/components/Order/MixFlavorModal";
 import type { IMixRule, IProductVariant } from "@/types/menu.types";
 
 export interface MixSelection {
+  /** Unique id of THIS added instance (a product can hold several mixes). */
   id: string;
-  mixLabel: string;
+  /** `IMixRule.id` of the rule this instance was built from. */
+  mixId: string;
   count: number;
-  selectedFlavors: string[];
+  /** `IProductVariant.id` per picked ball — repeats allowed. */
+  selectedItemIds: string[];
   unitPrice: number;
 }
 
-/** Collapse a raw, possibly-repeated array of labels into {label, qty} pairs. */
-export function countFlavorOccurrences(flavors: string[]): Array<{ label: string; qty: number }> {
+/** Collapse a possibly-repeated array of item ids into {id, qty} pairs. */
+export function countFlavorOccurrences(
+  itemIds: string[],
+): Array<{ id: string; qty: number }> {
   const counts = new Map<string, number>();
-  for (const flavor of flavors) counts.set(flavor, (counts.get(flavor) ?? 0) + 1);
-  return Array.from(counts.entries()).map(([label, qty]) => ({ label, qty }));
+  for (const id of itemIds) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return Array.from(counts.entries()).map(([id, qty]) => ({ id, qty }));
 }
 
-function flavorFrequencyLabels(flavors: string[]) {
-  return countFlavorOccurrences(flavors).map(({ label, qty }) =>
-    qty > 1 ? `${label} ×${qty}` : label,
-  );
+/** Human-readable chips for a selection — ids resolved to current labels, so
+ *  a dashboard rename shows through immediately. */
+function flavorFrequencyLabels(itemIds: string[], items: IProductVariant[]) {
+  return countFlavorOccurrences(itemIds).map(({ id, qty }) => {
+    const label = items.find((i) => i.id === id)?.label ?? id;
+    return qty > 1 ? `${label} ×${qty}` : label;
+  });
 }
 
 interface MixOrderSectionProps {
@@ -62,16 +70,16 @@ export default function MixOrderSection({
     setMixSelections((prev) => prev.filter((m) => m.id !== mixId));
   }
 
-  function handleConfirm(flavors: string[], unitPrice: number) {
+  function handleConfirm(itemIds: string[], unitPrice: number) {
     if (!activeMix) return;
-    const newId = `${activeMix.label}_${Date.now()}_${Math.random()}`;
+    const newId = `${activeMix.id}_${Date.now()}_${Math.random()}`;
     setMixSelections((prev) => [
       ...prev,
       {
         id: newId,
-        mixLabel: activeMix.label,
+        mixId: activeMix.id,
         count: 1,
-        selectedFlavors: flavors,
+        selectedItemIds: itemIds,
         unitPrice,
       },
     ]);
@@ -92,11 +100,11 @@ export default function MixOrderSection({
       <div className="space-y-5">
         {mixes.map((mixConfig) => {
           const mixInstances = mixSelections.filter(
-            (m) => m.mixLabel === mixConfig.label && m.count > 0,
+            (m) => m.mixId === mixConfig.id && m.count > 0,
           );
 
           return (
-            <div key={mixConfig.label}>
+            <div key={mixConfig.id}>
               <button
                 type="button"
                 onClick={() => setActiveMix(mixConfig)}
@@ -136,16 +144,17 @@ export default function MixOrderSection({
                             {mixConfig.label}
                           </p>
                           <div className="flex flex-wrap gap-1.5">
-                            {flavorFrequencyLabels(mix.selectedFlavors).map(
-                              (label) => (
-                                <span
-                                  key={label}
-                                  className="bg-white/10 border border-white/10 px-2 py-0.5 rounded-full text-[11px] text-white/80"
-                                >
-                                  {label}
-                                </span>
-                              ),
-                            )}
+                            {flavorFrequencyLabels(
+                              mix.selectedItemIds,
+                              items,
+                            ).map((label) => (
+                              <span
+                                key={label}
+                                className="bg-white/10 border border-white/10 px-2 py-0.5 rounded-full text-[11px] text-white/80"
+                              >
+                                {label}
+                              </span>
+                            ))}
                           </div>
                         </div>
                         <button
