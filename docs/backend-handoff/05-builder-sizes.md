@@ -3,43 +3,232 @@
 **الأولوية:** عالية  
 **Endpoints:** `GET /menu/products` · `GET /menu/products/{slug}`  
 **Schema:** `ISizeOption` · `IContainerOption` في `docs/swagger.yaml`  
-**تاريخ:** 2026-08-11
+**تاريخ:** 2026-08-11 · **إعادة تحقق:** 2026-08-12 (أمثلة حية: `cup` · `family` · `brad`)
 
 ---
 
 ## قرار المنتج
 
-الأدمن يقدر من **Filament** يضيف / يعدّل / يحذف **الأنواع** و**الأحجام** لكل منتج `kind: "builder"` (`cup` · `family` · `brad` · `brad-boza` …).
+الأدمن يقدر من **Filament** يضيف / يعدّل / يحذف **الأنواع** و**الأحجام** و**أسعارها** لكل منتج `kind: "builder"` (`cup` · `family` · `brad` · `brad-boza` …).
 
 **مش المقصود** نصوص العناوين «اختر النوع» / «اختر الحجم» — دي تبقى في الفرونت.  
 **المقصود** محتوى الأزرار نفسها:
 
-| على الشاشة (مثال كاسة) | مصدر البيانات | إدارة من الداشبورد |
+| على الشاشة | مصدر البيانات | إدارة من الداشبورد |
 |---|---|---|
-| كاسة · بسكوت · تيك اواي | `containerOptions[]` | ✅ CRUD مطلوب |
-| صغير · وسط · كبير | `sizes[]` | ✅ CRUD مطلوب |
+| كاسة · بسكوت · تيك اواي / بلاستيك · فلين | `containerOptions[]` | ✅ CRUD مطلوب |
+| صغير · وسط · كبير / 1/2 لتر · 1 لتر | `sizes[]` | ✅ CRUD مطلوب |
 | أسعار كل حجم | `sizes[].prices` | ✅ مطلوب |
-| عنوان الخطوة «اختر النوع» | نص فرونت ثابت | ❌ مش مطلوب من الباك |
+| صورة صف الحجم (خصوصًا العائلي) | `sizes[].image` | ✅ مطلوب |
+| عنوان الخطوة «اختر النوع / الحجم» | نص فرونت ثابت | ❌ مش مطلوب من الباك |
 
 أي تغيير من الأدمن يظهر فوراً على `/menu/order/{slug}` بدون deploy فرونت.
 
 ---
 
-## الحالة الحالية
+## الحكم (حاسم) — ينطبق على **كل** builder بما فيها `cup` و`family`
 
-الـAPI بيرجّع الأنواع والأحجام من الداتابيس، بس تبويب **إعدادات Builder** فيه فقط:
+| | في الـAPI | في الداشبورد |
+|---|---|---|
+| `containerOptions[]` — «اختر النوع» | ✅ بيرجع (seed) | ❌ **مفيش تحكم** |
+| `sizes[]` — «اختر الحجم» | ✅ بيرجع (seed) | ❌ **مفيش تحكم** |
+| `sizes[].prices` — أسعار الأحجام | ✅ بيرجع مع الأنواع/الأحجام | ❌ **مفيش تحكم في الأسعار** |
+| `sizes[].image` | ❌ **مش راجع** | ❌ **مفيش رفع** |
+
+الأنواع + الأحجام + الأسعار **بيرجعوا مع بعض في الـAPI**، بس الأدمن **ما عندهوش أي واجهة** يغيّرهم منها.
+
+---
+
+## دليل 1 — `cup` / بوظة كاسة
+
+نفس المشكلة: مفيش تحكم في الداشبورد لـ«اختر النوع» ولا «اختر الحجم» ولا الأسعار — والثلاثتهم بيرجعوا من الـAPI.
+
+عيّنة حية من `GET /menu/products/cup`:
+
+```json
+{
+  "slug": "cup",
+  "kind": "builder",
+  "name": "بوظة كاسة",
+  "image": null,
+  "containerOptions": [
+    { "id": "cup", "label": "كاسة", "available": true, "pricingLabel": "الكاسة" },
+    { "id": "biscuit", "label": "بسكوت", "available": true, "pricingLabel": "البسكوت" },
+    { "id": "takeaway", "label": "تيك اواي", "available": true, "pricingLabel": "التيك اواي" }
+  ],
+  "sizes": [
+    {
+      "id": "cup-small",
+      "label": "صغير",
+      "maxBalls": 1,
+      "available": true,
+      "containerId": "cup",
+      "prices": [
+        { "flavorFamily": "classic", "price": 2 },
+        { "flavorFamily": "special", "price": 4 }
+      ]
+    },
+    {
+      "id": "biscuit-small",
+      "label": "صغير",
+      "maxBalls": 1,
+      "available": true,
+      "containerId": "biscuit",
+      "prices": [
+        { "flavorFamily": "classic", "price": 2 }
+      ]
+    },
+    {
+      "id": "takeaway-size",
+      "label": "تيك اواي",
+      "maxBalls": 3,
+      "available": true,
+      "containerId": "takeaway",
+      "prices": [
+        { "flavorFamily": "classic", "price": 5 },
+        { "flavorFamily": "special", "price": 7 }
+      ]
+    }
+  ]
+}
+```
+
+| على `/menu/order/cup` | مصدر API | داشبورد |
+|---|---|---|
+| كاسة · بسكوت · تيك اواي | `containerOptions` | ❌ مفيش تحكم |
+| صغير · وسط · كبير | `sizes` | ❌ مفيش تحكم |
+| أسعار الجدول (مثلاً كاسة صغير classic = 2) | `sizes[].prices` | ❌ مفيش تحكم |
+| `sizes[].image` | مش راجع | ❌ مفيش رفع |
+
+```bash
+curl -s "$API/menu/products/cup" | jq '{
+  containers: .containerOptions,
+  sizes: [.sizes[] | {id, label, containerId, prices, image}]
+}'
+```
+
+---
+
+## دليل 2 — `family` / بوظة عائلي
+
+على `/menu/order/family` صفوف النوع/الحجم ظاهرة والأسعار شغالة، لكن **مكان صورة الحجم فاضي**:
+
+![بوظة عائلي — أماكن صور الأحجام فاضية](./images/family-storefront.png)
+
+عيّنة حية مختصرة من `GET /menu/products/family`:
+
+```json
+{
+  "slug": "family",
+  "kind": "builder",
+  "name": "بوظة عائلي",
+  "image": null,
+  "containerOptions": [
+    { "id": "plastic", "label": "بلاستيك", "available": true },
+    { "id": "foam", "label": "فلين", "available": false }
+  ],
+  "sizes": [
+    {
+      "id": "plastic-half",
+      "label": "1/2 لتر",
+      "maxBalls": 8,
+      "available": true,
+      "containerId": "plastic",
+      "prices": [
+        { "flavorFamily": "classic", "price": 14 },
+        { "flavorFamily": "special", "price": 18 },
+        { "flavorFamily": "mix", "price": 16 }
+      ]
+    }
+  ]
+}
+```
+
+لاحظ: فيه `prices` · **مفيش** `image` على الـsize.
+
+---
+
+## دليل 3 — `brad` / براد
+
+نفس النقص: الأحجام والأسعار ظاهرة على الفرونت من الـAPI، و**مفيش تحكم** في الداشبورد.
+
+على `/menu/order/brad` — جدول أسعار البراد (صغير 1 · وسط 2 · كبير 3) + اختر النوع (ليمون/مانجا/مكس) + اختر الحجم:
+
+![براد — أحجام وأسعار من الـAPI بدون تحكم أدمن](./images/brad-storefront.png)
+
+عيّنة حية من `GET /menu/products/brad`:
+
+```json
+{
+  "slug": "brad",
+  "kind": "builder",
+  "name": "براد",
+  "pricingLabel": "أسعار البراد",
+  "containerOptions": [
+    { "id": "lemon", "label": "ليمون", "available": true },
+    { "id": "mango", "label": "مانجا", "available": true },
+    { "id": "mix", "label": "مكس", "available": true }
+  ],
+  "sizes": [
+    {
+      "id": "brad-small",
+      "label": "صغير",
+      "available": true,
+      "prices": [{ "flavorFamily": "classic", "price": 1 }]
+    },
+    {
+      "id": "brad-medium",
+      "label": "وسط",
+      "available": true,
+      "prices": [{ "flavorFamily": "classic", "price": 2 }]
+    },
+    {
+      "id": "brad-large",
+      "label": "كبير",
+      "available": true,
+      "prices": [{ "flavorFamily": "classic", "price": 3 }]
+    }
+  ]
+}
+```
+
+| على `/menu/order/brad` | مصدر API | داشبورد |
+|---|---|---|
+| ليمون · مانجا · مكس | `containerOptions` | ❌ مفيش تحكم |
+| صغير · وسط · كبير | `sizes` | ❌ **مفيش تحكم في الأحجام** |
+| 1 / 2 / 3 ₪ | `sizes[].prices` | ❌ **مفيش تحكم في الأسعار** |
+| عنوان «أسعار البراد» | `pricingLabel` | ⚠️ قابل للتعديل من إعدادات Builder فقط |
+
+```bash
+curl -s "$API/menu/products/brad" | jq '{
+  pricingLabel,
+  containers: .containerOptions,
+  sizes: [.sizes[] | {id, label, prices, image}]
+}'
+```
+
+---
+
+## دليل من الداشبورد (نفس الشكل على cup و family و brad و brad-boza)
+
+شاشة Edit builder — معلومات أساسية / إعدادات العرض / إعدادات Builder فقط.  
+**مفيش** أي واجهة للأنواع أو الأحجام أو أسعار الأحجام أو صور الأحجام:
+
+![داشبورد بوظة عائلي — بدون تحكم نوع/حجم/سعر](./images/family-dashboard.png)
+
+تبويب **إعدادات Builder** الحالي فيه فقط:
 
 - وضع الاختيار (Toggle / Repeatable)
 - عائلات النكهات
 - نص `pricingLabel`
 - سويتش «يتضمن خطوة أضف بوظة»
 
-**مش موجود في الأدمن:**
+**مش موجود في الأدمن (لكل builder بما فيها بوظة كاسة والبراد):**
 
-- إضافة / تعديل / حذف **الأنواع** (`containerOptions`)
-- إضافة / تعديل / حذف **الأحجام** (`sizes`)
-- تعديل **الأسعار** داخل `sizes[].prices`
-- رفع **صورة حجم** (`sizes[].image`)
+- إضافة / تعديل / حذف **الأنواع** (`containerOptions`) — خطوة «اختر النوع»
+- إضافة / تعديل / حذف **الأحجام** (`sizes`) — خطوة «اختر الحجم»
+- تعديل **الأسعار** داخل `sizes[].prices` (كاسة · عائلي · **براد** · براد-بوظة)
+- رفع **صورة حجم** (`sizes[].image`) وإرجاعها في الـAPI
 - تعديل **`iceCreamAddonPrices`** (brad-boza)
 
 ---
@@ -96,14 +285,21 @@
 
 الفرونت يعرض صورة الصف من: `sizes[].image` ثم fallback `containerOptions[].image`.
 
-### عائلي حالياً (حي) — بدون صور
+### عائلي حالياً (حي) — أسعار موجودة · صور غائبة
 
-| الصف | `size.id` | `containerId` | صورة |
-|---|---|---|---|
-| 1/2 لتر بلاستيك | `plastic-half` | `plastic` | ❌ |
-| 1 لتر بلاستيك | `plastic-one` | `plastic` | ❌ |
-| 1/2 لتر فلين | `foam-half` | `foam` | ❌ (الحاوية موقوفة) |
-| 1 لتر فلين | `foam-one` | `foam` | ❌ |
+| الصف | `size.id` | `containerId` | سعر classic | `sizes[].image` |
+|---|---|---|---:|---|
+| 1/2 لتر بلاستيك | `plastic-half` | `plastic` | 14 | ❌ مش راجع |
+| 1 لتر بلاستيك | `plastic-one` | `plastic` | 28 | ❌ مش راجع |
+| 1/2 لتر فلين | `foam-half` | `foam` | 16 | ❌ مش راجع (الحاوية موقوفة) |
+| 1 لتر فلين | `foam-one` | `foam` | 31 | ❌ مش راجع |
+
+```bash
+curl -s "$API/menu/products/family" | jq '{
+  containers: .containerOptions,
+  sizes: [.sizes[] | {id, label, containerId, image, prices}]
+}'
+```
 
 ---
 
@@ -155,18 +351,20 @@ URL الصور: كامل عبر `Storage::disk('public')->url(...)`.
 
 ## معايير القبول
 
-- [ ] من الأدمن: CRUD كامل لـ`containerOptions` (الأنواع) لكل builder
-- [ ] من الأدمن: CRUD كامل لـ`sizes` + `prices` + صورة الحجم
+- [ ] من الأدمن: CRUD كامل لـ`containerOptions` (الأنواع / «اختر النوع») لكل builder بما فيها `family`
+- [ ] من الأدمن: CRUD كامل لـ`sizes` (الأحجام / «اختر الحجم»)
+- [ ] من الأدمن: تعديل **`sizes[].prices`** يظهر فورًا على `/menu/order/family` (مثلاً classic نصف بلاستيك 14 → قيمة جديدة)
+- [ ] من الأدمن: رفع صورة حجم → الـAPI يرجّع `sizes[].image` كـURL كامل (مش يختفي الحقل)
 - [ ] من الأدمن: تعديل `iceCreamAddonPrices` لـ`brad-boza`
 - [ ] إضافة نوع أو حجم جديد يظهر في صفحة الطلب بدون deploy فرونت
-- [ ] كل حجم على `family` يرجّع `image` (أو على الأقل `container.image` كـfallback)
+- [ ] `/menu/order/family` تعرض thumbnails مش أماكن فاضية
 - [ ] إيقاف `available` على نوع أو حجم ينعكس في الواجهة
 - [ ] **لا** حقول عناوين خطوات (`typeStepTitle` …) — مش جزء من هذا الطلب
 
 ```bash
-curl -s "$API/menu/products/cup" | jq '{containers: .containerOptions, sizes: [.sizes[] | {id, label, containerId, prices}]}'
-curl -s "$API/menu/products/family" | jq '.sizes[] | {id, label, image, available, containerId}'
-curl -s "$API/menu/products/brad-boza" | jq '{containers: .containerOptions, sizes: [.sizes[] | {id, label, prices}], iceCreamAddonPrices}'
+curl -s "$API/menu/products/cup" | jq '{containers: .containerOptions, sizes: [.sizes[] | {id, label, containerId, prices, image}]}'
+curl -s "$API/menu/products/family" | jq '.sizes[] | {id, label, image, available, containerId, prices}'
+curl -s "$API/menu/products/brad-boza" | jq '{containers: .containerOptions, sizes: [.sizes[] | {id, label, prices, image}], iceCreamAddonPrices}'
 ```
 
 ---

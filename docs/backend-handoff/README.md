@@ -1,24 +1,36 @@
 # حزمة تعديلات للباك اند — Glace API
 
-**تاريخ:** 2026-08-11  
+**تاريخ الحزمة:** 2026-08-11  
+**آخر مراجعة QA:** 2026-08-12 → [`08-qa-remaining.md`](./08-qa-remaining.md)  
 **API الحالي:** `http://acw348d983gr8x01lb5myd3x.64.176.172.179.sslip.io/api`  
-**العقد:** [`../swagger.yaml`](../swagger.yaml) · [`../MENU_CATALOG.md`](../MENU_CATALOG.md)
+**داشبورد:** `http://acw348d983gr8x01lb5myd3x.64.176.172.179.sslip.io/admin`  
+**العقد:** [`../swagger.yaml`](../swagger.yaml) · [`swagger.yaml`](./swagger.yaml) · [`../MENU_CATALOG.md`](../MENU_CATALOG.md)
 
 هذه المجلدات مخصّصة لإرسالها لفريق الباك. كل ملف = تذكرة تنفيذ مستقلة مع معايير قبول.
+
+**لقطات دليل النواقص:** [`images/`](./images/)  
+- [`loqaimat.png`](./images/loqaimat.png) — ستورفرونت flat-list: سعر ظاهر · مكان الصورة فاضي  
+- [`brad-storefront.png`](./images/brad-storefront.png) — براد: أحجام وأسعار ظاهرة · **مفيش تحكم أدمن**  
+- [`family-storefront.png`](./images/family-storefront.png) — بوظة عائلي: أماكن صور الأحجام فاضية  
+- [`family-dashboard.png`](./images/family-dashboard.png) — داشبورد builder: **مفيش** تحكم نوع/حجم/سعر  
+- [`dashboard-settings.png`](./images/dashboard-settings.png) — منتج flat-list · معلومات أساسية (**بدون** أصناف)  
+- [`dashboard-product-presentaion-settings.png`](./images/dashboard-product-presentaion-settings.png) — إعدادات العرض فقط  
+- [`dashboard-event.png`](./images/dashboard-event.png) — فعالية · صورة بطاقة فقط · **مفيش حقل لـ`images[]`**  
 
 ---
 
 ## الأولوية
 
-| # | الملف | الأثر | الحالة على الـAPI الحي (2026-08-11) |
+| # | الملف | الأثر | حالة QA 2026-08-12 |
 |---|---|---|---|
-| 1 | [`01-items-image.md`](./01-items-image.md) | صور أصناف **كل** flat-list (15 منتج / 69 صنف) | ❌ `items[].image` = **0/69** |
-| 2 | [`02-builder-flavors.md`](./02-builder-flavors.md) | قفل طلب `cup` / `brad-boza` / `family` | ❌ `available` محذوف لما `false` · `family` بدون `flavors` |
-| 3 | [`05-builder-sizes.md`](./05-builder-sizes.md) | CRUD أنواع+أحجام+أسعار من الداشبورد · صور الأحجام | ❌ الأدمن ما بيدير `containerOptions`/`sizes` · مفيش `sizes[].image` |
-| 4 | [`07-flat-list-mixes.md`](./07-flat-list-mixes.md) | CRUD مكس/سوبر مكس من الداشبورد (flat-list) | ❌ الأدمن ما بيدير `mixes[]` (بيانات API متسيّدة فقط) |
-| 5 | [`06-brad-boza-media.md`](./06-brad-boza-media.md) | عنوان أسعار البراد بدون تكرار · بدون صورة كاسة | ⚠️ `pricingLabel` · ممنوع صورة ثانية |
-| 6 | [`04-home-and-events.md`](./04-home-and-events.md) | كسر/ضعف الهوم والفعاليات | ❌ مسار نسبي · `paragraphs` غلط · limit 3 · معرض `null` |
-| 7 | [`03-media-and-cleanup.md`](./03-media-and-cleanup.md) | صور نكهات + تنظيفات صغيرة | جزئي (صور المنتجات اتحسّنت) |
+| 1 | [`01-items-image.md`](./01-items-image.md) | صور + أسعار أصناف flat-list من الداشبورد | ❌ `image` 0/69 · ✅ `price` في API فقط · ❌ مفيش حقول أدمن |
+| 2 | [`02-builder-flavors.md`](./02-builder-flavors.md) | قفل طلب `cup` / `brad-boza` / `family` | ✅ مغلق |
+| 3 | [`05-builder-sizes.md`](./05-builder-sizes.md) | CRUD أنواع+أحجام+أسعار · صور الأحجام | ❌ `cup`+`family`+`brad`: بيانات API موجودة · **مفيش داشبورد** |
+| 4 | [`07-flat-list-mixes.md`](./07-flat-list-mixes.md) | CRUD مكس/سوبر مكس من الداشبورد (flat-list) | ⚠️ بيانات API موجودة · ❌ مفيش CRUD أدمن |
+| 5 | [`06-brad-boza-media.md`](./06-brad-boza-media.md) | عنوان أسعار البراد بدون تكرار · بدون صورة كاسة | ✅ API · ⚠️ ناقص تعديل `iceCreamAddonPrices` من الأدمن |
+| 6 | [`04-home-and-events.md`](./04-home-and-events.md) | كسر/ضعف الهوم والفعاليات | ⚠️ URL كامل ✅ · **مفيش مكان لـ`images[]` في الداشبورد** · `images: []` دايمًا |
+| 7 | [`03-media-and-cleanup.md`](./03-media-and-cleanup.md) | صور نكهات + تنظيفات صغيرة | ✅ صور نكهات · ❌ addons مكررة |
+| 8 | [`08-qa-remaining.md`](./08-qa-remaining.md) | **قائمة المتبقي بعد مراجعة الرفع** (API + داشبورد) | 🔴 القبول مرفوض — راجع الملف |
 
 ---
 
@@ -49,7 +61,7 @@ curl -s .../api/menu/products/pancake | jq '.mixes[] | {id, available, pick, bas
 curl -s .../api/menu/products/kunafa | jq '.mixes'
 ```
 
-القبول النهائي: `audit-api.mjs` يخرج `0` فشل، وكل الـ19 منتج يوصلوا لـ«أضف للسلة» بدون شاشة خطأ، والهوم/الفعاليات بدون placeholders مكسورة.
+القبول النهائي: `audit-api.mjs` يخرج `0` فشل، وكل بنود [`08-qa-remaining.md`](./08-qa-remaining.md) متعلّمة، وكل الـ19 منتج يوصلوا لـ«أضف للسلة» بدون شاشة خطأ، والهوم/الفعاليات بدون placeholders مكسورة.
 
 ---
 
@@ -59,3 +71,4 @@ curl -s .../api/menu/products/kunafa | jq '.mixes'
 - **المطلوب للصور:** URL كامل عبر `Storage::disk('public')->url(...)`.  
   الفرونت عنده تطبيع مؤقت للمسارات النسبية — **مش بديل عن العقد** (شوف [`04-home-and-events.md`](./04-home-and-events.md) بند 1).
 - روابط `cdn.example.com` **مرفوضة** (دومين ميت) وتُعامل كـ«مفيش صورة».
+- بعد أي رفع جديد: نفّذ بنود [`08-qa-remaining.md`](./08-qa-remaining.md) قبل ما تعتبر الحزمة مكتملة.

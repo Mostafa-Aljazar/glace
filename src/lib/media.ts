@@ -57,13 +57,14 @@ function apiOrigin(): string {
 /**
  * Resolves any backend media value to something `next/image` accepts.
  *
- * The API returns uploads as storage-relative paths with no leading slash
- * (`"hero-slides/x.png"`). Passing those straight to `next/image` throws
- * "Failed to parse src", so they are resolved against the API origin here.
+ * Contract (handoff 04): uploads are **absolute** URLs
+ * (`http(s)://…/storage/…`). Absolute URLs pass through unchanged.
+ * Relative storage paths are still normalised against the API origin so older
+ * or partial payloads do not crash `next/image`.
  *
  * | input                          | output                          |
  * |--------------------------------|---------------------------------|
- * | `https://cdn.glace.ps/a.png`   | unchanged                       |
+ * | `https://host/storage/a.png`   | unchanged                       |
  * | `hero-slides/a.png`            | `{apiOrigin}/storage/hero-slides/a.png` |
  * | `/storage/hero-slides/a.png`   | `{apiOrigin}/storage/hero-slides/a.png` |
  * | `/media-placeholder.svg`       | unchanged (our own public asset) |

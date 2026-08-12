@@ -2,93 +2,57 @@
 
 **الأولوية:** عاجل للشكل + عملية يدوية للصور  
 **Endpoints:** `GET /home` · `GET /events` · `GET /events/{id}`  
-**تاريخ التحقق على الـAPI الحي:** 2026-08-11
+**تاريخ التحقق على الـAPI الحي:** 2026-08-11  
+**إعادة تحقق:** 2026-08-12
 
 ---
 
 ## ملخص سريع
 
-| # | البند | نوع الشغل | الحالة الحيّة |
+| # | البند | نوع الشغل | الحالة الحيّة (2026-08-12) |
 |---|---|---|---|
-| 1 | الصور مسار نسبي بدل URL كامل | كود (Resource / Accessor) | ❌ مثال: `"manImg": "hero-slides/xxx.png"` |
-| 2 | `about.paragraphs` شكل غلط | كود (Resource) | ❌ `[{ "text": "..." }]` بدل `["..."]` |
-| 3 | رفع صورة بطاقة للفعاليات 4–10 | يدوي من الأدمن | جزئي — عند id 3 صورة؛ 4–10 غالباً `null` |
-| 4 | `home.events.items` من 3 ← 10 | كود (limit/take) | ❌ الهوم يرجّع **3** وبلا صور |
-| 5 | معرض `images[]` لتفاصيل الفعالية | شاشة + جدول جديد | ❌ دائماً `[null, null, null, null]` |
+| 1 | الصور مسار نسبي بدل URL كامل | كود (Resource / Accessor) | ✅ **مغلق** — الروابط absolute على `/storage/...` |
+| 2 | `about.paragraphs` شكل غلط | كود (Resource) | ✅ **مغلق** — `string[]` |
+| 3 | رفع صورة بطاقة للفعاليات الناقصة | يدوي من الأدمن | ⚠️ `listImage` على **3/10** فقط (1–3) · الهوم `image: null` |
+| 4 | `home.events.items` من 3 ← 10 | كود (limit/take) | ✅ العدد ≥ 10 · ❌ الصور لسه فاضية على الهوم |
+| 5 | معرض `images[]` لتفاصيل الفعالية | شاشة + جدول جديد | ❌ **مفيش حقل في الداشبورد** · `images` دايمًا `[]` |
 | — | `whyGlace.features[].image` | لا تعملوا شيء | ملاحظة فقط — الفرونت بيتجاهلها |
 
 ---
 
-## 🔴 1. الصور لازم ترجع URL كامل
+## ✅ 1. الصور لازم ترجع URL كامل — **تم**
 
-### المشكلة
+### الحالة بعد الإصلاح (2026-08-12)
 
-الباك بيرجّع مسار تخزين نسبي:
-
-```json
-"manImg": "hero-slides/01KZRAB31FVVSVVAJNQD8YH3BY.png"
-"image": "about/01KZRDEBZ60TV1QE6QW33NDEPD.png"
-"listImage": "events/01KZRF7M84418CBNDS3PWADNCN.png"
-```
-
-المطلوب حسب العقد (`format: uri` في الـSwagger):
+الباك بيرجّع URL كامل، مثال:
 
 ```json
+"listImage": "http://acw348d983gr8x01lb5myd3x.64.176.172.179.sslip.io/storage/events/01KZRF6GGTR1EZGK66MXY8HC5J.png"
 "manImg": "http://acw348d983gr8x01lb5myd3x.64.176.172.179.sslip.io/storage/hero-slides/01KZRAB31FVVSVVAJNQD8YH3BY.png"
+"image": "http://acw348d983gr8x01lb5myd3x.64.176.172.179.sslip.io/storage/about/01KZRDEBZ60TV1QE6QW33NDEPD.png"
 ```
 
-ده كان بيكسر الصفحة الرئيسية (خطأ parse / 500 على `next/image`) قبل ما الفرونت يضيف workaround مؤقت بـ`resolveMediaSrc`.  
-**الـworkaround مش بديل للعقد — المطلوب من الباك URL كامل.**
+الفرونت (`resolveMediaSrc`) بيمرّر الروابط absolute كما هي لـ`next/image`.
 
-### وين ينطبق
+### معايير قبول — متحققة
 
-كل حقول الصور في:
-
-- `home.hero.slides[]` → `manImg` · `pieceImg` · `zigzagsImg`
-- `home.about.image`
-- `home.events.items[].listImage` (أو `image` إن وُجد)
-- `events[].listImage`
-- `events[].images[]`
-- ويفضّل نفس القاعدة على المنيو (`product.image` · `items[].image` · `flavors[].image`) لاتساق العقد
-
-### التنفيذ المقترح (Laravel)
-
-```php
-'image' => $model->image_path
-    ? Storage::disk('public')->url($model->image_path)
-    : null,
-
-// أو accessor موحّد
-'manImg' => $this->storageUrl($slide->man_img_path),
-```
-
-تأكدوا إن `APP_URL` / `FILESYSTEM_DISK` يعطوا host صحيح للبيئة الحالية (sslip.io / production).
-
-### معايير قبول
-
-- [ ] كل حقول الصور في `/home` و`/events` تبدأ بـ`http://` أو `https://`
-- [ ] المسار يتضمن `/storage/...` أو CDN حقيقي
-- [ ] مفيش قيم نسبية مثل `hero-slides/...` أو `about/...` بدون origin
-- [ ] الروابط تفتح في المتصفح مباشرة (200 + صورة)
+- [x] حقول الصور المرفوعة في `/home` و`/events` تبدأ بـ`http://` أو `https://`
+- [x] المسار يتضمن `/storage/...`
+- [x] مفيش قيم نسبية زي `hero-slides/...` بدون origin (لما الصورة موجودة)
+- [x] الروابط تفتح في المتصفح مباشرة
 
 ```bash
 curl -s "$API/home" | jq '.. | objects | .. | strings | select(test("^(hero-slides|about|events|products|flavors)/"))'
 # المتوقع: لا نتائج
 ```
 
+> **ملاحظة:** `null` لسه مقبول لما مفيش رفع. المشكلة المتبقية = تعبئة الصور الناقصة (بند 3) + تضمينها في `home.events.items` + معرض `images[]` (بند 5) — مش شكل الـURL.
+
 ---
 
-## 🔴 2. `about.paragraphs` = مصفوفة نصوص مباشرة
+## ✅ 2. `about.paragraphs` = مصفوفة نصوص مباشرة — **تم**
 
-### الحالة الحيّة
-
-```json
-"paragraphs": [
-  { "text": "تأسس جلاسيه الأمير عام 2015..." }
-]
-```
-
-### المطلوب (Swagger + `IHomeAboutData`)
+### الحالة بعد الإصلاح
 
 ```json
 "paragraphs": [
@@ -97,26 +61,10 @@ curl -s "$API/home" | jq '.. | objects | .. | strings | select(test("^(hero-slid
 ]
 ```
 
-شكل `{ "text": "..." }` كان بيرمي error ويكسر قسم About — الفرونت عنده تطبيع مؤقت، المطلوب الباك يبعت `string[]`.
+### معايير قبول — متحققة
 
-### تنفيذ
-
-في الـAPI Resource:
-
-```php
-'paragraphs' => collect($about->paragraphs)
-    ->map(fn ($p) => is_array($p) ? ($p['text'] ?? '') : (string) $p)
-    ->values()
-    ->all(),
-```
-
-أو خزّنوا أصلاً JSON كـ`string[]` في الداتابيس/الإعدادات.
-
-### معايير قبول
-
-- [ ] `typeof paragraphs[0] === "string"`
-- [ ] مفيش عنصر من نوع object داخل المصفوفة
-- [ ] قسم About في الهوم يعرض النصوص بدون أخطاء
+- [x] `typeof paragraphs[0] === "string"`
+- [x] مفيش عنصر من نوع object داخل المصفوفة
 
 ```bash
 curl -s "$API/home" | jq '.about.paragraphs | map(type) | unique'
@@ -127,65 +75,88 @@ curl -s "$API/home" | jq '.about.paragraphs | map(type) | unique'
 
 ## 🟡 3. رفع صورة بطاقة للفعاليات الناقصة (يدوي)
 
-### الحالة
+### دليل من الداشبورد
 
-حقل الأدمن **«صورة البطاقة»** موجود ويعمل.  
-على الـAPI: فعالية واحدة على الأقل (`id: 3`) عندها `listImage`؛ معظم الباقي `listImage: null`، والهوم يعرض أحدث 3 (8، 9، 10) **بدون صور**.
+شاشة تعديل الفعالية — حقل **«صورة البطاقة»** موجود (يقابل `listImage`). **مفيش** حقل لمعرض `images[]`:
+
+![تعديل فعالية — صورة البطاقة فقط بدون معرض](./images/dashboard-event.png)
+
+### الحالة (2026-08-12)
+
+حقل الأدمن **«صورة البطاقة»** موجود ويعمل ويرجّع URL كامل.  
+على `/events`: ids **1، 2، 3** عندهم `listImage`؛ **4–10** = `null`.  
+على `/home`: الحقل اسمه `image` (مش `listImage`) وكل القيم حالياً `null` — حتى للفعاليات اللي صورتها موجودة في `/events`.
 
 ### المطلوب
 
-من شاشة تعديل الفعالية → ارفعوا «صورة البطاقة» للفعاليات **4 إلى 10** (وكل فعالية جديدة لاحقاً).
-
-مش محتاج كود — رفع من الداشبورد فقط.
+1. من شاشة تعديل الفعالية → ارفعوا «صورة البطاقة» للفعاليات **4 إلى 10** (وكل فعالية جديدة).
+2. في Resource الهوم: عبّوا `home.events.items[].image` من نفس مصدر `listImage` (URL كامل)، مش تسيبوه `null` لما البطاقة موجودة.
 
 ### معايير قبول
 
 - [ ] كل فعالية ظاهرة في `/events` عندها `listImage` غير `null`
+- [ ] `home.events.items[].image` غير `null` لنفس الفعاليات اللي عندها بطاقة
 - [ ] بطاقات قائمة الفعاليات والهوم تظهر thumbnails حقيقية
+
+```bash
+curl -s "$API/events?perPage=20" | jq '[.items[] | {id, listImage: (.listImage != null)}]'
+curl -s "$API/home" | jq '[.events.items[] | {id, image}]'
+```
 
 ---
 
-## 🟡 4. `home.events.items`: من 3 إلى 10
+## ✅ 4. `home.events.items`: من 3 إلى 10 — **تم العدد**
 
-### الحالة الحيّة
+### الحالة بعد الإصلاح
 
 ```text
-home.events.items length = 3
-ids: 10, 9, 8   ← وبالصدفة بدون listImage
+home.events.items length = 10
 ```
 
-### المطلوب
-
-غيّروا الـ`limit` / `take` / `paginate` في كويري فعاليات الهوم من **3 → 10**.
-
-الفرونت (الكاروسيل) بياخد **أي عدد** — مفيش قيد على 3.
-
-### معايير قبول
-
-- [ ] `GET /home` → `events.items.length` = حتى 10 (أو عدد الفعاليات المتوفرة إن أقل)
-- [ ] العناصر مرتّبة بالأحدث أولاً (نفس منطق القائمة)
+العدد تمام. المتبقي مرتبط ببند 3 (الصور على عناصر الهوم لسه `image: null`).
 
 ```bash
 curl -s "$API/home" | jq '.events.items | length'
-# المتوقع: 10 (أو عدد الفعاليات إن < 10)
+# المتوقع: 10 (أو عدد الفعاليات إن < 10)  ✅
 ```
 
 ---
 
-## 🔴 5. معرض صور تفاصيل الفعالية `images[]` — شاشة جديدة
+## 🔴 5. معرض صور تفاصيل الفعالية `images[]` — **مفيش مكان في الداشبورد**
 
-### المشكلة
+### المشكلة (حاسمة)
 
-شاشة تعديل الفعالية فيها **«صورة البطاقة»** فقط.  
-مفيش واجهة لرفع معرض صفحة التفاصيل، فـ`images` بترجع دائماً:
+في شاشة تعديل الفعالية **لا يوجد أي حقل** لصور الفعالية الواحدة (معرض صفحة التفاصيل).
+
+الموجود فقط:
+
+| في الداشبورد | يقابل في الـAPI |
+|---|---|
+| عنوان الفعالية | `title` |
+| تاريخ الفعالية | `date` |
+| **صورة البطاقة** | `listImage` |
+| الوصف التفصيلي | `description` |
+
+**مش موجود نهائيًا:** رفع / إدارة `images[]` (صور المعرض داخل صفحة الفعالية الواحدة).
+
+لذلك الـAPI **دايمًا** بيرجّع `images` فاضية على كل الفعاليات — حتى لو `listImage` موجودة:
 
 ```json
-"images": [null, null, null, null]
+{
+  "id": 6,
+  "title": "أجواء العيد مع جلاسيه غير",
+  "date": "11/06/2020",
+  "description": "كل عام وانتم بخير بحلول عيد الفطر المبارك احتفالنا معكم بالعيد أجمل . أهلا وسهلاُ بكم في جلاسيه فرع الاتصالات تفضلوا عنا , هناك عروض مميزة بانتظاركم",
+  "listImage": null,
+  "images": []
+}
 ```
 
-حتى للفعاليات اللي عندها `listImage`.
+والدليل من الأدمن — صورة البطاقة فقط، بدون أي FileUpload للمعرض:
 
-الفرونت حالياً يعمل fallback على `listImage` للمعرض — **workaround مؤقت**.
+![تعديل فعالية — صورة البطاقة فقط بدون معرض images](./images/dashboard-event.png)
+
+الفرونت حالياً يعمل fallback على `listImage` للمعرض — **workaround مؤقت** لأن `images` عمرها ما بتتملّى من الداشبورد.
 
 ### المطلوب
 
@@ -198,30 +169,32 @@ curl -s "$API/home" | jq '.events.items | length'
 | `path` / `url` | string | مسار التخزين |
 | `sort_order` | int | ترتيب العرض |
 
-2. **شاشة Filament:** رفع متعدد (FileUpload multiple / Repeater) على Edit Event، بنفس أسلوب صورة البطاقة.
+2. **شاشة Filament على Edit Event:** حقل رفع متعدد جديد (FileUpload multiple / Repeater) بعنوان واضح مثل **«معرض صور الفعالية»** — **غير** حقل «صورة البطاقة».
 3. **الـAPI:**
 
 ```json
 "images": [
-  "https://host/storage/events/3-a.png",
-  "https://host/storage/events/3-b.png"
+  "http://acw348d983gr8x01lb5myd3x.64.176.172.179.sslip.io/storage/events/6-a.png",
+  "http://acw348d983gr8x01lb5myd3x.64.176.172.179.sslip.io/storage/events/6-b.png"
 ]
 ```
 
-- مصفوفة strings (URL كامل بعد البند 1)
-- **بدون** `null` داخل المصفوفة — إما روابط أو `[]` فارغة
+- مصفوفة strings (URL كامل)
+- **بدون** `null` داخل المصفوفة — إما روابط أو `[]` فارغة لما الأدمن ما رفعش
 - العقد يطلب `images` في `IEvent.required`
 
 ### معايير قبول
 
-- [ ] من الأدمن تقدر ترفع أكثر من صورة لمعرض فعالية
-- [ ] `GET /events/{id}` يرجّع `images` كمصفوفة روابط حقيقية (أو `[]`)
+- [ ] في الداشبورد يظهر حقل واضح لرفع صور المعرض (مش صورة البطاقة)
+- [ ] من الأدمن تقدر ترفع أكثر من صورة لمعرض فعالية واحدة
+- [ ] `GET /events/{id}` و`GET /events` يرجّعوا `images` كمصفوفة روابط حقيقية بعد الرفع (مش تفضل `[]` دايمًا)
 - [ ] مفيش `null` داخل `images`
-- [ ] صفحة تفاصيل الفعالية تعرض المعرض من الـAPI بدون الاعتماد على fallback الفرونت
+- [ ] صفحة تفاصيل الفعالية `/events/{id}` تعرض المعرض من الـAPI بدون الاعتماد على fallback الفرونت
 
 ```bash
-curl -s "$API/events/3" | jq '.images'
-# المتوقع: ["http.../storage/...", ...]  — مش [null, null, ...]
+curl -s "$API/events/6" | jq '{id, listImage, images}'
+# قبل الإصلاح: images = []
+# بعد الإصلاح (بعد رفع من الأدمن): images = ["http.../storage/...", ...]
 ```
 
 ---
@@ -234,12 +207,11 @@ curl -s "$API/events/3" | jq '.images'
 
 ---
 
-## ترتيب التنفيذ المقترح
+## ترتيب التنفيذ المتبقي
 
-1. **بند 2** (`paragraphs`) — سطر Resource، أثر فوري  
-2. **بند 1** (`Storage::url`) — موحّد لكل حقول الصور  
-3. **بند 4** (limit 10) — سطر كويري  
-4. **بند 3** — رفع يدوي لصور البطاقات  
-5. **بند 5** — جدول + شاشة معرض (أكبر شغل)
+1. **بند 3** — رفع بطاقات 4–10 + ربط `home.events.items[].image` بنفس الـURL  
+2. **بند 5** — جدول + شاشة معرض `images[]`
 
-بعدها: راجعوا [`03-media-and-cleanup.md`](./03-media-and-cleanup.md) لأي بنود وسائط متبقية على المنيو.
+بند 1 (URL كامل) وبند 2 (`paragraphs`) وبند 4 (limit 10) = **مقفولين**.
+
+بعدها: راجعوا [`08-qa-remaining.md`](./08-qa-remaining.md) و[`03-media-and-cleanup.md`](./03-media-and-cleanup.md) لأي بنود وسائط متبقية على المنيو.

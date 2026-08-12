@@ -1,5 +1,5 @@
 import { guestApi } from "@/lib/axios";
-import type { IHomePageData } from "@/types/home.types";
+import type { IHomeEvent, IHomePageData } from "@/types/home.types";
 
 export const HOME_PAGE_QUERY_KEY = ["home-page"] as const;
 
@@ -7,23 +7,43 @@ const isStr = (v: unknown): v is string => typeof v === "string";
 const isArr = Array.isArray;
 
 /**
- * TEMPORARY — delete once the backend returns `about.paragraphs` as plain strings.
+ * Defensive normalisers for known backend shape quirks.
  *
- * The API currently wraps each paragraph in an object:
- *   `"paragraphs": [{ "text": "..." }]`   instead of   `"paragraphs": ["..."]`
- *
- * Unwrapping here keeps the shim in one place; `AboutSection` can keep treating
- * paragraphs as the `string[]` the contract promises.
+ * - `about.paragraphs`: contract is `string[]`; older payloads wrapped
+ *   `{ text }` — unwrap if that form ever reappears.
+ * - `events.items[].image`: home cards use `image`; some payloads may send
+ *   `listImage` (same absolute `/storage/...` URL as `/events`). Prefer
+ *   `image`, fall back to `listImage`.
  */
 function normalizeHomePage(data: IHomePageData): IHomePageData {
-  const raw = data.about?.paragraphs as unknown;
-  if (!isArr(raw)) return data;
+  const rawParagraphs = data.about?.paragraphs as unknown;
+  const paragraphs = isArr(rawParagraphs)
+    ? rawParagraphs.map((p) =>
+        isStr(p)
+          ? p
+          : isStr((p as { text?: unknown })?.text)
+            ? (p as { text: string }).text
+            : "",
+      )
+    : data.about?.paragraphs;
 
-  const paragraphs = raw.map((p) =>
-    isStr(p) ? p : isStr((p as { text?: unknown })?.text) ? (p as { text: string }).text : "",
-  );
+  const items = isArr(data.events?.items)
+    ? data.events.items.map((ev) => {
+        const raw = ev as IHomeEvent & { listImage?: unknown };
+        const image =
+          (isStr(raw.image) && raw.image.trim() !== "" ? raw.image : null) ??
+          (isStr(raw.listImage) && raw.listImage.trim() !== ""
+            ? raw.listImage
+            : null);
+        return { ...ev, image };
+      })
+    : data.events?.items;
 
-  return { ...data, about: { ...data.about, paragraphs } };
+  return {
+    ...data,
+    about: data.about ? { ...data.about, paragraphs: paragraphs ?? [] } : data.about,
+    events: data.events ? { ...data.events, items: items ?? [] } : data.events,
+  };
 }
 
 /**

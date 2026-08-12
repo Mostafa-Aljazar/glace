@@ -1,23 +1,106 @@
-# 01 — صور الأصناف لكل منتجات flat-list (`items[].image`)
+# 01 — أصناف flat-list: صور + أسعار من الداشبورد (`items[]`)
 
 **الأولوية:** عالية  
 **Endpoints:** `GET /menu/products` · `GET /menu/products/{slug}`  
 **Schema:** `IProductVariant` في `docs/swagger.yaml`  
-**تاريخ التحقق:** 2026-08-11
+**تاريخ التحقق:** 2026-08-11 · **إعادة تحقق:** 2026-08-12
 
 ---
 
 ## قرار المنتج
 
-**كل** منتج `kind: "flat-list"` — بدون استثناء — لازم كل صف داخل `items[]` يرجّع **`image`** غير فاضي.
+الأدمن يقدر من **Filament** يدير كل صف في `items[]` لكل منتج `kind: "flat-list"`:
 
-ينطبق على الميلك شيك والبان كيك والذرة والمشروبات و… **كل الـ15 منتج / 69 صنف**.
+| حقل | مطلوب من الأدمن |
+|---|---|
+| `label` | ✅ |
+| `price` | ✅ |
+| `available` | ✅ |
+| **`image`** | ✅ رفع صورة |
+| `isPremiumMixFlavor` | ✅ إن لزم |
 
-الفرونت جاهز: بمجرد ما الحقل يوصل، الصورة تظهر جنب الاسم في `/menu/order/{slug}`.
+ينطبق على الميلك شيك واللقيمات والبان كيك والذرة والمشروبات و… **كل الـ15 منتج / 69 صنف**.
+
+الفرونت جاهز: السعر والصورة يظهروا جنب الاسم في `/menu/order/{slug}` بمجرد ما الحقول توصل.
 
 ---
 
-## الحالة الحيّة (0 صور على الكل)
+## الحكم (حاسم)
+
+| | في الـAPI | في الداشبورد |
+|---|---|---|
+| `items[].price` | ✅ بيرجع (من seed) | ❌ **مفيش مكان** لتعديل سعر الصنف |
+| `items[].image` | ⚠️ الحقل موجود = **`null` دائمًا** (0/69) | ❌ **مفيش مكان** لرفع صورة الصنف |
+| `items[].label` / `available` | ✅ بيرجعوا | ❌ **مفيش مكان** لإدارتهم |
+
+يعني: البيانات متسيّدة في الـAPI، والأدمن **ما يقدرش** يغيّر سعر ولا يرفع صورة لأي صنف flat-list.
+
+---
+
+## دليل من الستورفرونت + الـAPI (لقيمات)
+
+على `/menu/order/loqaimat` السعر ظاهر (مثلاً **8**) ومكان الصورة فاضي لأن `image: null`:
+
+![لقيمات — السعر ظاهر · مكان الصورة فاضي](./images/loqaimat.png)
+
+عيّنة حية من `GET /menu/products/loqaimat`:
+
+```json
+{
+  "slug": "loqaimat",
+  "kind": "flat-list",
+  "name": "لقيمات",
+  "image": null,
+  "items": [
+    {
+      "id": "arabian",
+      "label": "لقيمة عربية",
+      "price": 8,
+      "available": true,
+      "image": null
+    },
+    {
+      "id": "lotus",
+      "label": "لقيمة لوتس",
+      "price": 8,
+      "available": true,
+      "image": null
+    },
+    {
+      "id": "dondurma-pistachio",
+      "label": "لقيمة دوندورما بيستاشيو",
+      "price": 12,
+      "available": true,
+      "image": null,
+      "isPremiumMixFlavor": true
+    }
+  ],
+  "mixes": [ /* موجودة في الـAPI أيضًا — شوف تذكرة 07 */ ]
+}
+```
+
+- `price` شغال على الفرونت ← جاي من الـAPI  
+- `image: null` ← مكان فاضي جنب الاسم  
+- **ولا السعر ولا الصورة ليهم حقل في الأدمن**
+
+---
+
+## دليل من الداشبورد (2026-08-12)
+
+شاشة تعديل منتج flat-list فيها تابين فقط — **مفيش** قائمة أصناف ولا سعر صنف ولا رفع صورة:
+
+![تعديل منتج flat-list — معلومات أساسية فقط](./images/dashboard-settings.png)
+
+![إعدادات العرض — سويتشات واجهة فقط، بدون أصناف](./images/dashboard-product-presentaion-settings.png)
+
+**المطلوب إضافته:** تبويب/ريليشن «الأصناف» مع:
+
+- تعديل `label` · `price` · `available` · `isPremiumMixFlavor`
+- FileUpload لـ`image` (URL كامل عبر `Storage::url`)
+
+---
+
+## الحالة الحيّة — صور الأصناف (0 على الكل)
 
 | slug | عناصر | عندها `image` |
 |---|---:|---:|
@@ -94,44 +177,43 @@ IProductVariant:
 
 ## شغل الأدمن (Filament) — مرة واحدة تغطي الكل
 
-1. حقل رفع صورة على **عناصر المنتج** (Relation Manager / repeater للـitems) — مش بس صورة المنتج الأب.
-2. نفس الواجهة لكل منتج flat-list (الـ15 أعلاه).
-3. الـAPI Resource يسلّسل `image` لكل item في القائمة والتفصيل.
+1. تبويب/Relation Manager **«الأصناف»** على منتج flat-list — مش بس صورة المنتج الأب ولا إعدادات العرض.
+2. لكل صنف يمكن للأدمن تعديل: `label` · **`price`** · `available` · `isPremiumMixFlavor` · رفع **`image`**.
+3. نفس الواجهة لكل منتج flat-list (الـ15 أعلاه).
+4. الـAPI Resource يسلّسل كل الحقول في القائمة والتفصيل.
 
-الأدمن يرفع صور الأصناف؛ الباك يرجّعها؛ الفرونت يعرضها تلقائياً لكل الصفحات.
+الأدمن يرفع الصور ويعدّل الأسعار؛ الباك يرجّعها؛ الفرونت يعرضها تلقائياً.
 
 ---
 
 ## سلوك الفرونت (تم — لا شغل إضافي)
 
-نفس `items[].image` بتظهر في:
-
-1. قائمة الأصناف في `/menu/order/{slug}` (`OrderFlatListTemplate`)
-2. **مودال المكس / سوبر مكس** (`MixFlavorModal`) — صف كل طعم: صورة + اسم (`label`) + سعر الوحدة داخل المكس
+- `items[].price` → ظاهر جنب الاسم (شغال من الـAPI حتى بدون داشبورد)
+- `items[].image` → thumbnail جنب الاسم؛ بدون صورة = مكان فاضي (زي `loqaimat.png`)
+- مودال المكس: صورة + اسم + سعر الوحدة داخل المكس
 
 ```tsx
 {item.image && <Image src={resolveMenuImageSrc(item.image)} ... />}
 ```
 
-بدون `image` من الـAPI → دائرة فاضية جنب الاسم (زي وافل مكس حالياً).  
-الاسم والسعر شغالين من الحقول الموجودة؛ **الصورة تنتظر رفع `items[].image`.**
-
 ---
 
 ## معايير القبول
 
-- [ ] **كل** عنصر في `GET /menu/products` عنده `image` غير فاضي (69/69)
-- [ ] نفس الشيء في `GET /menu/products/{slug}` لكل الـ15 slug أعلاه
+- [ ] من الداشبورد: CRUD أصناف + تعديل **`price`** + رفع **`image`**
+- [ ] تغيير سعر صنف من الأدمن يظهر فورًا على `/menu/order/{slug}`
+- [ ] **كل** عنصر عنده `image` غير فاضي (69/69)
 - [ ] مفيش `cdn.example.com` أو host ميت
-- [ ] الصورة تفتح من المتصفح عبر `/storage/...` أو CDN حقيقي
-- [ ] `/menu/order/milkshake` و`/menu/order/corn` و`/menu/order/pancake` … تظهر thumbnail لكل صف
-- [ ] مودال المكس (مثلاً `/menu/order/waffle` → مكس) يظهر صورة لكل صنف جنب الاسم والسعر
+- [ ] `/menu/order/loqaimat` تظهر thumbnail لكل صف مش مكان فاضي
+- [ ] مودال المكس يظهر صورة لكل صنف جنب الاسم والسعر
 - [ ] `scripts/audit-api.mjs` بند `(3) items[].image` يمرّ بنجاح
 
 ```bash
 API=http://acw348d983gr8x01lb5myd3x.64.176.172.179.sslip.io/api
 
-# لازم يطبع 0 لكل منتج
+curl -s "$API/menu/products/loqaimat" | jq '.items[] | {id, label, price, image}'
+
+# لازم يطبع missing=0 لكل منتج
 for slug in milkshake pancake waffle crepe pizza molten brownie cookies cheesecake kunafa loqaimat corn juices hot-drinks cold-drinks; do
   missing=$(curl -s "$API/menu/products/$slug" | jq '[.items[] | select(.image == null or .image == "")] | length')
   echo "$slug: missing=$missing"
