@@ -127,7 +127,7 @@ export default function EventsClientPage() {
         className="hidden lg:block top-[200px] left-14 absolute opacity-50 w-16 pointer-events-none"
       />
 
-      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-12 max-w-[1300px]">
+      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-28 lg:pb-12 max-w-[1300px]">
         <div className="flex flex-col items-center pt-4 sm:pt-6 pb-5 sm:pb-6 text-center">
           <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm mb-3 px-4 py-1 border border-white/20 rounded-full text-[13px] text-white/80">
             <Sparkles size={12} className="text-glace-yellow" />

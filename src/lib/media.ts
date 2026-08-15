@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "@/lib/dataSource";
+import { getBackendApiUrl } from "@/lib/dataSource";
 
 /**
  * Neutral placeholder served from `public/` — shown whenever the backend has
@@ -48,7 +48,7 @@ export function hasRealMedia(src: unknown): src is string {
 /** Origin of the API (`http://host/api` → `http://host`), for storage paths. */
 function apiOrigin(): string {
   try {
-    return new URL(getApiBaseUrl()).origin;
+    return new URL(getBackendApiUrl()).origin;
   } catch {
     return "";
   }

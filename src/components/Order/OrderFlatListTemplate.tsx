@@ -341,16 +341,16 @@ export default function OrderFlatListTemplate({
         </div>
       </div>
 
-      <div className="bottom-28 lg:bottom-0 z-9999997 fixed inset-x-0 px-4 pt-6 pb-4 pointer-events-none">
-        <div className="flex flex-wrap items-center gap-4 bg-white/18 backdrop-blur-[20px] mx-auto px-5 py-4 border border-white/20 rounded-[24px] max-w-3xl pointer-events-auto">
-          <div className="flex-1">
-            <p className="text-[12px] text-white/55">الإجمالي</p>
-            <p className="font-bold text-[22px] text-glace-yellow leading-none">
+      <div className="bottom-28 lg:bottom-0 z-9999997 fixed inset-x-0 px-3 sm:px-4 pt-6 pb-4 pointer-events-none">
+        <div className="flex items-center gap-2 sm:gap-4 bg-[#2d8aaa]/92 backdrop-blur-md mx-auto px-3 sm:px-5 py-3 sm:py-4 border border-white/35 rounded-[24px] max-w-3xl shadow-[0_8px_28px_rgba(0,0,0,0.22)] pointer-events-auto">
+          <div className="shrink-0">
+            <p className="text-[11px] sm:text-[12px] text-white/75">الإجمالي</p>
+            <p className="font-bold text-[18px] sm:text-[22px] text-glace-yellow leading-none tabular-nums">
               {totalPrice.toFixed(2)} ₪
             </p>
           </div>
 
-          <p className="text-[13px] text-white/50 shrink-0">
+          <p className="hidden sm:block text-[13px] text-white/50 shrink-0">
             {totalItems + mixItems}{" "}
             {totalItems + mixItems === 1 ? "صنف" : "أصناف"}
           </p>

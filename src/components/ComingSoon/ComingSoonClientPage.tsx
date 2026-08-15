@@ -2,55 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { logo, iceCreamImg1, iceCreamImg2, iceCreamImg3, iceCreamImg4 } from "@/assets/images";
 
-const TARGET_DATE = new Date("2026-12-31T00:00:00");
-
-interface TimeLeft {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-}
-
-function getTimeLeft(): TimeLeft {
-  const diff = Math.max(0, TARGET_DATE.getTime() - Date.now()) / 1000;
-  return {
-    days:    Math.floor(diff / 86400),
-    hours:   Math.floor(diff / 3600) % 24,
-    minutes: Math.floor(diff / 60) % 60,
-    seconds: Math.floor(diff) % 60,
-  };
-}
-
-function pad(n: number) {
-  return String(n).padStart(2, "0");
-}
-
-function TimerBlock({ value, label }: { value: number; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-2 sm:gap-3">
-      <div className="relative flex items-center justify-center bg-white/10 border border-white/20 rounded-[20px] sm:rounded-[24px] w-20 h-20 sm:w-25 sm:h-25 md:w-30 md:h-30 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.2)]">
-        <span className="text-white font-bold text-[32px] sm:text-[42px] md:text-[52px] leading-none tabular-nums">
-          {pad(value)}
-        </span>
-      </div>
-      <span className="text-white/50 text-[11px] sm:text-[13px] tracking-widest">{label}</span>
-    </div>
-  );
-}
-
 export default function ComingSoonClientPage() {
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>(getTimeLeft);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const id = setInterval(() => setTimeLeft(getTimeLeft()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
   return (
     <div className="relative min-h-screen overflow-hidden flex flex-col items-center justify-center py-10">
 
@@ -80,7 +34,7 @@ export default function ComingSoonClientPage() {
       </div>
 
       {/* ── Content ── */}
-      <div className={`relative z-10 flex flex-col items-center text-center w-full max-w-160 px-6 transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+      <div className="relative z-10 flex flex-col items-center text-center w-full max-w-160 px-6">
 
         {/* Logo */}
         <div className="mb-6 sm:mb-8">
@@ -105,28 +59,11 @@ export default function ComingSoonClientPage() {
         </h1>
 
         {/* Subtitle */}
-        <p className="text-white/55 text-[14px] sm:text-[16px] md:text-[17px] leading-relaxed mb-10 sm:mb-14 max-w-100">
+        <p className="text-white/55 text-[14px] sm:text-[16px] md:text-[17px] leading-relaxed mb-10 sm:mb-12 max-w-100">
           نعمل على شيء رائع ومميز لكم
           <br />
           ترقبوا انطلاقنا قريباً
         </p>
-
-        {/* Countdown */}
-        <div className="flex items-start justify-center gap-2 sm:gap-4 md:gap-6 flex-row-reverse mb-10 sm:mb-14 w-full">
-          <TimerBlock value={timeLeft.days}    label="يوم"   />
-          <div className="flex items-center h-20 sm:h-25 md:h-30">
-            <span className="text-white/25 text-[22px] sm:text-[30px] font-light">:</span>
-          </div>
-          <TimerBlock value={timeLeft.hours}   label="ساعة"  />
-          <div className="flex items-center h-20 sm:h-25 md:h-30">
-            <span className="text-white/25 text-[22px] sm:text-[30px] font-light">:</span>
-          </div>
-          <TimerBlock value={timeLeft.minutes} label="دقيقة" />
-          <div className="flex items-center h-20 sm:h-25 md:h-30">
-            <span className="text-white/25 text-[22px] sm:text-[30px] font-light">:</span>
-          </div>
-          <TimerBlock value={timeLeft.seconds} label="ثانية" />
-        </div>
 
         {/* Yellow rule */}
         <div className="w-20 h-0.5 rounded-full bg-linear-to-r from-transparent via-glace-yellow to-transparent mb-10 sm:mb-12 opacity-60" />

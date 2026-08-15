@@ -6,6 +6,41 @@ import { MapPin, Phone, MessageCircle } from "lucide-react";
 import { imgTimesWorkSec, imgbgBS, imgpp, imgpp2 } from "@/assets/images";
 import type { IHomeBranchesData } from "@/types/home.types";
 
+function BranchWave({ active }: { active: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 176 58"
+      className={`absolute inset-0 w-full h-full transition-[filter,opacity] duration-300 ${
+        active
+          ? "opacity-100 drop-shadow-[0_6px_14px_rgba(0,0,0,0.28)]"
+          : "opacity-90"
+      }`}
+      aria-hidden
+      preserveAspectRatio="none"
+    >
+      {active ? (
+        <>
+          <path
+            d="M18 30 C14 14 38 4 62 8 C86 2 108 14 132 7 C154 2 170 14 168 30 C170 46 152 54 128 50 C104 56 84 46 62 52 C38 56 16 46 18 30 Z"
+            fill="#e4c43a"
+          />
+          <path
+            d="M22 30 C20 16 42 8 64 11 C86 6 108 16 130 10 C150 6 164 16 162 30 C164 44 148 50 128 47 C106 52 86 44 64 49 C42 52 22 44 22 30 Z"
+            fill="#f4e451"
+          />
+        </>
+      ) : (
+        <path
+          d="M18 30 C14 14 38 4 62 8 C86 2 108 14 132 7 C154 2 170 14 168 30 C170 46 152 54 128 50 C104 56 84 46 62 52 C38 56 16 46 18 30 Z"
+          fill="none"
+          stroke="rgba(255,255,255,0.55)"
+          strokeWidth="2"
+        />
+      )}
+    </svg>
+  );
+}
+
 export default function TimesWorkSection({
   branchesData,
 }: {
@@ -19,52 +54,50 @@ export default function TimesWorkSection({
   return (
     <section
       id="location"
-      className="z-[2] relative -mt-[50px] lg:-mt-[50px] max-lg:mt-0 pt-52 lg:pt-52 max-lg:pt-25 pb-28 max-lg:pb-24 min-h-125 overflow-hidden"
+      className="z-[2] relative max-lg:mt-0 lg:-mt-[50px] pt-36 lg:pt-52 max-lg:pt-28 pb-28 max-lg:pb-36 min-h-125 overflow-hidden"
       style={{
         background:
           "radial-gradient(circle, rgba(136,103,91,1) 6%, rgba(83,53,42,1) 100%)",
       }}
     >
-      {/* top wave decoration */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={imgTimesWorkSec.src}
         alt=""
-        className="top-0 left-0 absolute w-full"
+        className="top-0 left-0 absolute w-full pointer-events-none select-none"
       />
 
       <div className="z-[1] relative mx-auto w-[90%] max-w-400">
-        {/* Branch tabs */}
-        <ul className="flex gap-4 m-0 mb-3 p-0 list-none">
-          {branches.map((b) => (
-            <li key={b.id}>
-              <button
-                onClick={() => setActiveBranch(b.id)}
-                className={`relative border-0 bg-transparent pb-1 transition-all duration-300
-                  lg:text-[38px] sm:text-[30px] text-[25px]
-                  ${activeBranch === b.id ? "text-white opacity-100" : "text-white opacity-50"}`}
-              >
-                {b.label}
-                <span
-                  className="top-1/2 left-1/2 z-[-1] absolute bg-cover bg-no-repeat w-[50px] h-[50px] transition-all -translate-x-1/2 -translate-y-1/2 duration-300"
-                  style={{
-                    backgroundImage:
-                      activeBranch === b.id
-                        ? "url(/images/checkImg.png)"
-                        : "url(/images/checkImgB.png)",
-                  }}
-                />
-              </button>
-            </li>
-          ))}
+        <ul className="flex items-center gap-2 sm:gap-3 m-0 mb-5 p-0 list-none">
+          {branches.map((b) => {
+            const active = activeBranch === b.id;
+            return (
+              <li key={b.id} className="flex-1 min-w-0 sm:flex-none">
+                <button
+                  type="button"
+                  onClick={() => setActiveBranch(b.id)}
+                  className={`relative inline-flex items-center justify-center border-0 bg-transparent w-full sm:w-[158px] lg:w-[180px] h-[44px] sm:h-[52px] lg:h-[58px] cursor-pointer transition-transform duration-200 ${
+                    active ? "scale-[1.06] z-[1]" : "hover:scale-[1.03]"
+                  }`}
+                >
+                  <BranchWave active={active} />
+                  <span
+                    className={`relative z-10 font-bold text-[14px] sm:text-[16px] lg:text-[18px] leading-none whitespace-nowrap ${
+                      active ? "text-[#3a2a18]" : "text-white/85"
+                    }`}
+                  >
+                    {b.label}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
 
-        {/* Title row */}
-        <div className="relative">
-          <h1 className="text-[32px] text-white sm:text-[36px] lg:text-[45px]">
+        <div className="relative mb-4">
+          <h1 className="text-[22px] text-white sm:text-[32px] lg:text-[45px] leading-snug">
             {branchesData.title}
           </h1>
-          {/* imgpp2 — hidden on mobile per original */}
           <Image
             src={imgpp2}
             alt=""
@@ -74,50 +107,56 @@ export default function TimesWorkSection({
           />
         </div>
 
-        {/* Content: text + map */}
-        <div className="flex lg:flex-row flex-col justify-between items-start gap-5">
-          {/* Hours & address — constrained width so text wraps */}
-          <div className="w-full lg:max-w-[55%] text-white">
-            <div className="flex gap-3.75 lg:gap-7.5 mb-4">
-              <div>
-                <p className="mb-0 text-[24px] sm:text-[25px] lg:text-[27px]">
+        <div className="flex lg:flex-row flex-col justify-between items-stretch gap-6">
+          <div className="flex flex-col gap-4 w-full lg:max-w-[55%] text-white">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/10 rounded-2xl px-3 py-3">
+                <p className="mb-1 text-[12px] sm:text-[16px] text-white/70">
                   من السبت وحتى الخميس
                 </p>
-                <p className="mb-0 text-[24px] sm:text-[25px] lg:text-[27px]">
+                <p
+                  className="mb-0 text-[16px] sm:text-[22px] lg:text-[24px] font-bold tabular-nums"
+                  dir="ltr"
+                >
                   {branch.weekdayHours}
                 </p>
               </div>
-              <div>
-                <p className="mb-0 text-[24px] sm:text-[25px] lg:text-[27px]">
+              <div className="bg-white/10 rounded-2xl px-3 py-3">
+                <p className="mb-1 text-[12px] sm:text-[16px] text-white/70">
                   يوم الجمعة
                 </p>
-                <p className="mb-0 text-[24px] sm:text-[25px] lg:text-[27px]">
+                <p
+                  className="mb-0 text-[16px] sm:text-[22px] lg:text-[24px] font-bold tabular-nums"
+                  dir="ltr"
+                >
                   {branch.fridayHours}
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-[5px] max-w-105">
-              <MapPin size={20} className="mt-1 shrink-0" />
-              <span className="text-[24px] lg:text-[30px] wrap-break-word">
-                {branch.address}
-              </span>
-            </div>
-            <div className="flex items-center gap-[5px]">
-              <Phone size={20} className="shrink-0" />
-              <span dir="ltr" className="text-[24px] lg:text-[30px]">
-                {branch.phone}
-              </span>
-            </div>
-            <div className="flex items-center gap-[5px]">
-              <MessageCircle size={20} className="shrink-0" />
-              <span dir="ltr" className="text-[24px] lg:text-[30px]">
-                {branch.whatsapp}
-              </span>
+
+            <div className="flex flex-col gap-3 bg-white/10 rounded-2xl px-3.5 py-3.5">
+              <div className="flex items-start gap-2.5">
+                <MapPin size={18} className="mt-0.5 shrink-0 text-glace-yellow" />
+                <span className="text-[14px] sm:text-[18px] lg:text-[22px] leading-relaxed">
+                  {branch.address}
+                </span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Phone size={18} className="shrink-0 text-glace-yellow" />
+                <span dir="ltr" className="text-[14px] sm:text-[18px] lg:text-[22px] tabular-nums">
+                  {branch.phone}
+                </span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <MessageCircle size={18} className="shrink-0 text-glace-yellow" />
+                <span dir="ltr" className="text-[14px] sm:text-[18px] lg:text-[22px] tabular-nums">
+                  {branch.whatsapp}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Map */}
-          <div className="z-[1] relative mx-auto lg:mx-0 lg:ml-50 w-full lg:w-105 md:max-w-112.5 lg:max-w-none h-82.5 md:h-100 lg:h-96 shrink-0">
+          <div className="z-[1] relative mx-auto lg:mx-0 lg:ml-50 w-full lg:w-105 md:max-w-112.5 lg:max-w-none h-72 sm:h-82.5 md:h-100 lg:h-96 shrink-0">
             <iframe
               src={branch.mapSrc}
               width="600"
@@ -144,7 +183,6 @@ export default function TimesWorkSection({
         </div>
       </div>
 
-      {/* bottom food curve into Events — blue → white, transparent keeps brown drips */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={imgbgBS.src}

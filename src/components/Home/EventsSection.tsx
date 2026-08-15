@@ -10,7 +10,6 @@ import type { Swiper as SwiperType } from "swiper";
 import "swiper/css";
 import "swiper/css/pagination";
 
-import { imgBtnBrown } from "@/assets/images";
 import { resolveHomeImageSrc, type IHomeEventsData } from "@/types/home.types";
 
 export default function EventsSection({
@@ -19,32 +18,32 @@ export default function EventsSection({
   eventsData: IHomeEventsData;
 }) {
   const swiperRef = useRef<SwiperType | null>(null);
-  const paginationRef = useRef<HTMLDivElement>(null);
+  const canLoop = eventsData.items.length > 4;
 
   return (
-    <section className="z-[1] relative bg-white -mt-[1px] pt-2.5 pb-4 lg:pb-6 min-h-0 overflow-hidden">
+    <section className="z-[1] relative bg-white -mt-[1px] pt-2.5 pb-6 lg:pb-8 min-h-0 overflow-hidden">
       <div className="mx-auto w-[90%] max-w-400">
         <div className="text-center">
-          <h1 className="text-[#53352a] text-[38px] md:text-[45px] lg:text-[60px]">
+          <h1 className="text-[#53352a] text-[24px] sm:text-[36px] lg:text-[52px] leading-snug">
             {eventsData.title}
           </h1>
 
           <div className="relative flex flex-col mt-6 pb-2 md:pb-4 lg:pb-6">
             <div className="relative px-0 sm:px-12" dir="ltr">
-              {/* Mobile: prev/next above the slider, on the left */}
-              <div className="sm:hidden flex justify-start items-center gap-2 mb-3 px-1">
+              {/* Mobile arrows */}
+              <div className="sm:hidden flex justify-end items-center gap-2 mb-3 px-1">
                 <button
                   type="button"
-                  aria-label="السابق"
-                  onClick={() => swiperRef.current?.slidePrev()}
+                  aria-label="التالي"
+                  onClick={() => swiperRef.current?.slideNext()}
                   className="flex justify-center items-center bg-[#53352a]/10 hover:bg-[#53352a] border-0 rounded-full size-9 text-[#53352a] hover:text-white transition-colors cursor-pointer"
                 >
                   <ChevronLeft size={18} />
                 </button>
                 <button
                   type="button"
-                  aria-label="التالي"
-                  onClick={() => swiperRef.current?.slideNext()}
+                  aria-label="السابق"
+                  onClick={() => swiperRef.current?.slidePrev()}
                   className="flex justify-center items-center bg-[#53352a]/10 hover:bg-[#53352a] border-0 rounded-full size-9 text-[#53352a] hover:text-white transition-colors cursor-pointer"
                 >
                   <ChevronRight size={18} />
@@ -55,20 +54,11 @@ export default function EventsSection({
                 modules={[Autoplay, Pagination]}
                 onSwiper={(swiper) => {
                   swiperRef.current = swiper;
-                  const pag = swiper.params.pagination;
-                  if (
-                    paginationRef.current &&
-                    pag &&
-                    typeof pag !== "boolean"
-                  ) {
-                    pag.el = paginationRef.current;
-                    swiper.pagination.init();
-                    swiper.pagination.render();
-                    swiper.pagination.update();
-                  }
+                  swiper.changeLanguageDirection("ltr");
+                  swiper.update();
                 }}
                 dir="ltr"
-                loop={eventsData.items.length > 4}
+                loop={canLoop}
                 autoplay={{
                   delay: 3500,
                   disableOnInteraction: false,
@@ -78,15 +68,19 @@ export default function EventsSection({
                 slidesPerView={1}
                 slidesPerGroup={1}
                 watchOverflow
+                observer
+                observeParents
+                // Built-in pagination (not external el) so bullets stay in sync
+                // with arrows, autoplay, and drag.
                 pagination={{
                   clickable: true,
-                  el: paginationRef.current,
+                  dynamicBullets: false,
                 }}
                 breakpoints={{
                   640: { slidesPerView: 2, spaceBetween: 18 },
                   1024: { slidesPerView: 4, spaceBetween: 20 },
                 }}
-                className="[&_.swiper-slide]:box-border [&_.swiper-slide]:flex [&_.swiper-wrapper]:items-stretch [&_.swiper-slide]:py-3 !pb-0 [&_.swiper-slide]:!h-auto !overflow-hidden events-swiper"
+                className="events-swiper [&_.swiper-slide]:box-border [&_.swiper-slide]:flex [&_.swiper-wrapper]:items-stretch [&_.swiper-slide]:py-3 [&_.swiper-slide]:!h-auto !overflow-visible !pb-0"
               >
                 {eventsData.items.map((ev) => (
                   <SwiperSlide key={ev.id} className="!h-auto">
@@ -94,7 +88,7 @@ export default function EventsSection({
                       href={ev.href}
                       className="group flex flex-col gap-2.5 bg-white shadow-[0_8px_24px_rgba(83,53,42,0.12)] hover:shadow-[0_12px_32px_rgba(83,53,42,0.18)] p-2.5 rounded-[24px] w-full h-full no-underline transition-shadow duration-300"
                     >
-                      <div className="rounded-[20px] w-full h-[200px] overflow-hidden shrink-0">
+                      <div className="rounded-[20px] w-full h-[170px] sm:h-[200px] overflow-hidden shrink-0">
                         <Image
                           src={resolveHomeImageSrc(ev.image)}
                           alt={ev.title}
@@ -123,45 +117,58 @@ export default function EventsSection({
               {/* Tablet / desktop: side arrows */}
               <button
                 type="button"
-                aria-label="السابق"
-                onClick={() => swiperRef.current?.slidePrev()}
+                aria-label="التالي"
+                onClick={() => swiperRef.current?.slideNext()}
                 className="hidden top-1/2 left-0 z-10 absolute sm:flex justify-center items-center bg-[#53352a]/10 hover:bg-[#53352a] border-0 rounded-full size-10 text-[#53352a] hover:text-white transition-colors -translate-y-[70%] cursor-pointer"
               >
                 <ChevronLeft size={22} />
               </button>
               <button
                 type="button"
-                aria-label="التالي"
-                onClick={() => swiperRef.current?.slideNext()}
+                aria-label="السابق"
+                onClick={() => swiperRef.current?.slidePrev()}
                 className="hidden top-1/2 right-0 z-10 absolute sm:flex justify-center items-center bg-[#53352a]/10 hover:bg-[#53352a] border-0 rounded-full size-10 text-[#53352a] hover:text-white transition-colors -translate-y-[70%] cursor-pointer"
               >
                 <ChevronRight size={22} />
               </button>
-
-              {/* Centered dots under the slider */}
-              <div className="flex justify-center items-center mt-3 mb-2 px-1 w-full">
-                <div
-                  ref={paginationRef}
-                  className="flex justify-center items-center gap-1.5 w-full min-h-4 events-pagination"
-                />
-              </div>
             </div>
 
             {/* View more — bottom of section */}
-            <div className="z-[8] relative flex justify-center mt-8 sm:mt-6 mb-1 lg:mb-2 w-full">
+            <div className="z-[8] relative flex justify-center mt-6 sm:mt-6 mb-2 lg:mb-2 w-full">
               <Link
                 href={eventsData.moreHref}
-                className="relative flex justify-center items-center"
+                className="group relative inline-flex items-center justify-center w-[210px] sm:w-[230px] h-[72px] hover:scale-[1.04] active:scale-[0.97] transition-transform duration-200"
               >
-                <Image
-                  src={imgBtnBrown}
-                  alt=""
-                  width={260}
-                  className="top-1/2 left-1/2 absolute w-52 -translate-x-1/2 -translate-y-1/2"
-                />
-                <h2 className="relative mb-0 px-6 text-[#53352a] text-[30px] whitespace-nowrap">
+                <svg
+                  viewBox="0 0 280 96"
+                  className="absolute inset-0 w-full h-full drop-shadow-[0_8px_18px_rgba(0,0,0,0.2)] group-hover:brightness-110 transition-[filter] duration-200"
+                  aria-hidden
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M24 50
+                       C18 28 52 10 88 16
+                       C118 6 152 20 186 12
+                       C224 4 262 22 260 50
+                       C262 76 226 90 188 82
+                       C154 92 118 78 86 86
+                       C50 94 20 74 24 50 Z"
+                    fill="rgba(83,53,42,0.18)"
+                  />
+                  <path
+                    d="M30 50
+                       C26 32 56 16 90 20
+                       C120 12 152 24 184 16
+                       C218 10 250 26 248 50
+                       C250 72 218 84 184 78
+                       C152 86 120 74 90 80
+                       C56 88 28 70 30 50 Z"
+                    fill="#f4e451"
+                  />
+                </svg>
+                <span className="relative z-10 font-bold text-[#1a4a5a] text-[20px] sm:text-[22px] -rotate-[2deg]">
                   {eventsData.moreLabel}
-                </h2>
+                </span>
               </Link>
             </div>
           </div>
@@ -171,7 +178,21 @@ export default function EventsSection({
       <style
         dangerouslySetInnerHTML={{
           __html: `
-            .events-pagination .swiper-pagination-bullet {
+            .events-swiper {
+              padding-bottom: 28px !important;
+            }
+            .events-swiper .swiper-pagination {
+              position: relative !important;
+              bottom: 0 !important;
+              top: auto !important;
+              margin-top: 12px;
+              width: 100% !important;
+              display: flex !important;
+              justify-content: center;
+              align-items: center;
+              gap: 0;
+            }
+            .events-swiper .swiper-pagination-bullet {
               background: rgba(83, 53, 42, 0.28) !important;
               opacity: 1 !important;
               width: 8px !important;
@@ -179,8 +200,9 @@ export default function EventsSection({
               border-radius: 999px !important;
               margin: 0 3px !important;
               display: inline-block !important;
+              transition: width 0.2s ease, background 0.2s ease;
             }
-            .events-pagination .swiper-pagination-bullet-active {
+            .events-swiper .swiper-pagination-bullet-active {
               background: #53352a !important;
               width: 18px !important;
             }

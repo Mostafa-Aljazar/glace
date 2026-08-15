@@ -38,35 +38,32 @@ function MenuProductCard({ product }: { product: IProduct }) {
       href={`/menu/order/${product.slug}`}
       className="group relative flex flex-col items-center text-white text-center cursor-pointer select-none"
     >
-      <div className="relative bg-white/14 hover:bg-white/22 hover:shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur-md border border-glace-yellow/80 hover:border-glace-yellow rounded-2xl w-full overflow-hidden transition-all hover:-translate-y-1 duration-300">
-        <div className="relative flex justify-center items-center bg-white/8 px-4 pt-6 pb-2 overflow-hidden">
-          <div className="absolute inset-0 bg-radial-[ellipse_at_50%_60%] from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      <div className="relative bg-white/12 hover:bg-white/18 border border-white/20 hover:border-white/35 rounded-[20px] w-full overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)] transition-all duration-300">
+        <div className="relative flex justify-center items-center px-3 pt-5 pb-1">
           <Image
             src={resolveMenuImageSrc(product.image)}
             alt={product.name}
-            width={160}
-            height={140}
-            className="z-10 relative drop-shadow-lg w-full max-w-32.5 sm:max-w-38.75 h-27.5 sm:h-32.5 object-contain group-hover:scale-105 transition-transform duration-300"
+            width={200}
+            height={180}
+            className="drop-shadow-lg w-full max-w-40 sm:max-w-38.75 h-36 sm:h-32.5 object-contain group-hover:scale-105 transition-transform duration-300"
           />
         </div>
 
-        <div className="px-3 pt-3 pb-5">
-          <h2 className="mb-1 font-bold text-[18px] sm:text-[20px] line-clamp-2 leading-snug">
+        <div className="flex flex-col items-center px-3 pt-2 pb-3">
+          <h2 className="mb-0.5 font-semibold text-[16px] sm:text-[18px] line-clamp-2 leading-snug">
             {product.name}
           </h2>
 
           {priceTeaser !== undefined && (
-            <p className="mb-3 text-[13px] text-white/60">
+            <p className="mb-3 text-[13px] text-white/70 tabular-nums">
               يبدأ من {priceTeaser} ₪
             </p>
           )}
 
-          <div className="flex justify-center">
-            <span className="inline-flex items-center gap-1.5 bg-glace-yellow/90 group-hover:bg-glace-yellow px-4 py-1.5 border border-glace-yellow/80 rounded-xl font-bold text-[#1e6a7f] text-[14px] transition-all duration-200">
-              <ShoppingCart size={13} />
-              اطلب الآن
-            </span>
-          </div>
+          <span className="inline-flex items-center justify-center gap-1.5 w-full bg-glace-yellow group-hover:brightness-105 px-3 py-2 rounded-full font-bold text-[#1a4a5a] text-[13px] sm:text-[14px] transition-all duration-200">
+            <ShoppingCart size={14} />
+            اطلب الآن
+          </span>
         </div>
       </div>
     </Link>
@@ -90,11 +87,11 @@ function MenuCategorySection({ categoryId }: { categoryId: string }) {
 
   if (isLoading) {
     return (
-      <div className="gap-4 sm:gap-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="gap-3 sm:gap-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="bg-white/10 rounded-[24px] h-70 animate-pulse"
+            className="bg-white/10 rounded-[24px] h-80 sm:h-70 animate-pulse"
           />
         ))}
       </div>
@@ -120,7 +117,7 @@ function MenuCategorySection({ categoryId }: { categoryId: string }) {
   }
 
   return (
-    <div className="gap-4 sm:gap-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="gap-3 sm:gap-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
       {products.map((product) => (
         <MenuProductCard key={product.id} product={product} />
       ))}
@@ -253,13 +250,13 @@ export default function MenuClientPage() {
         src={imgIesPP}
         alt=""
         width={90}
-        className="top-[55vh] right-4 sm:right-12 lg:right-20 absolute opacity-70 w-14 sm:w-18.75 lg:w-22.5 object-contain pointer-events-none"
+        className="hidden sm:block top-[55vh] right-4 sm:right-12 lg:right-20 absolute opacity-70 w-14 sm:w-18.75 lg:w-22.5 object-contain pointer-events-none"
       />
       <Image
         src={imgIesC}
         alt=""
         width={110}
-        className="top-[55vh] left-4 sm:left-12 lg:left-20 absolute opacity-70 w-16 sm:w-21.25 lg:w-27.5 object-contain pointer-events-none"
+        className="hidden sm:block top-[55vh] left-4 sm:left-12 lg:left-20 absolute opacity-70 w-16 sm:w-21.25 lg:w-27.5 object-contain pointer-events-none"
       />
       <Image
         src={imgIcee}
@@ -274,7 +271,7 @@ export default function MenuClientPage() {
         className="hidden lg:block top-27.5 left-16 absolute opacity-60 w-20 object-contain pointer-events-none"
       />
 
-      <div className="z-90 relative mx-auto px-4 sm:px-6 lg:px-8 pt-22.5 lg:pt-26.5 pb-28 lg:pb-8 max-w-screen-2xl">
+      <div className="z-90 relative mx-auto px-3 sm:px-6 lg:px-8 pt-22.5 lg:pt-26.5 pb-28 lg:pb-8 max-w-screen-2xl">
         <div className="relative flex flex-col items-center pt-8 pb-10 sm:pb-14 text-center">
           <div className="hidden top-0 left-0 absolute sm:flex gap-3 opacity-80 pointer-events-none">
             <Image
@@ -336,12 +333,12 @@ export default function MenuClientPage() {
             ))}
           </div>
         ) : (
-          <div className="top-0 z-50 sticky -mx-4 sm:-mx-6 lg:-mx-8">
+          <div className="top-0 z-50 sticky -mx-3 sm:-mx-6 lg:-mx-8 mb-6">
             <div
               ref={selectorScrollRef}
-              className="bg-transparent shadow-none backdrop-blur-xl px-3 py-3 border-[1.25px] border-white/15 rounded-none w-full overflow-x-auto no-scrollbar"
+              className="bg-[#2f7a96]/75 backdrop-blur-md px-3 py-2.5 w-full overflow-x-auto no-scrollbar"
             >
-              <div className="flex gap-3 sm:gap-4 min-w-max">
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-max">
                 {categories.map((cat: IMenuCategory) => {
                   const isActive = activeCategory === cat.id;
                   return (
@@ -352,25 +349,18 @@ export default function MenuClientPage() {
                       }}
                       type="button"
                       onClick={() => handleSelectCategory(cat.id)}
-                      className={`
-                        group relative inline-flex items-center gap-2 min-w-37.5 sm:min-w-45 px-5 py-3
-                        rounded-[20px] border text-[15px] sm:text-[16px] transition-all duration-300 cursor-pointer
-                        ${
-                          isActive
-                            ? "bg-white text-[#1e6a7f] border-white shadow-[0_8px_30px_rgba(0,0,0,0.18)]"
-                            : "bg-white/10 text-white border-white/20 hover:bg-white/18 hover:border-white/40"
-                        }
-                      `}
+                      className={`inline-flex items-center gap-1.5 shrink-0 rounded-full px-3.5 sm:px-5 py-2 sm:py-2.5 text-[13px] sm:text-[15px] font-semibold border transition-all duration-200 cursor-pointer ${
+                        isActive
+                          ? "bg-white text-[#1a4a5a] border-white shadow-[0_4px_14px_rgba(0,0,0,0.16)]"
+                          : "bg-white/8 text-white border-white/20 hover:bg-white/16 hover:border-white/35"
+                      }`}
                     >
                       <MenuIcon
                         name={cat.icon}
-                        size={20}
-                        className={`transition-colors ${isActive ? "text-[#1e9fd8]" : "text-white/80 group-hover:text-white"}`}
+                        size={16}
+                        className={isActive ? "text-[#1e9fd8]" : "text-white/85"}
                       />
-                      <span className="font-bold">{cat.label}</span>
-                      {isActive && (
-                        <span className="-bottom-1.5 left-1/2 absolute bg-white rounded-full w-2 h-2 -translate-x-1/2" />
-                      )}
+                      <span>{cat.label}</span>
                     </button>
                   );
                 })}
@@ -380,35 +370,25 @@ export default function MenuClientPage() {
         )}
 
         {!catsLoading && (
-          <div className="space-y-12">
+          <div className="space-y-8 sm:space-y-12">
             {categories.map((cat) => (
               <section
                 key={cat.id}
                 id={cat.id}
                 data-category-id={cat.id}
                 ref={setSectionRef(cat.id)}
-                className="scroll-mt-32"
+                className="scroll-mt-16"
               >
-                <div
-                  className="flex items-center gap-3 bg-linear-to-r mb-6 px-4 py-3 rounded-[16px]"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${cat.gradientFrom}33, ${cat.gradientTo}33)`,
-                  }}
-                >
-                  <div
-                    className="flex justify-center items-center rounded-full w-9 h-9 shrink-0"
-                    style={{ backgroundColor: `${cat.accentColor}33` }}
-                  >
-                    <MenuIcon
-                      name={cat.icon}
-                      size={18}
-                      style={{ color: cat.accentColor }}
-                    />
-                  </div>
-                  <h2 className="font-bold text-[22px] text-white sm:text-[26px]">
+                <div className="flex items-center gap-2.5 mb-4 sm:mb-6">
+                  <MenuIcon
+                    name={cat.icon}
+                    size={18}
+                    className="text-glace-yellow shrink-0"
+                  />
+                  <h2 className="font-bold text-[18px] text-white sm:text-[24px]">
                     {cat.label}
                   </h2>
-                  <div className="flex-1 bg-white/15 mr-2 h-px" />
+                  <div className="flex-1 bg-white/20 h-px" />
                 </div>
 
                 <MenuCategorySection categoryId={cat.id} />

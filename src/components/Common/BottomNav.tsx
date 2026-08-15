@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  UtensilsCrossed,
+  IceCreamCone,
   ShoppingCart,
   Heart,
   CalendarDays,
@@ -14,7 +14,7 @@ import { useCartStore } from "@/store/cartStore";
 
 const LEFT_NAV = [
   { label: "طلباتي", href: "/my-orders", icon: CalendarDays },
-  { label: "المنيو", href: "/menu", icon: UtensilsCrossed },
+  { label: "المنيو", href: "/menu", icon: IceCreamCone },
 ];
 const RIGHT_NAV = [
   { label: "المفضلة", href: "/favorites", icon: Heart },
@@ -120,7 +120,7 @@ export default function BottomNav() {
         </Link>
 
         {/* the bar itself */}
-        <div className="bg-[#0b5f72]/95 shadow-[0_-8px_28px_rgba(0,0,0,0.18)] backdrop-blur-2xl border-white/10 border-t rounded-t-[28px]">
+        <div className="bg-[#0b5f72]/95 shadow-[0_-8px_28px_rgba(0,0,0,0.18)] backdrop-blur-2xl border-white/10 border-t rounded-t-[28px] pb-[max(12px,env(safe-area-inset-bottom))]">
           <div className="flex items-center h-[62px]">
             {/* left side */}
             <div className="flex flex-1">
@@ -157,7 +157,6 @@ export default function BottomNav() {
               ))}
             </div>
           </div>
-          {/* <div className="h-safe-b" /> */}
         </div>
       </div>
     </nav>

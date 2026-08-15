@@ -296,33 +296,31 @@
 .splash-float-3  { animation: splash-float-3 3.6s ease-in-out 0.8s infinite; }
 .splash-ring     { animation: splash-pulse-ring 1.6s ease-out infinite; }
 
-/* Mask for header top decoration */
+/* Mask for header top decoration — full uncropped SVG on every breakpoint */
 .imageHeaderT {
   position: absolute;
   top: 0;
   right: 0;
   left: 0;
+  z-index: 80;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  overflow: visible;
+  background-color: #51c9f48a;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   -webkit-mask-image: url(/images/imageHeaderT.svg);
   mask-image: url(/images/imageHeaderT.svg);
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  mask-size: 100vw auto !important;
-  -webkit-mask-size: 100vw auto;
-  z-index: 80;
-  width: 100%;
-  background-color: #51c9f48a;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  height: 100%;
+  mask-size: 100% auto !important;
+  -webkit-mask-size: 100% auto;
+  mask-position: top center;
+  -webkit-mask-position: top center;
 }
 
 @media (max-width: 450px) {
-  .imageHeaderT {
-    -webkit-mask-image: url(/images/imageHeaderTMob.svg);
-    mask-image: url(/images/imageHeaderTMob.svg);
-    mask-size: 100% !important;
-    -webkit-mask-size: 100%;
-  }
   .iceCreamMenu {
     transform: translateY(-15px);
   }
@@ -366,13 +364,31 @@
    `[dir]` styling and silently defeated the `dir` attribute — a phone number
    like "0592 226 522" rendered with its groups reversed as "522 226 0592".
    These live OUTSIDE any layer on purpose: unlayered rules win over layered
-   ones, so `dir="ltr"` works again for phone numbers, latin text and URLs. */
-[dir="ltr"] {
+   ones, so `dir="ltr"` works again for phone numbers, latin text and URLs.
+
+   Descendants must inherit LTR too — otherwise Swiper's `.swiper-wrapper` /
+   `.swiper-slide` stay RTL from the universal selector and slides translate
+   off-screen (blank carousel on Arabic pages). */
+[dir="ltr"],
+[dir="ltr"] * {
   direction: ltr;
+}
+
+[dir="ltr"] [dir="rtl"],
+[dir="ltr"] [dir="rtl"] * {
+  direction: rtl;
   unicode-bidi: isolate;
 }
 
 [dir="rtl"] {
   direction: rtl;
   unicode-bidi: isolate;
+}
+
+/* Swiper translate math expects physical LTR on the track, even when the
+   page is RTL. Nested Arabic copy should set dir="rtl" on the text node. */
+.swiper,
+.swiper-wrapper,
+.swiper-slide {
+  direction: ltr;
 }

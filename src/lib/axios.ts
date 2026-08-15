@@ -1,19 +1,23 @@
-import axios, { type AxiosRequestHeaders } from "axios";
+import axios, {
+  type AxiosRequestHeaders,
+  type InternalAxiosRequestConfig,
+} from "axios";
 import { getApiBaseUrl } from "@/lib/dataSource";
 
-const BASE = getApiBaseUrl();
+const jsonHeaders = { Accept: "application/json" };
+
+function attachBaseUrl(config: InternalAxiosRequestConfig) {
+  config.baseURL = getApiBaseUrl();
+  return config;
+}
 
 // Public axios instance (no auth header, suitable for public fetches)
-const guestApi = axios.create({
-  baseURL: BASE,
-  headers: { Accept: "application/json" },
-});
+const guestApi = axios.create({ headers: jsonHeaders });
+guestApi.interceptors.request.use(attachBaseUrl);
 
 // Authenticated axios instance (default export) — keeps existing behaviour
-const userApi = axios.create({
-  baseURL: BASE,
-  headers: { Accept: "application/json" },
-});
+const userApi = axios.create({ headers: jsonHeaders });
+userApi.interceptors.request.use(attachBaseUrl);
 
 userApi.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {

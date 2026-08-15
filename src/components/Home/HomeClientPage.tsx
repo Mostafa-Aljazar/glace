@@ -67,7 +67,11 @@ export default function HomeClientPage() {
       className="transition-[background-color] duration-2000 ease-in-out"
       style={{ backgroundColor: bgColor }}
     >
-      <HeroSection slides={data.hero.slides} onColorChange={setBgColor} />
+      <HeroSection
+        slides={data.hero.slides}
+        bgColor={bgColor}
+        onColorChange={setBgColor}
+      />
       <AboutSection bgColor={bgColor} about={data.about} />
       <WhyGlaceSection whyGlace={data.whyGlace} />
       <TimesWorkSection branchesData={data.branches} />

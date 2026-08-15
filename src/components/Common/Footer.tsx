@@ -89,105 +89,129 @@ export default function Footer({ withBg = true }: FooterProps) {
 
   return (
     <footer
-      className={`relative -mt-px min-h-[320px] lg:min-h-[380px] overflow-hidden ${withBg ? "bg-white" : ""}`}
+      className={`relative z-[1] -mt-1 overflow-hidden ${withBg ? "bg-white" : ""}`}
     >
-      {/* Background image — same curve as original */}
-      <Image
-        src={bgFooter}
-        alt=""
-        fill
-        className="top-0 left-0 z-0 absolute w-full h-full object-cover object-top lg:object-fill"
-        // style={{ filter: "brightness(0.38) saturate(1.2) hue-rotate(195deg)" }}
-      />
-
-      {/* Dark overlay so text stays readable over the light blue image */}
-      {/* <div className="z-[1] absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 18%, rgba(14,55,74,0.92) 42%, rgba(10,42,58,0.97) 100%)" }} /> */}
-
-      {/* Content */}
-      <div className="z-10 relative flex flex-col items-center mx-auto px-4 pt-24 sm:pt-20 pb-5 lg:pb-6 w-[90%] max-w-4xl text-white">
-        {/* Logo */}
-        <Image
-          src={logo}
-          alt="جلاسيه الأمير"
-          width={180}
-          height={70}
-          className="drop-shadow-xl mb-2.5 w-36 sm:w-44 object-contain"
+      {/* Wave keeps mobile drip density on wider screens by tiling a mirror copy */}
+      <div className="relative z-0 w-full">
+        <div className="flex w-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={bgFooter.src}
+            alt=""
+            className="block w-full md:w-1/2 lg:w-1/3 h-auto pointer-events-none select-none"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={bgFooter.src}
+            alt=""
+            className="hidden md:block w-1/2 lg:w-1/3 h-auto -scale-x-100 pointer-events-none select-none"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={bgFooter.src}
+            alt=""
+            className="hidden lg:block w-1/3 h-auto pointer-events-none select-none"
+          />
+        </div>
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-[58%] bottom-0"
+          style={{ background: "#51C9F4" }}
         />
+      </div>
 
-        {/* Tagline */}
-        <p className="mb-7 text-[13px] text-white/55 text-center tracking-wide">
-          أفضل بوظة وحلويات في فلسطين — نصنع السعادة كل يوم
-        </p>
+      <div
+        className="relative z-10 -mt-px"
+        style={{
+          background:
+            "linear-gradient(to bottom, #51C9F4 0%, #2f8fb3 45%, #1c6b88 100%)",
+        }}
+      >
+        <div className="flex flex-col items-center mx-auto px-4 pt-2 sm:pt-3 pb-24 lg:pb-8 w-[90%] max-w-5xl text-white">
+          {/* Logo */}
+          <Image
+            src={logo}
+            alt="جلاسيه الأمير"
+            width={180}
+            height={70}
+            className="drop-shadow-xl mb-2.5 w-36 sm:w-44 object-contain"
+          />
 
-        {/* Yellow accent divider */}
-        <div className="flex items-center gap-2 mb-7">
-          <div className="bg-glace-yellow/40 w-10 h-px" />
-          <div className="bg-glace-yellow rounded-full w-1.5 h-1.5" />
-          <div className="bg-glace-yellow/40 w-10 h-px" />
-        </div>
+          {/* Tagline */}
+          <p className="mb-6 text-[13px] sm:text-[15px] text-white text-center tracking-wide">
+            أفضل بوظة وحلويات في فلسطين — نصنع السعادة كل يوم
+          </p>
 
-        {/* Nav links */}
-        <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2.5 m-0 mb-7 p-0 list-none">
-          {footerLinks.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className="text-[15px] text-white/70 sm:text-[16px] hover:text-glace-yellow transition-colors"
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-
-        {/* Social icons */}
-        <div className="flex justify-center items-center gap-2.5 mb-8">
-          {socialLinks.map((s) => (
-            <Link
-              key={s.label}
-              href={s.href}
-              target="_blank"
-              aria-label={s.label}
-              className="flex justify-center items-center bg-white/10 hover:bg-glace-yellow border border-white/20 hover:border-glace-yellow rounded-full w-9 h-9 text-white/70 hover:text-[#0e3749] transition-all duration-200"
-            >
-              {s.icon}
-            </Link>
-          ))}
-        </div>
-
-        {/* Bottom bar */}
-        <div className="flex sm:flex-row flex-col justify-between items-center gap-2.5 pt-4 border-white/10 border-t w-full text-[12px] text-white/35">
-          <div className="flex flex-wrap justify-center gap-4">
-            <a
-              href="tel:+970592226522"
-              className="flex items-center gap-1.5 hover:text-white/60 transition-colors"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-              </svg>
-              970592226522+
-            </a>
-            <a
-              href="mailto:info@glaceelameer.com"
-              className="flex items-center gap-1.5 hover:text-white/60 transition-colors"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z" />
-              </svg>
-              info@glaceelameer.com
-            </a>
+          {/* Yellow accent divider */}
+          <div className="flex items-center gap-2 mb-6">
+            <div className="bg-glace-yellow w-10 h-px" />
+            <div className="bg-glace-yellow rounded-full w-1.5 h-1.5" />
+            <div className="bg-glace-yellow w-10 h-px" />
           </div>
-          <p>جميع الحقوق محفوظة © جلاسيه الأمير {currentYear}</p>
+
+          {/* Nav links */}
+          <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 m-0 mb-6 p-0 list-none">
+            {footerLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="text-[15px] text-white sm:text-[16px] hover:text-glace-yellow transition-colors"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          {/* Social icons */}
+          <div className="flex justify-center items-center gap-2.5 mb-6">
+            {socialLinks.map((s) => (
+              <Link
+                key={s.label}
+                href={s.href}
+                target="_blank"
+                aria-label={s.label}
+                className="flex justify-center items-center bg-white/20 hover:bg-glace-yellow border border-white/50 hover:border-glace-yellow rounded-full w-10 h-10 text-white hover:text-[#0e3749] transition-all duration-200"
+              >
+                {s.icon}
+              </Link>
+            ))}
+          </div>
+
+          {/* Bottom bar */}
+          <div className="flex sm:flex-row flex-col justify-between items-center gap-2 pt-4 border-white/25 border-t w-full text-[12px] text-white/90">
+            <div className="flex flex-wrap justify-center gap-4">
+              <a
+                href="tel:+970592226522"
+                className="flex items-center gap-1.5 hover:text-glace-yellow transition-colors"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+                </svg>
+                970592226522+
+              </a>
+              <a
+                href="mailto:info@glaceelameer.com"
+                className="flex items-center gap-1.5 hover:text-glace-yellow transition-colors"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z" />
+                </svg>
+                info@glaceelameer.com
+              </a>
+            </div>
+            <p>جميع الحقوق محفوظة © جلاسيه الأمير {currentYear}</p>
+          </div>
         </div>
       </div>
     </footer>

@@ -12,7 +12,7 @@ export default function MainLayout({
   return (
     <>
       <LogoNav />
-      <div className="pb-14lg:pb-0">{children}</div>
+      <div>{children}</div>
       <BottomNav />
       <FloatingFavoritesButton />
     </>

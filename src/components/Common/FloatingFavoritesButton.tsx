@@ -10,9 +10,11 @@ export default function FloatingFavoritesButton() {
   const favoriteIds = useFavoritesStore((s) => s.ids);
   const favoriteCount = favoriteIds.length;
 
-  // Order pages render their own fixed bottom "أضف للسلة" bar (plus per-item
-  // heart toggles), so the floating shortcut would overlap it — hide it there.
-  if (pathname?.startsWith("/menu/order/")) return null;
+  // Order pages have their own add-to-cart bar; the favorites page already
+  // is this destination — hide the shortcut so it does not sit on top of itself.
+  if (pathname?.startsWith("/menu/order/") || pathname === "/favorites") {
+    return null;
+  }
 
   return (
     <Link

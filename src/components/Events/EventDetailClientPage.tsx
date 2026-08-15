@@ -135,6 +135,7 @@ export default function EventDetailClientPage({
                   modules={[Navigation, Pagination]}
                   navigation
                   pagination={{ clickable: true }}
+                  dir="ltr"
                   className="absolute inset-0 w-full h-full [--swiper-navigation-color:#fff] [--swiper-navigation-size:15px] [--swiper-pagination-color:#f4e451] [--swiper-pagination-bullet-inactive-color:rgba(255,255,255,0.35)] [--swiper-pagination-bullet-inactive-opacity:1]"
                 >
                   {(gallery.length > 0 ? gallery : [undefined]).map((img, i) => (
@@ -208,6 +209,7 @@ export default function EventDetailClientPage({
               pagination={{ clickable: true }}
               spaceBetween={14}
               slidesPerView={1}
+              dir="ltr"
               breakpoints={{
                 480: { slidesPerView: 2 },
                 768: { slidesPerView: 3 },

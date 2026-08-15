@@ -13,7 +13,7 @@ import {
   User,
   ChevronLeft,
   Home,
-  UtensilsCrossed,
+  IceCreamCone,
   Tag,
   CalendarDays,
   MapPin,
@@ -32,7 +32,7 @@ import type { NavItem } from "@/types";
 
 const navItems: NavItem[] = [
   { label: "الرئيسية", href: "/", icon: Home },
-  { label: "المنيو", href: "/menu", icon: UtensilsCrossed },
+  { label: "المنيو", href: "/menu", icon: IceCreamCone },
   { label: "العروض", href: "/offers", icon: Tag },
   {
     label: "موقعنا و ساعات العمل",
@@ -133,6 +133,7 @@ export default function LogoNav() {
           <ul className="flex flex-col gap-2 m-0 p-0 list-none">
             {navItems.map((item) => {
               const DrawerIcon = item.icon;
+              const active = isActive(item.href);
               return (
                 <li key={item.href}>
                   <Link
@@ -150,9 +151,9 @@ export default function LogoNav() {
                         el.getBoundingClientRect().top + window.scrollY - 96;
                       window.scrollTo({ top, behavior: "smooth" });
                     }}
-                    className={`flex items-center justify-end gap-3 px-4 py-3 rounded-[16px] text-[16px] font-semibold transition-all touch-manipulation
+                    className={`flex items-center justify-between gap-3 px-4 py-3 rounded-[16px] text-[16px] font-semibold transition-all touch-manipulation
                       ${
-                        isActive(item.href)
+                        active
                           ? "bg-glace-yellow text-[#1e6a7f] font-bold"
                           : "bg-white/10 text-white hover:bg-white/20"
                       }`}
@@ -161,7 +162,10 @@ export default function LogoNav() {
                       {item.label}
                     </span>
                     {DrawerIcon && (
-                      <DrawerIcon size={20} className="text-white" />
+                      <DrawerIcon
+                        size={20}
+                        className={active ? "text-[#1e6a7f]" : "text-white"}
+                      />
                     )}
                   </Link>
                 </li>
@@ -171,48 +175,52 @@ export default function LogoNav() {
 
           <div className="my-3 border-white/12 border-t" />
 
-          {/* account and cart links placed under the nav links (mobile drawer) */}
-          <div className="flex flex-col gap-3 mt-4">
+          {/* account / wallet / cart — same row layout (label | badge + icon) */}
+          <div className="flex flex-col gap-2">
             <Link
               href="/my-account"
               onClick={() => setDrawerOpen(false)}
-              className="flex justify-between items-center gap-3 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-[16px] text-[17px] text-white hover:text-white transition-all"
+              className="flex justify-between items-center gap-3 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-[16px] text-[16px] text-white transition-all"
             >
-              <span className="font-semibold">حسابي</span>
-              <User size={18} className="text-white" />
+              <span className="flex-1 text-right font-semibold">حسابي</span>
+              <User size={18} className="shrink-0 text-white" />
             </Link>
             <Link
               href="/my-wallet"
               onClick={() => setDrawerOpen(false)}
-              className="flex justify-end items-center gap-3 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-[16px] text-[17px] text-white hover:text-white transition-all"
+              className="flex justify-between items-center gap-3 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-[16px] text-[16px] text-white transition-all"
             >
-              <span className="font-medium">محفظتي</span>
-              {walletBalance > 0 && (
-                <span className="bg-white/20 mr-auto px-2 py-0.5 rounded-full text-[12px]">
-                  {walletBalance.toFixed(0)} ₪
-                </span>
-              )}
-              <Wallet size={17} className="text-white/90" />
+              <span className="flex-1 text-right font-semibold">محفظتي</span>
+              <span className="flex items-center gap-2 shrink-0">
+                {walletBalance > 0 && (
+                  <span className="bg-white/20 px-2 py-0.5 rounded-full text-[12px]">
+                    {walletBalance.toFixed(0)} ₪
+                  </span>
+                )}
+                <Wallet size={18} className="text-white" />
+              </span>
             </Link>
             <Link
               href="/cart"
               onClick={() => setDrawerOpen(false)}
-              className="flex justify-between items-center gap-3 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-[16px] text-[17px] text-white hover:text-white transition-all"
+              className="flex justify-between items-center gap-3 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-[16px] text-[16px] text-white transition-all"
             >
-              <span className="font-semibold">السلة</span>
-              <div className="relative">
-                <ShoppingCart size={18} className="text-white" />
+              <span className="flex-1 text-right font-semibold">السلة</span>
+              <span className="relative flex items-center gap-2 shrink-0">
                 {cartCount > 0 && (
-                  <span className="-top-2 -left-2 absolute flex justify-center items-center bg-glace-yellow rounded-full w-4 h-4 font-bold text-[#1e6a7f] text-[9px]">
+                  <span className="bg-glace-yellow/20 px-2 py-0.5 rounded-full font-bold text-[12px] text-glace-yellow">
                     {cartCount}
                   </span>
                 )}
-              </div>
-              {cartCount > 0 && (
-                <span className="bg-glace-yellow/20 mr-auto px-2 py-0.5 rounded-full font-bold text-[13px] text-glace-yellow">
-                  {cartCount}
+                <span className="relative">
+                  <ShoppingCart size={18} className="text-white" />
+                  {cartCount > 0 && (
+                    <span className="-top-2 -left-2 absolute flex justify-center items-center bg-glace-yellow rounded-full w-4 h-4 font-bold text-[#1e6a7f] text-[9px]">
+                      {cartCount > 9 ? "9+" : cartCount}
+                    </span>
+                  )}
                 </span>
-              )}
+              </span>
             </Link>
           </div>
         </div>
