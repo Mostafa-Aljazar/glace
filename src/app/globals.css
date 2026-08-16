@@ -296,6 +296,13 @@
 .splash-float-3  { animation: splash-float-3 3.6s ease-in-out 0.8s infinite; }
 .splash-ring     { animation: splash-pulse-ring 1.6s ease-out infinite; }
 
+/* CTA button bobbing up/down, like a popup catching your eye */
+@keyframes cta-pop {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+.animate-cta-pop { animation: cta-pop 1.8s ease-in-out infinite; }
+
 /* Mask for header top decoration — full uncropped SVG on every breakpoint */
 .imageHeaderT {
   position: absolute;

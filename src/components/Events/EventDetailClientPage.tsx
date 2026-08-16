@@ -37,6 +37,7 @@ function RelatedCard({ event }: { event: IEvent }) {
   return (
     <Link
       href={`/events/${event.id}`}
+      dir="rtl"
       className="group flex flex-col bg-white/[.12] hover:bg-white/[.18] border border-white/15 hover:border-white/25 rounded-[20px] overflow-hidden transition-all hover:-translate-y-1 duration-300"
     >
       <div className="relative w-full h-40 overflow-hidden">
@@ -115,7 +116,7 @@ export default function EventDetailClientPage({
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
 
-      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-16 max-w-[1200px]">
+      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-36 max-w-[1200px]">
         <div className="flex items-center gap-2 mt-4 mb-7 text-[13px] text-white/50">
           <Link
             href="/events"
@@ -138,16 +139,18 @@ export default function EventDetailClientPage({
                   dir="ltr"
                   className="absolute inset-0 w-full h-full [--swiper-navigation-color:#fff] [--swiper-navigation-size:15px] [--swiper-pagination-color:#f4e451] [--swiper-pagination-bullet-inactive-color:rgba(255,255,255,0.35)] [--swiper-pagination-bullet-inactive-opacity:1]"
                 >
-                  {(gallery.length > 0 ? gallery : [undefined]).map((img, i) => (
-                    <SwiperSlide key={i}>
-                      <Image
-                        src={resolveEventImageSrc(img)}
-                        alt={event.title}
-                        fill
-                        className="object-cover"
-                      />
-                    </SwiperSlide>
-                  ))}
+                  {(gallery.length > 0 ? gallery : [undefined]).map(
+                    (img, i) => (
+                      <SwiperSlide key={i}>
+                        <Image
+                          src={resolveEventImageSrc(img)}
+                          alt={event.title}
+                          fill
+                          className="object-cover"
+                        />
+                      </SwiperSlide>
+                    ),
+                  )}
                 </Swiper>
 
                 <span className="top-2 right-2 z-20 absolute flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-full font-medium text-[11px] text-white/90 pointer-events-none">
@@ -215,7 +218,7 @@ export default function EventDetailClientPage({
                 768: { slidesPerView: 3 },
                 1024: { slidesPerView: 4 },
               }}
-              className="pb-10 [--swiper-pagination-color:#f4e451] [--swiper-pagination-bullet-inactive-color:rgba(255,255,255,0.3)] [--swiper-pagination-bullet-inactive-opacity:1]"
+              className="related-events-swiper pb-2"
             >
               {otherEvents.map((ev) => (
                 <SwiperSlide key={ev.id}>
@@ -223,6 +226,38 @@ export default function EventDetailClientPage({
                 </SwiperSlide>
               ))}
             </Swiper>
+
+            <style
+              dangerouslySetInnerHTML={{
+                __html: `
+                  .related-events-swiper .swiper-pagination {
+                    position: relative !important;
+                    bottom: 0 !important;
+                    top: auto !important;
+                    margin-top: 16px;
+                    width: 100% !important;
+                    display: flex !important;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 0;
+                  }
+                  .related-events-swiper .swiper-pagination-bullet {
+                    background: rgba(255, 255, 255, 0.3) !important;
+                    opacity: 1 !important;
+                    width: 8px !important;
+                    height: 8px !important;
+                    border-radius: 999px !important;
+                    margin: 0 3px !important;
+                    display: inline-block !important;
+                    transition: width 0.2s ease, background 0.2s ease;
+                  }
+                  .related-events-swiper .swiper-pagination-bullet-active {
+                    background: #f4e451 !important;
+                    width: 18px !important;
+                  }
+                `,
+              }}
+            />
           </div>
         )}
       </div>

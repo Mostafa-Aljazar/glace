@@ -7,6 +7,7 @@ import { z } from "zod";
 import ContactBackground from "@/components/Contact/ContactBackground";
 import ContactForm from "@/components/Contact/ContactForm";
 import ContactSuccessDialog from "@/components/Contact/ContactSuccessDialog";
+import Footer from "@/components/Common/Footer";
 import { useSendContactMessage } from "@/hooks/contact/useSendContactMessage";
 import type { IContactRequest } from "@/types/contact.types";
 
@@ -79,6 +80,8 @@ export default function ContactClientPage() {
       </div>
 
       <ContactSuccessDialog open={successOpen} onOpenChange={setSuccessOpen} />
+
+      <Footer withBg={false} />
     </div>
   );
 }

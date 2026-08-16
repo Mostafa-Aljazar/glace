@@ -3,6 +3,7 @@
 import LogoNav from "@/components/Common/LogoNav";
 import BottomNav from "@/components/Common/BottomNav";
 import FloatingFavoritesButton from "@/components/Common/FloatingFavoritesButton";
+import InstallPwaButton from "@/components/Common/InstallPwaButton";
 
 export default function MainLayout({
   children,
@@ -15,6 +16,7 @@ export default function MainLayout({
       <div>{children}</div>
       <BottomNav />
       <FloatingFavoritesButton />
+      <InstallPwaButton />
     </>
   );
 }

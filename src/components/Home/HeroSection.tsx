@@ -10,19 +10,19 @@ import type { Swiper as SwiperType } from "swiper";
 import "swiper/css";
 import "swiper/css/effect-fade";
 
-import {
-  imgL,
-  happinessExpertsImg,
-  iceC,
-  sunImg,
-} from "@/assets/images";
+import { imgL, happinessExpertsImg, iceC, sunImg } from "@/assets/images";
 import HeaderWave from "@/components/Common/HeaderWave";
 import { resolveHomeImageSrc, type ISlideData } from "@/types/home.types";
 
 function contrastOn(bg: string): string {
   const hex = bg.trim().replace("#", "");
   const full =
-    hex.length === 3 ? hex.split("").map((c) => c + c).join("") : hex.slice(0, 6);
+    hex.length === 3
+      ? hex
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : hex.slice(0, 6);
   if (!/^[0-9a-fA-F]{6}$/.test(full)) return "#ffffff";
   const n = Number.parseInt(full, 16);
   const r = (n >> 16) & 255;
@@ -92,11 +92,9 @@ export default function HeroSection({
   );
 
   return (
-    <div className="relative min-h-screen overflow-hidden pb-0">
+    <div className="relative pb-0 min-h-screen overflow-hidden">
       {/* overlay + blob fade into the about section color */}
-      <div
-        className="z-[80] absolute inset-0 overflow-hidden pointer-events-none [mask-image:linear-gradient(to_bottom,black_70%,transparent)] [-webkit-mask-image:linear-gradient(to_bottom,black_70%,transparent)]"
-      >
+      <div className="z-[80] absolute inset-0 overflow-hidden pointer-events-none [mask-image:linear-gradient(to_bottom,black_70%,transparent)] [-webkit-mask-image:linear-gradient(to_bottom,black_70%,transparent)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(0,0,0,0.14)_48%,rgba(0,0,0,0.44)_96%)]" />
         <img
           ref={bgImgRef}
@@ -109,7 +107,7 @@ export default function HeroSection({
 
       <div
         ref={headerTRef}
-        className="absolute top-0 left-0 z-[80] w-full pointer-events-none"
+        className="top-0 left-0 z-[80] absolute w-full pointer-events-none"
         style={{ color: slidesData[0]?.headerBgColor ?? "#51c9f48a" }}
       >
         <HeaderWave />
@@ -144,14 +142,14 @@ export default function HeroSection({
             <SwiperSlide key={i}>
               <div className="flex items-center w-full h-full overflow-hidden">
                 {/* .centerImageH — no min-width on phones; side padding keeps skew/badges on-screen */}
-                <div className="relative mx-auto w-full max-w-[465px] min-w-0 px-8 sm:px-10 md:px-0 md:min-w-[290px] lg:min-w-[395px] 2xl:min-w-[465px]">
+                <div className="relative mx-auto px-8 sm:px-10 md:px-0 w-full min-w-0 md:min-w-[290px] lg:min-w-[395px] 2xl:min-w-[465px] max-w-[465px]">
                   {/* sun */}
                   <Image
                     src={sunImg}
                     alt=""
                     width={170}
                     height={170}
-                    className="top-[-22px] sm:top-0 left-[40%] right-auto md:left-[-170px] lg:left-[-170px] z-[1099] absolute w-[64px] sm:w-[80px] md:w-[120px] lg:w-[140px] 2xl:w-[150px]"
+                    className="top-[-22px] sm:top-0 right-auto left-[40%] md:left-[-170px] lg:left-[-170px] z-[1099] absolute w-[64px] sm:w-[80px] md:w-[120px] lg:w-[140px] 2xl:w-[150px]"
                     style={{
                       animation: "rotateS 20s normal linear infinite",
                     }}
@@ -184,7 +182,7 @@ export default function HeroSection({
                       }}
                     >
                       <h1
-                        className="font-bold text-[clamp(1.45rem,7.4vw,2.6rem)] sm:text-[45px] md:text-[64px] lg:text-[75px] 2xl:text-[85px] leading-none rotate-[1deg] -skew-x-[10deg] sm:-skew-x-[15deg]"
+                        className="font-bold text-[clamp(1.45rem,7.4vw,2.6rem)] sm:text-4xl md:text-5xl lg:text-5xl leading-none rotate-[1deg] -skew-x-[10deg] sm:-skew-x-[15deg]"
                         style={{ textShadow: "2px 2px #0000006c" }}
                       >
                         {slide.titleH1}
@@ -197,7 +195,7 @@ export default function HeroSection({
                       }}
                     >
                       <h2
-                        className="text-[14px] sm:text-[20px] md:text-[27px] lg:text-[30px] 2xl:text-[35px] leading-snug text-center rotate-[4deg] -skew-x-[8deg] sm:-skew-x-[10deg]"
+                        className="text-[14px] sm:text-xl md:text-2xl lg:text-3xl text-center leading-snug rotate-[4deg] -skew-x-[8deg] sm:-skew-x-[10deg]"
                         style={{ textShadow: "2px 2px #0000001e" }}
                       >
                         {slide.titleH2}
@@ -215,14 +213,14 @@ export default function HeroSection({
                   />
 
                   {/* order now — wavy blob button */}
-                  <div className="z-[200] relative flex justify-center mt-6 sm:mt-10 lg:mt-12 mb-6 sm:mb-8 lg:mb-10">
+                  <div className="z-[200] relative flex justify-center mt-6 sm:mt-10 lg:mt-12 mb-6 sm:mb-8 lg:mb-10 animate-cta-pop">
                     <Link
                       href="/menu"
-                      className="group relative inline-flex items-center justify-center w-[250px] sm:w-[270px] h-[84px] sm:h-[90px] hover:scale-[1.04] active:scale-[0.97] transition-transform duration-200"
+                      className="group inline-flex relative justify-center items-center w-[250px] sm:w-[270px] h-[84px] sm:h-[90px] hover:scale-[1.04] active:scale-[0.97] transition-transform duration-200"
                     >
                       <svg
                         viewBox="0 0 280 96"
-                        className="absolute inset-0 w-full h-full drop-shadow-[0_10px_22px_rgba(0,0,0,0.22)] group-hover:brightness-110 transition-[filter] duration-200"
+                        className="absolute inset-0 drop-shadow-[0_10px_22px_rgba(0,0,0,0.22)] group-hover:brightness-110 w-full h-full transition-[filter] duration-200"
                         aria-hidden
                         preserveAspectRatio="none"
                       >
@@ -248,10 +246,14 @@ export default function HeroSection({
                         />
                       </svg>
                       <span
-                        className="relative z-10 flex items-center gap-2 font-bold text-[22px] sm:text-[24px] lg:text-[26px] -rotate-[2deg]"
+                        className="z-10 relative flex items-center gap-2 font-bold text-[22px] sm:text-[24px] lg:text-[26px] -rotate-[2deg]"
                         style={{ color: contrastOn(slide.h1BgColor) }}
                       >
-                        <IceCreamCone size={22} strokeWidth={2.4} className="shrink-0" />
+                        <IceCreamCone
+                          size={22}
+                          strokeWidth={2.4}
+                          className="shrink-0"
+                        />
                         اطلب الان
                       </span>
                     </Link>

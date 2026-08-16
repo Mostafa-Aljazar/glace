@@ -80,7 +80,7 @@ export default function EventsSection({
                   640: { slidesPerView: 2, spaceBetween: 18 },
                   1024: { slidesPerView: 4, spaceBetween: 20 },
                 }}
-                className="events-swiper [&_.swiper-slide]:box-border [&_.swiper-slide]:flex [&_.swiper-wrapper]:items-stretch [&_.swiper-slide]:py-3 [&_.swiper-slide]:!h-auto !overflow-visible !pb-0"
+                className="[&_.swiper-slide]:box-border [&_.swiper-slide]:flex [&_.swiper-wrapper]:items-stretch [&_.swiper-slide]:py-3 !pb-0 [&_.swiper-slide]:!h-auto !overflow-visible events-swiper"
               >
                 {eventsData.items.map((ev) => (
                   <SwiperSlide key={ev.id} className="!h-auto">
@@ -98,7 +98,7 @@ export default function EventsSection({
                         />
                       </div>
                       <h3
-                        className="px-1 pb-1 overflow-hidden text-[#53352a] sm:text-[18px] lg:text-[22px] text-start leading-[1.25]"
+                        className="px-1 pb-1 overflow-hidden text-[#53352a] sm:text-[18px] text-start leading-[1.25]"
                         dir="rtl"
                         style={{
                           display: "-webkit-box",
@@ -137,11 +137,11 @@ export default function EventsSection({
             <div className="z-[8] relative flex justify-center mt-6 sm:mt-6 mb-2 lg:mb-2 w-full">
               <Link
                 href={eventsData.moreHref}
-                className="group relative inline-flex items-center justify-center w-[210px] sm:w-[230px] h-[72px] hover:scale-[1.04] active:scale-[0.97] transition-transform duration-200"
+                className="group inline-flex relative justify-center items-center w-[210px] sm:w-[230px] h-[72px] hover:scale-[1.04] active:scale-[0.97] transition-transform duration-200"
               >
                 <svg
                   viewBox="0 0 280 96"
-                  className="absolute inset-0 w-full h-full drop-shadow-[0_8px_18px_rgba(0,0,0,0.2)] group-hover:brightness-110 transition-[filter] duration-200"
+                  className="absolute inset-0 drop-shadow-[0_8px_18px_rgba(0,0,0,0.2)] group-hover:brightness-110 w-full h-full transition-[filter] duration-200"
                   aria-hidden
                   preserveAspectRatio="none"
                 >
@@ -166,7 +166,7 @@ export default function EventsSection({
                     fill="#f4e451"
                   />
                 </svg>
-                <span className="relative z-10 font-bold text-[#1a4a5a] text-[20px] sm:text-[22px] -rotate-[2deg]">
+                <span className="z-10 relative font-bold text-[#1a4a5a] text-[20px] sm:text-[22px] -rotate-[2deg]">
                   {eventsData.moreLabel}
                 </span>
               </Link>

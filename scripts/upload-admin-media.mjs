@@ -183,9 +183,46 @@ async function uploadFlavors(page) {
   }
 }
 
+async function uploadOneProductAttempt(page, product, filePath) {
+  await page.goto(`${BASE}/admin/products/${product.id}/edit`, {
+    waitUntil: "domcontentloaded",
+  });
+  await page.waitForTimeout(1200); // let Alpine/Livewire/FilePond hydrate
+  const basic = page.getByRole("tab", { name: /المعلومات الأساسية|Basic/i });
+  if (await basic.count()) {
+    await basic.first().click().catch(() => {});
+    await page.waitForTimeout(500);
+  }
+
+  const fileInput = page.locator('input[type="file"]').first();
+  await fileInput.waitFor({ state: "attached", timeout: 20000 });
+  await clearExistingUploads(page);
+  await page.waitForTimeout(500);
+
+  const uploadWait = page
+    .waitForResponse((r) => r.url().includes("livewire/upload-file") && r.ok(), {
+      timeout: 20000,
+    })
+    .catch(() => null);
+  await fileInput.setInputFiles(filePath);
+  const resp = await uploadWait;
+  if (!resp) return false; // hydration race — caller retries
+  await page.waitForTimeout(2000);
+
+  const save = page.getByRole("button", { name: /Save changes|حفظ التغييرات|Save/i });
+  if (await save.isDisabled().catch(() => true)) return false;
+  await save.click({ timeout: 15000 });
+  await page.waitForTimeout(3000);
+
+  const check = await (await fetch(`${API}/menu/products/${product.slug}`)).json();
+  return !!check.image;
+}
+
 async function uploadProducts(page) {
   console.log("\n=== Products ===");
   const list = await (await fetch(`${API}/menu/products`)).json();
+  let ok = 0;
+  let fail = 0;
   for (const p of list) {
     const file = PRODUCT_FILES[p.slug];
     if (!file) {
@@ -193,17 +230,28 @@ async function uploadProducts(page) {
       continue;
     }
     const filePath = mustFile(ASSETS, file);
-    const url = `${BASE}/admin/products/${p.id}/edit`;
-    try {
-      await page.goto(url, { waitUntil: "domcontentloaded" });
-      // Product image is on basic tab; ensure we're there
-      const basic = page.getByRole("tab", { name: /المعلومات الأساسية|Basic/i });
-      if (await basic.count()) await basic.first().click().catch(() => {});
-      await uploadOnPage(page, filePath, `product:${p.slug} ← ${file}`);
-    } catch (e) {
-      console.log(`  ❌ product:${p.slug} — ${e.message}`);
+
+    let success = false;
+    for (let attempt = 1; attempt <= 3 && !success; attempt++) {
+      try {
+        success = await uploadOneProductAttempt(page, p, filePath);
+      } catch (e) {
+        console.log(`  ⚠ ${p.slug} attempt ${attempt} error: ${e.message}`);
+      }
+      if (!success && attempt < 3) {
+        console.log(`  ↻ ${p.slug} attempt ${attempt} failed, retrying`);
+      }
+    }
+
+    if (success) {
+      console.log(`  ✅ product:${p.slug} ← ${file}`);
+      ok++;
+    } else {
+      console.log(`  ❌ product:${p.slug} — failed after 3 attempts`);
+      fail++;
     }
   }
+  console.log(`\nProducts done: ${ok} ok, ${fail} failed`);
 }
 
 async function discoverFirstMatchingLink(page, texts) {
@@ -403,7 +451,8 @@ async function main() {
   console.log("Admin:", BASE);
   console.log("Assets:", ASSETS);
 
-  const browser = await chromium.launch({ channel: 'chrome', headless: true });
+  const headless = process.env.GLACE_HEADLESS !== "false";
+  const browser = await chromium.launch({ channel: 'chrome', headless });
   const context = await browser.newContext({ viewport: { width: 1400, height: 900 } });
   const page = await context.newPage();
   page.setDefaultTimeout(45000);

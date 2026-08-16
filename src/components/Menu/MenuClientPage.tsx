@@ -38,7 +38,7 @@ function MenuProductCard({ product }: { product: IProduct }) {
       href={`/menu/order/${product.slug}`}
       className="group relative flex flex-col items-center text-white text-center cursor-pointer select-none"
     >
-      <div className="relative bg-white/12 hover:bg-white/18 border border-white/20 hover:border-white/35 rounded-[20px] w-full overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)] transition-all duration-300">
+      <div className="relative bg-white/12 hover:bg-white/18 shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)] border border-white/20 hover:border-white/35 rounded-[20px] w-full overflow-hidden transition-all duration-300">
         <div className="relative flex justify-center items-center px-3 pt-5 pb-1">
           <Image
             src={resolveMenuImageSrc(product.image)}
@@ -55,12 +55,12 @@ function MenuProductCard({ product }: { product: IProduct }) {
           </h2>
 
           {priceTeaser !== undefined && (
-            <p className="mb-3 text-[13px] text-white/70 tabular-nums">
+            <p className="mb-3 tabular-nums text-[13px] text-white/70">
               يبدأ من {priceTeaser} ₪
             </p>
           )}
 
-          <span className="inline-flex items-center justify-center gap-1.5 w-full bg-glace-yellow group-hover:brightness-105 px-3 py-2 rounded-full font-bold text-[#1a4a5a] text-[13px] sm:text-[14px] transition-all duration-200">
+          <span className="inline-flex justify-center items-center gap-1.5 bg-glace-yellow group-hover:brightness-105 px-3 py-2 rounded-full w-full font-bold text-[#1a4a5a] text-[13px] sm:text-[14px] transition-all duration-200">
             <ShoppingCart size={14} />
             اطلب الآن
           </span>
@@ -75,12 +75,7 @@ function MenuProductCard({ product }: { product: IProduct }) {
 function MenuCategorySection({ categoryId }: { categoryId: string }) {
   // One shared products query for the whole page — filtering here keeps the
   // menu at a single `/menu/products` request instead of one per category.
-  const {
-    data: allProducts,
-    isLoading,
-    isError,
-    refetch,
-  } = useMenuProducts();
+  const { data: allProducts, isLoading, isError, refetch } = useMenuProducts();
   const products = (allProducts ?? []).filter(
     (p) => p.categoryId === categoryId,
   );
@@ -307,10 +302,10 @@ export default function MenuClientPage() {
           </div>
 
           <div className="z-10 relative">
-            <h1 className="drop-shadow-lg font-bold text-[36px] text-white sm:text-[56px] lg:text-[68px] leading-tight">
+            <h1 className="drop-shadow-lg font-bold text-white text-3xl sm:text-4xl lg:text-5xl leading-tight">
               منيو جلاسيه الأمير - غزة
             </h1>
-            <p className="mx-auto mt-3 max-w-120 text-[17px] text-white/70 sm:text-[19px] leading-relaxed">
+            <p className="mx-auto mt-3 max-w-120 text-white/70 sm:text-[19px] text-base leading-relaxed">
               بوظة طازجة، مشروبات مثلجة، وحلويات شرقية ، كل شيء بنكهة جلاسيه
             </p>
           </div>
@@ -358,7 +353,9 @@ export default function MenuClientPage() {
                       <MenuIcon
                         name={cat.icon}
                         size={16}
-                        className={isActive ? "text-[#1e9fd8]" : "text-white/85"}
+                        className={
+                          isActive ? "text-[#1e9fd8]" : "text-white/85"
+                        }
                       />
                       <span>{cat.label}</span>
                     </button>

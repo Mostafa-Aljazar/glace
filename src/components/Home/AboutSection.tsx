@@ -13,10 +13,10 @@ export default function AboutSection({
   return (
     <section
       id="about"
-      className="relative z-[2] min-h-0 lg:min-h-[730px] xl:min-h-[770px] overflow-hidden transition-[background-color] duration-2000 ease-in-out"
+      className="z-[2] relative min-h-0 lg:min-h-[730px] xl:min-h-[770px] overflow-hidden transition-[background-color] duration-2000 ease-in-out"
       style={{ backgroundColor: bgColor }}
     >
-      <div className="flex lg:flex-row flex-col-reverse items-center gap-0 lg:gap-[30px] mx-auto pt-8 pb-28 lg:py-5 max-lg:pb-32 w-[90%] max-w-[1600px]">
+      <div className="flex lg:flex-row flex-col-reverse items-center gap-0 lg:gap-[30px] mx-auto lg:py-5 pt-8 pb-28 max-lg:pb-32 w-[90%] max-w-[1600px]">
         {/* Character image — desktop only; on mobile the striped circle dominates the section */}
         <div className="hidden lg:block mt-0 w-full lg:w-[40%]">
           <Image
@@ -32,7 +32,7 @@ export default function AboutSection({
         <div className="z-10 relative w-full lg:w-[60%] text-white">
           <div className="max-w-[700px]">
             <h1
-              className="text-[#f4e451] text-[24px] md:text-[30px] lg:text-[36px] leading-snug"
+              className="mb-5 text-[#f4e451] text-[24px] md:text-[30px] lg:text-[36px] leading-snug"
               style={{ textShadow: "2px 2px #00000046" }}
             >
               {about.title}
@@ -40,18 +40,18 @@ export default function AboutSection({
             {about.paragraphs.map((paragraph) => (
               <p
                 key={paragraph.slice(0, 24)}
-                className="text-[20px] md:text-[24px] lg:text-[26px] text-justify"
+                className="mb-3 text-[20px] md:text-[24px] lg:text-[26px] text-justify"
               >
                 {paragraph}
               </p>
             ))}
             <Link
               href={about.ctaHref}
-              className="group relative mt-8 inline-flex items-center justify-center w-[210px] sm:w-[230px] h-[72px] hover:scale-[1.04] active:scale-[0.97] transition-transform duration-200"
+              className="group inline-flex relative justify-center items-center mt-8 w-[210px] sm:w-[230px] h-[72px] hover:scale-[1.04] active:scale-[0.97] transition-transform duration-200"
             >
               <svg
                 viewBox="0 0 280 96"
-                className="absolute inset-0 w-full h-full drop-shadow-[0_8px_18px_rgba(0,0,0,0.2)] group-hover:brightness-110 transition-[filter] duration-200"
+                className="absolute inset-0 drop-shadow-[0_8px_18px_rgba(0,0,0,0.2)] group-hover:brightness-110 w-full h-full transition-[filter] duration-200"
                 aria-hidden
                 preserveAspectRatio="none"
               >
@@ -76,7 +76,7 @@ export default function AboutSection({
                   fill="#f4e451"
                 />
               </svg>
-              <span className="relative z-10 font-bold text-[#1a4a5a] text-[20px] sm:text-[22px] -rotate-[2deg]">
+              <span className="z-10 relative font-bold text-[#1a4a5a] text-[20px] sm:text-[22px] -rotate-[2deg]">
                 {about.ctaLabel}
               </span>
             </Link>
@@ -89,7 +89,7 @@ export default function AboutSection({
       <img
         src={bgWA.src}
         alt=""
-        className="right-0 bottom-0 left-0 z-[6] absolute w-full h-auto object-cover object-bottom pointer-events-none select-none [clip-path:inset(0_0_4px_0)]"
+        className="right-0 bottom-0 left-0 z-[6] absolute w-full h-auto object-bottom object-cover pointer-events-none select-none [clip-path:inset(0_0_4px_0)]"
       />
       <div
         aria-hidden

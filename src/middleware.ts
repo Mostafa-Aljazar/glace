@@ -14,6 +14,9 @@ const LIVE: RegExp[] = [
   /^\/cart\/?$/, // cart
   /^\/offers\/?$/, // offers
   /^\/favorites\/?$/, // favorites
+  /^\/contact\/?$/, // contact
+  /^\/swagger(\/.*)?$/, // API docs
+  /^\/api\/openapi\/?$/, // API docs spec (fetched by /swagger)
   /^\/coming-soon\/?$/,
 ];
 
@@ -34,6 +37,6 @@ export const config = {
     /*
      * Skip Next internals and static assets.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|xml)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|backend-api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|xml)$).*)",
   ],
 };
