@@ -652,6 +652,7 @@ export default function OrderBuilderTemplate({
                     active={sizeId === s.id}
                     unavailable={s.available === false}
                     onClick={() => selectSize(s.id)}
+                    subtitle={s.maxBalls > 0 ? `${s.maxBalls} كورة` : undefined}
                   />
                 ))}
               </div>
