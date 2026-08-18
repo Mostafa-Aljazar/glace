@@ -305,9 +305,6 @@ export default function MenuClientPage() {
             <h1 className="drop-shadow-lg font-bold text-white text-3xl sm:text-4xl lg:text-5xl leading-tight">
               منيو جلاسيه الأمير - غزة
             </h1>
-            <p className="mx-auto mt-3 max-w-120 text-white/70 sm:text-[19px] text-base leading-relaxed">
-              بوظة طازجة، مشروبات مثلجة، وحلويات شرقية ، كل شيء بنكهة جلاسيه
-            </p>
           </div>
         </div>
 

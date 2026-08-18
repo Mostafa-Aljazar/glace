@@ -150,7 +150,7 @@ export default function MixOrderSection({
                             ).map((label) => (
                               <span
                                 key={label}
-                                className="bg-white/10 border border-white/10 px-2 py-0.5 rounded-full text-[11px] text-white/80"
+                                className="bg-white/10 border border-white/10 px-2 py-0.5 rounded-full text-[11px] font-bold text-white/90"
                               >
                                 {label}
                               </span>

@@ -165,11 +165,12 @@ export default function OrderFlatListTemplate({
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
 
-      <BackButton onBeforeBack={handleBeforeBack} />
-
       <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-52 lg:pb-36 max-w-3xl">
+        <div className="mb-3 text-start">
+          <BackButton onBeforeBack={handleBeforeBack} />
+        </div>
         <div className="bg-white/17 backdrop-blur-[15px] mb-6 rounded-[28px] overflow-hidden">
-          <div className="flex justify-center items-center p-8">
+          <div className="flex justify-center items-center p-5 sm:p-8">
             <div className="flex flex-col items-center gap-6 text-center">
               <div>
                 <h1 className="font-bold text-[28px] text-white sm:text-[34px] leading-tight">
@@ -341,27 +342,31 @@ export default function OrderFlatListTemplate({
         </div>
       </div>
 
-      <div className="bottom-28 lg:bottom-0 z-9999997 fixed inset-x-0 px-3 sm:px-4 pt-6 pb-4 pointer-events-none">
-        <div className="flex items-center gap-2 sm:gap-4 bg-[#2d8aaa]/92 backdrop-blur-md mx-auto px-3 sm:px-5 py-3 sm:py-4 border border-white/35 rounded-[24px] max-w-3xl shadow-[0_8px_28px_rgba(0,0,0,0.22)] pointer-events-auto">
-          <div className="shrink-0">
-            <p className="text-[11px] sm:text-[12px] text-white/75">الإجمالي</p>
-            <p className="font-bold text-[18px] sm:text-[22px] text-glace-yellow leading-none tabular-nums">
-              {totalPrice.toFixed(2)} ₪
+      <div className="bottom-28 lg:bottom-0 z-9999997 fixed inset-x-0 px-3 sm:px-4 lg:px-6 pt-6 pb-4 pointer-events-none">
+        <div className="flex md:flex-row items-stretch sm:items-center gap-3 sm:gap-4 lg:gap-6 bg-[#2d8aaa]/92 shadow-[0_8px_28px_rgba(0,0,0,0.22)] backdrop-blur-md mx-auto px-4 sm:px-5 lg:px-8 py-3 sm:py-4 lg:py-5 border border-white/35 rounded-[24px] max-w-3xl lg:max-w-5xl pointer-events-auto">
+          {/* Price - visible on all breakpoints */}
+          <div className="flex flex-col shrink-0">
+            <span className="mb-1 text-[11px] text-white/75 sm:text-[12px] leading-none">
+              إجمالي السعر
+            </span>
+            <p className="font-bold tabular-nums text-[16px] text-glace-yellow sm:text-[18px] lg:text-[22px] leading-none">
+              ₪ {totalPrice.toFixed(2)}
             </p>
           </div>
 
-          <p className="hidden sm:block text-[13px] text-white/50 shrink-0">
-            {totalItems + mixItems}{" "}
-            {totalItems + mixItems === 1 ? "صنف" : "أصناف"}
-          </p>
+          {/* Spacer - only visible on tablet+ */}
+          <div className="hidden md:block flex-1" />
 
-          <AddToCartButton
-            onClick={handleAddToCart}
-            canAdd={totalItems > 0 || mixItems > 0}
-            addedToCart={addedToCart}
-            validationMsg={validationMsg}
-            cartQuantity={productCartQuantity}
-          />
+          {/* Button - full width on mobile (own row), auto width on tablet+ */}
+          <div className="w-full sm:w-auto">
+            <AddToCartButton
+              onClick={handleAddToCart}
+              canAdd={totalItems > 0 || mixItems > 0}
+              addedToCart={addedToCart}
+              validationMsg={validationMsg}
+              cartQuantity={productCartQuantity}
+            />
+          </div>
         </div>
       </div>
 

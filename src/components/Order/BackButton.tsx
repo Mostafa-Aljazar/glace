@@ -30,16 +30,18 @@ export default function BackButton({
   };
 
   return (
-    <div className="z-90 relative mx-auto px-4 pt-3 max-w-300">
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={!onBeforeBack && disabled}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[14px] font-medium transition-all ${disabled ? "cursor-not-allowed border-white/10 bg-white/5 text-white/35" : "cursor-pointer border-white/15 bg-white/10 text-white/70 hover:border-white/30 hover:bg-white/20 hover:text-white"}`}
-      >
-        <ChevronRight size={16} />
-        رجوع
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={!onBeforeBack && disabled}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[14px] font-bold shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all ${
+        disabled
+          ? "cursor-not-allowed border-white/10 bg-white/10 text-white/35"
+          : "cursor-pointer border-white/35 bg-[#165a6c] text-white hover:bg-[#1a6a80] hover:border-white/50"
+      }`}
+    >
+      <ChevronRight size={16} />
+      رجوع
+    </button>
   );
 }

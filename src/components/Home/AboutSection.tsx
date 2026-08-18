@@ -45,7 +45,7 @@ export default function AboutSection({
                 {paragraph}
               </p>
             ))}
-            <Link
+            {/* <Link
               href={about.ctaHref}
               className="group inline-flex relative justify-center items-center mt-8 w-[210px] sm:w-[230px] h-[72px] hover:scale-[1.04] active:scale-[0.97] transition-transform duration-200"
             >
@@ -79,7 +79,7 @@ export default function AboutSection({
               <span className="z-10 relative font-bold text-[#1a4a5a] text-[20px] sm:text-[22px] -rotate-[2deg]">
                 {about.ctaLabel}
               </span>
-            </Link>
+            </Link> */}
           </div>
         </div>
       </div>

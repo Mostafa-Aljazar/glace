@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   Wallet,
   User,
+  Heart,
   ChevronLeft,
   Home,
   IceCreamCone,
@@ -22,6 +23,7 @@ import {
 import { logo } from "@/assets/images";
 import { useCartStore } from "@/store/cartStore";
 import { useWalletStore } from "@/store/walletStore";
+import { useFavoritesStore } from "@/store/favoritesStore";
 import {
   ORDER_OPEN_MENU,
   ORDER_PROTECTED_LINK_CLICK,
@@ -51,6 +53,7 @@ export default function LogoNav() {
   const showBack = pathname !== "/";
 
   const cartCount = useCartStore((s) => s.items.length);
+  const favoriteCount = useFavoritesStore((s) => s.ids.length);
   const walletBalance = useWalletStore((s) => s.balance);
   const isMenuPage = pathname === "/menu";
 
@@ -182,15 +185,15 @@ export default function LogoNav() {
               onClick={() => setDrawerOpen(false)}
               className="flex justify-between items-center gap-3 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-[16px] text-[16px] text-white transition-all"
             >
-              <span className="flex-1 text-right font-semibold">حسابي</span>
-              <User size={18} className="shrink-0 text-white" />
+              <span className="flex-1 font-semibold text-right">حسابي</span>
+              <User size={18} className="text-white shrink-0" />
             </Link>
             <Link
               href="/my-wallet"
               onClick={() => setDrawerOpen(false)}
               className="flex justify-between items-center gap-3 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-[16px] text-[16px] text-white transition-all"
             >
-              <span className="flex-1 text-right font-semibold">محفظتي</span>
+              <span className="flex-1 font-semibold text-right">محفظتي</span>
               <span className="flex items-center gap-2 shrink-0">
                 {walletBalance > 0 && (
                   <span className="bg-white/20 px-2 py-0.5 rounded-full text-[12px]">
@@ -201,25 +204,33 @@ export default function LogoNav() {
               </span>
             </Link>
             <Link
+              href="/favorites"
+              onClick={() => setDrawerOpen(false)}
+              className="flex justify-between items-center gap-3 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-[16px] text-[16px] text-white transition-all"
+            >
+              <span className="flex-1 font-semibold text-right">المفضلة</span>
+              <span className="relative shrink-0">
+                <Heart size={18} className="fill-red-500 text-red-500" />
+                {favoriteCount > 0 && (
+                  <span className="-top-2 -left-2 absolute flex justify-center items-center bg-glace-yellow rounded-full w-4 h-4 font-bold text-[#1e6a7f] text-[9px]">
+                    {favoriteCount > 9 ? "9+" : favoriteCount}
+                  </span>
+                )}
+              </span>
+            </Link>
+            <Link
               href="/cart"
               onClick={() => setDrawerOpen(false)}
               className="flex justify-between items-center gap-3 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-[16px] text-[16px] text-white transition-all"
             >
-              <span className="flex-1 text-right font-semibold">السلة</span>
-              <span className="relative flex items-center gap-2 shrink-0">
+              <span className="flex-1 font-semibold text-right">السلة</span>
+              <span className="relative shrink-0">
+                <ShoppingCart size={18} className="text-white" />
                 {cartCount > 0 && (
-                  <span className="bg-glace-yellow/20 px-2 py-0.5 rounded-full font-bold text-[12px] text-glace-yellow">
-                    {cartCount}
+                  <span className="-top-2 -left-2 absolute flex justify-center items-center bg-glace-yellow rounded-full w-4 h-4 font-bold text-[#1e6a7f] text-[9px]">
+                    {cartCount > 9 ? "9+" : cartCount}
                   </span>
                 )}
-                <span className="relative">
-                  <ShoppingCart size={18} className="text-white" />
-                  {cartCount > 0 && (
-                    <span className="-top-2 -left-2 absolute flex justify-center items-center bg-glace-yellow rounded-full w-4 h-4 font-bold text-[#1e6a7f] text-[9px]">
-                      {cartCount > 9 ? "9+" : cartCount}
-                    </span>
-                  )}
-                </span>
               </span>
             </Link>
           </div>
@@ -231,7 +242,7 @@ export default function LogoNav() {
         className={`${isMenuPage ? "absolute top-3 inset-x-0" : "top-3 fixed inset-x-0"} z-[9999999] px-3 lg:px-5 w-full`}
       >
         <div className="mx-auto max-w-[1180px]">
-          <div className="flex items-center gap-2 bg-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-xl px-3 py-1.5 lg:px-3.5 lg:py-2 border border-white/25 rounded-[22px] transition-all duration-200">
+          <div className="flex items-center gap-2 bg-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-xl px-3 lg:px-3.5 py-1.5 lg:py-2 border border-white/25 rounded-[22px] transition-all duration-200">
             {/* ── RIGHT: logo (first in DOM = right in RTL) ── */}
             <Link href="/" className="shrink-0">
               <Image
@@ -272,7 +283,7 @@ export default function LogoNav() {
                     }`}
                 >
                   {item.icon && (
-                    <item.icon size={14} className="shrink-0 text-white" />
+                    <item.icon size={14} className="text-white shrink-0" />
                   )}
                   <span className="text-white">
                     {item.shortLabel ?? item.label}
@@ -310,6 +321,35 @@ export default function LogoNav() {
                 </div>
                 <span className="hidden lg:inline font-medium text-[12px]">
                   السلة
+                </span>
+              </Link>
+
+              {/* Favorites — same overlapping count badge as the cart */}
+              <Link
+                href="/favorites"
+                className={`hidden relative lg:flex items-center gap-1 px-2.5 py-1 rounded-full border transition-all ${
+                  pathname === "/favorites"
+                    ? "bg-red-500 border-red-400 text-white shadow-[0_2px_12px_rgba(239,68,68,0.4)]"
+                    : "bg-red-500/15 hover:bg-red-500/25 border-red-400/40 text-white"
+                }`}
+              >
+                <div className="relative">
+                  <Heart
+                    size={15}
+                    className={
+                      pathname === "/favorites"
+                        ? "fill-white text-white"
+                        : "fill-red-500 text-red-500"
+                    }
+                  />
+                  {favoriteCount > 0 && (
+                    <span className="-top-2 -left-2 absolute flex justify-center items-center bg-glace-yellow rounded-full w-4 h-4 font-bold text-[#1e6a7f] text-[9px]">
+                      {favoriteCount > 9 ? "9+" : favoriteCount}
+                    </span>
+                  )}
+                </div>
+                <span className="hidden lg:inline font-medium text-[12px]">
+                  المفضلة
                 </span>
               </Link>
 

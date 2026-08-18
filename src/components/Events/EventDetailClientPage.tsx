@@ -9,6 +9,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import EventsBackground from "@/components/Events/EventsBackground";
+import BackButton from "@/components/Order/BackButton";
 import DataError from "@/components/Common/DataError";
 import { useEvent } from "@/hooks/events/useEvent";
 import { useEvents } from "@/hooks/events/useEvents";
@@ -117,6 +118,10 @@ export default function EventDetailClientPage({
       <EventsBackground />
 
       <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-36 max-w-[1200px]">
+        <div className="mb-6">
+          <BackButton />
+        </div>
+
         <div className="flex items-center gap-2 mt-4 mb-7 text-[13px] text-white/50">
           <Link
             href="/events"

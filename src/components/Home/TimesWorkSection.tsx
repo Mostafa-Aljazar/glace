@@ -6,6 +6,42 @@ import { MapPin, Phone, MessageCircle } from "lucide-react";
 import { imgTimesWorkSec, imgbgBS, imgpp, imgpp2 } from "@/assets/images";
 import type { IHomeBranchesData } from "@/types/home.types";
 
+function contactDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+/** Palestinian/local display numbers → `tel:` href for one-tap calling. */
+function toTelHref(phone: string): string {
+  const digits = contactDigits(phone);
+  if (!digits) return "#";
+  if (digits.startsWith("00")) return `tel:+${digits.slice(2)}`;
+  if (digits.startsWith("970")) return `tel:+${digits}`;
+  if (digits.startsWith("0")) return `tel:+970${digits.slice(1)}`;
+  return `tel:+${digits}`;
+}
+
+/** WhatsApp display numbers → `wa.me` chat link. */
+function toWhatsAppHref(whatsapp: string): string {
+  const digits = contactDigits(whatsapp);
+  if (!digits) return "#";
+  let num = digits;
+  if (num.startsWith("00")) num = num.slice(2);
+  else if (num.startsWith("0")) num = `970${num.slice(1)}`;
+  return `https://wa.me/${num}`;
+}
+
+/** Compact type scale for branch info cards. */
+const sectionTitle =
+  "text-[22px] sm:text-[28px] lg:text-[32px] text-white leading-snug";
+const branchTab =
+  "font-bold text-[14px] sm:text-[15px] lg:text-[16px] leading-tight";
+const cardLabel =
+  "text-[13px] sm:text-[14px] text-white/75 leading-snug";
+const cardValue =
+  "text-[15px] sm:text-[16px] font-bold leading-snug";
+const cardAddress =
+  "text-[15px] sm:text-[16px] leading-relaxed";
+
 function BranchWave({ active }: { active: boolean }) {
   return (
     <svg
@@ -82,8 +118,8 @@ export default function TimesWorkSection({
                 >
                   <BranchWave active={active} />
                   <span
-                    className={`relative z-10 font-bold text-[14px] sm:text-[16px] lg:text-[18px] leading-none whitespace-nowrap ${
-                      active ? "text-[#3a2a18]" : "text-white/85"
+                    className={`relative z-10 whitespace-nowrap ${branchTab} ${
+                      active ? "text-[#3a2a18]" : "text-white/90"
                     }`}
                   >
                     {b.label}
@@ -94,10 +130,8 @@ export default function TimesWorkSection({
           })}
         </ul>
 
-        <div className="relative mb-4">
-          <h1 className="text-[22px] text-white sm:text-[32px] lg:text-[45px] leading-snug">
-            {branchesData.title}
-          </h1>
+        <div className="relative mb-5">
+          <h1 className={sectionTitle}>{branchesData.title}</h1>
           <Image
             src={imgpp2}
             alt=""
@@ -110,48 +144,42 @@ export default function TimesWorkSection({
         <div className="flex lg:flex-row flex-col justify-between items-stretch gap-6">
           <div className="flex flex-col gap-4 w-full lg:max-w-[55%] text-white">
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white/10 rounded-2xl px-3 py-3">
-                <p className="mb-1 text-[12px] sm:text-[16px] text-white/70">
-                  من السبت وحتى الخميس
-                </p>
-                <p
-                  className="mb-0 text-[16px] sm:text-[22px] lg:text-[24px] font-bold tabular-nums"
-                  dir="ltr"
-                >
-                  {branch.weekdayHours}
-                </p>
+              <div className="bg-white/10 rounded-2xl px-3.5 py-3">
+                <p className={`mb-1.5 ${cardLabel}`}>من السبت وحتى الخميس</p>
+                <p className={`mb-0 ${cardValue}`}>{branch.weekdayHours}</p>
               </div>
-              <div className="bg-white/10 rounded-2xl px-3 py-3">
-                <p className="mb-1 text-[12px] sm:text-[16px] text-white/70">
-                  يوم الجمعة
-                </p>
-                <p
-                  className="mb-0 text-[16px] sm:text-[22px] lg:text-[24px] font-bold tabular-nums"
-                  dir="ltr"
-                >
-                  {branch.fridayHours}
-                </p>
+              <div className="bg-white/10 rounded-2xl px-3.5 py-3">
+                <p className={`mb-1.5 ${cardLabel}`}>يوم الجمعة</p>
+                <p className={`mb-0 ${cardValue}`}>{branch.fridayHours}</p>
               </div>
             </div>
 
             <div className="flex flex-col gap-3 bg-white/10 rounded-2xl px-3.5 py-3.5">
               <div className="flex items-start gap-2.5">
                 <MapPin size={18} className="mt-0.5 shrink-0 text-glace-yellow" />
-                <span className="text-[14px] sm:text-[18px] lg:text-[22px] leading-relaxed">
-                  {branch.address}
-                </span>
+                <span className={cardAddress}>{branch.address}</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone size={18} className="shrink-0 text-glace-yellow" />
-                <span dir="ltr" className="text-[14px] sm:text-[18px] lg:text-[22px] tabular-nums">
+                <a
+                  href={toTelHref(branch.phone)}
+                  dir="ltr"
+                  className={`${cardValue} tabular-nums underline-offset-2 hover:text-glace-yellow hover:underline transition-colors`}
+                >
                   {branch.phone}
-                </span>
+                </a>
               </div>
               <div className="flex items-center gap-2.5">
                 <MessageCircle size={18} className="shrink-0 text-glace-yellow" />
-                <span dir="ltr" className="text-[14px] sm:text-[18px] lg:text-[22px] tabular-nums">
+                <a
+                  href={toWhatsAppHref(branch.whatsapp)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  dir="ltr"
+                  className={`${cardValue} tabular-nums underline-offset-2 hover:text-glace-yellow hover:underline transition-colors`}
+                >
                   {branch.whatsapp}
-                </span>
+                </a>
               </div>
             </div>
           </div>

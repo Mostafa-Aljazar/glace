@@ -19,11 +19,11 @@ export default function AddToCartButton({
 }: AddToCartButtonProps) {
   return (
     <>
-      <div className="relative min-w-0 flex-1 sm:flex-none">
+      <div className="relative min-w-0 shrink-0 lg:w-48">
         <button
           type="button"
           onClick={onClick}
-          className={`w-full px-4 sm:px-8 py-2.5 sm:py-3 rounded-full font-bold text-[14px] sm:text-[16px] whitespace-nowrap transition-all cursor-pointer
+          className={`w-full px-4 sm:px-8 lg:px-10 py-2.5 sm:py-3 lg:py-3.5 rounded-full font-bold text-[14px] sm:text-[16px] lg:text-[16px] whitespace-nowrap transition-all cursor-pointer
             ${
               addedToCart
                 ? "bg-green-400 text-white"

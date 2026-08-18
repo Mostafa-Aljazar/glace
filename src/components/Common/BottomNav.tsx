@@ -42,7 +42,7 @@ function NavItem({
         className={active ? "text-glace-yellow" : "text-white/55"}
       />
       <span
-        className={`text-[10px] leading-none font-medium ${active ? "text-glace-yellow" : "text-white/50"}`}
+        className={`text-[13px] sm:text-[14px] leading-snug font-medium ${active ? "text-glace-yellow" : "text-white/50"}`}
       >
         {label}
       </span>
@@ -112,7 +112,7 @@ export default function BottomNav() {
             )}
           </span>
           <span
-            className={`text-[10px] font-medium leading-none
+            className={`text-[13px] sm:text-[14px] font-medium leading-snug
               ${cartActive ? "text-glace-yellow" : "text-white/60"}`}
           >
             السلة

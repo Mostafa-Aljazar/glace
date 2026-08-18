@@ -10,9 +10,9 @@ export default function FloatingFavoritesButton() {
   const favoriteIds = useFavoritesStore((s) => s.ids);
   const favoriteCount = favoriteIds.length;
 
-  // Order pages have their own add-to-cart bar; the favorites page already
-  // is this destination — hide the shortcut so it does not sit on top of itself.
-  if (pathname?.startsWith("/menu/order/") || pathname === "/favorites") {
+  // Hidden on the whole menu (listing + order pages) and on /favorites
+  // itself so the shortcut never sits on top of its destination.
+  if (pathname?.startsWith("/menu") || pathname === "/favorites") {
     return null;
   }
 

@@ -15,7 +15,7 @@ import fetchMenuProducts, {
 // Backend data changes without a redeploy (prices, products, events), so the
 // prerendered HTML is refreshed on an interval instead of frozen at build
 // time. Matches the client query `staleTime`.
-export const revalidate = 300;
+export const revalidate = 120;
 
 
 export const metadata: Metadata = {

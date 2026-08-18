@@ -16,14 +16,24 @@ import { useLeavePageGuard, useAddToCartFeedback } from "@/hooks/order";
 import { useMenuAddons } from "@/hooks/menu";
 import { useCartStore, type CartSelection } from "@/store/cartStore";
 import {
+  pickPriceCell,
   resolveBuilderPrice,
   resolveMenuImageSrc,
   type IBuilderProduct,
   type IFlavorOption,
+  type ISizeOption,
 } from "@/types/menu.types";
 
 /** Backend id of the extra-biscuit addon inside `GET /menu/addons`. */
 const EXTRA_BISCUIT_ADDON_ID = "extra-biscuit";
+
+/** Size-pill caption: ball count when the size holds flavors, otherwise the
+ *  size's own price (برادة has no balls, so each pill shows e.g. "3 ₪"). */
+function sizePillSubtitle(size: ISizeOption): string | undefined {
+  if (size.maxBalls > 0) return `${size.maxBalls} كورة`;
+  const price = pickPriceCell(size.prices, "classic");
+  return price > 0 ? `${price} ₪` : undefined;
+}
 
 /** Full price-table heading from API labels (avoid "أسعار أسعار …"). */
 function priceTableTitle(
@@ -194,6 +204,12 @@ export default function OrderBuilderTemplate({
     (c) => c.id === containerId,
   );
   const maxBalls = selectedSize?.maxBalls ?? 0;
+  const isFamilyProduct = product.slug === "family";
+  // Family mix is always an even split of whatever maxBalls the size
+  // returns (foam or plastic): ½ لتر = 4+4, 1 لتر = 6+6.
+  const mixHalf =
+    isFamilyProduct && maxBalls > 1 && maxBalls % 2 === 0 ? maxBalls / 2 : 0;
+  const equalMixSplit = mixHalf > 0;
 
   // Flavor balls ride along on the product detail payload — one request, and
   // each product can offer its own set.
@@ -301,17 +317,18 @@ export default function OrderBuilderTemplate({
       // controls whether one flavor can be picked more than once, it isn't
       // an "unlimited picks" mode.
       if (prev.length >= maxBalls) return prev;
-      if (isRepeatable) {
-        // Mix must end up with at least one classic AND one special ball —
-        // once only one slot is left, refuse to spend it on a family that
-        // already has a representative, so the other family keeps a slot.
-        if (flavorFamily === "mix" && maxBalls - prev.length === 1) {
-          const classicCount = prev.filter((id) =>
-            mixClassicIds.has(id),
-          ).length;
-          const specialCount = prev.filter((id) =>
-            mixSpecialIds.has(id),
-          ).length;
+      if (isRepeatable && flavorFamily === "mix") {
+        const classicCount = prev.filter((id) => mixClassicIds.has(id)).length;
+        const specialCount = prev.filter((id) => mixSpecialIds.has(id)).length;
+        if (equalMixSplit) {
+          if (mixClassicIds.has(flavorId) && classicCount >= mixHalf)
+            return prev;
+          if (mixSpecialIds.has(flavorId) && specialCount >= mixHalf)
+            return prev;
+        } else if (maxBalls - prev.length === 1) {
+          // Mix must end up with at least one classic AND one special ball —
+          // once only one slot is left, refuse to spend it on a family that
+          // already has a representative, so the other family keeps a slot.
           if (mixClassicIds.has(flavorId) && specialCount === 0) return prev;
           if (mixSpecialIds.has(flavorId) && classicCount === 0) return prev;
         }
@@ -356,9 +373,19 @@ export default function OrderBuilderTemplate({
     if (hasFlavorStep && selectedFlavorIds.length === 0)
       return showValidation("اختر الأطعمة");
     if (flavorFamily === "mix") {
-      const hasClassic = selectedFlavorIds.some((id) => mixClassicIds.has(id));
-      const hasSpecial = selectedFlavorIds.some((id) => mixSpecialIds.has(id));
-      if (!hasClassic || !hasSpecial) {
+      const classicCount = selectedFlavorIds.filter((id) =>
+        mixClassicIds.has(id),
+      ).length;
+      const specialCount = selectedFlavorIds.filter((id) =>
+        mixSpecialIds.has(id),
+      ).length;
+      if (equalMixSplit) {
+        if (classicCount !== mixHalf || specialCount !== mixHalf) {
+          return showValidation(
+            `اختر ${mixHalf} كرات كلاسيك و ${mixHalf} كرات سبيشل`,
+          );
+        }
+      } else if (classicCount === 0 || specialCount === 0) {
         return showValidation("اختر نكهة كلاسيك ونكهة سبيشل على الأقل");
       }
     }
@@ -421,7 +448,6 @@ export default function OrderBuilderTemplate({
   );
 
   // Merged container+size selection only for family product
-  const isFamilyProduct = product.slug === "family";
   const containerSizesList = useMemo(() => {
     if (!isFamilyProduct || !product.containerOptions?.length) return [];
     const composite: Array<{
@@ -482,9 +508,10 @@ export default function OrderBuilderTemplate({
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
-      <BackButton onBeforeBack={handleBeforeBack} />
-
       <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-52 lg:pb-36 max-w-3xl">
+        <div className="mb-3 text-start">
+          <BackButton onBeforeBack={handleBeforeBack} />
+        </div>
         <div className="bg-white/17 backdrop-blur-[15px] mb-6 rounded-[28px] overflow-hidden">
           <div className="flex md:flex-row flex-col gap-4 p-5">
             {/* Hero (right side in RTL) */}
@@ -652,7 +679,7 @@ export default function OrderBuilderTemplate({
                     active={sizeId === s.id}
                     unavailable={s.available === false}
                     onClick={() => selectSize(s.id)}
-                    subtitle={s.maxBalls > 0 ? `${s.maxBalls} كورة` : undefined}
+                    subtitle={sizePillSubtitle(s)}
                   />
                 ))}
               </div>
@@ -684,7 +711,9 @@ export default function OrderBuilderTemplate({
               title="اختر الأطعمة"
               subtitle={
                 isRepeatable
-                  ? `${selectedFlavorIds.length}/${maxBalls} كورة`
+                  ? equalMixSplit && flavorFamily === "mix"
+                    ? `${selectedFlavorIds.length}/${maxBalls} · ${mixHalf} كلاسيك + ${mixHalf} سبيشل`
+                    : `${selectedFlavorIds.length}/${maxBalls} كورة`
                   : undefined
               }
               done={selectedFlavorIds.length > 0}
@@ -703,15 +732,20 @@ export default function OrderBuilderTemplate({
                       mixSpecialIds.has(id),
                     ).length;
                     const remaining = maxBalls - selectedFlavorIds.length;
-                    const classicFull =
-                      remaining <= 0 || (remaining === 1 && specialCount === 0);
-                    const specialFull =
-                      remaining <= 0 || (remaining === 1 && classicCount === 0);
+                    const classicFull = equalMixSplit
+                      ? classicCount >= mixHalf || remaining <= 0
+                      : remaining <= 0 ||
+                        (remaining === 1 && specialCount === 0);
+                    const specialFull = equalMixSplit
+                      ? specialCount >= mixHalf || remaining <= 0
+                      : remaining <= 0 ||
+                        (remaining === 1 && classicCount === 0);
                     return (
                       <>
                         <div>
                           <p className="mb-2 font-bold text-[12px] text-glace-yellow">
                             كلاسيك
+                            {equalMixSplit ? ` ${classicCount}/${mixHalf}` : ""}
                           </p>
                           <div className="flex flex-wrap gap-4">
                             {mixClassicPool.map((flavor) => {
@@ -748,6 +782,7 @@ export default function OrderBuilderTemplate({
                         <div>
                           <p className="mb-2 font-bold text-[12px] text-white/85">
                             سبيشل
+                            {equalMixSplit ? ` ${specialCount}/${mixHalf}` : ""}
                           </p>
                           <div className="flex flex-wrap gap-4">
                             {mixSpecialPool.map((flavor) => {
@@ -836,7 +871,7 @@ export default function OrderBuilderTemplate({
       </div>
 
       <div className="bottom-28 lg:bottom-0 z-9999997 fixed inset-x-0 px-3 sm:px-4 pt-6 pb-4 pointer-events-none">
-        <div className="flex items-center gap-2 sm:gap-4 bg-[#2d8aaa]/92 backdrop-blur-md mx-auto px-3 sm:px-5 py-3 sm:py-4 border border-white/35 rounded-[24px] max-w-3xl shadow-[0_8px_28px_rgba(0,0,0,0.22)] pointer-events-auto">
+        <div className="flex items-center gap-2 sm:gap-4 bg-[#2d8aaa]/92 shadow-[0_8px_28px_rgba(0,0,0,0.22)] backdrop-blur-md mx-auto px-3 sm:px-5 py-3 sm:py-4 border border-white/35 rounded-[24px] max-w-3xl pointer-events-auto">
           <div className="flex items-center gap-1.5 bg-white/25 px-1.5 sm:px-2 py-1 border border-white/35 rounded-full shrink-0">
             <button
               type="button"
@@ -858,19 +893,24 @@ export default function OrderBuilderTemplate({
           </div>
 
           <div className="shrink-0">
-            <p className="text-[11px] sm:text-[12px] text-white/75">الإجمالي</p>
-            <p className="font-bold text-[18px] sm:text-[22px] text-glace-yellow leading-none tabular-nums">
+            <p className="text-[11px] text-white/75 sm:text-[12px]">الإجمالي</p>
+            <p className="font-bold tabular-nums text-[18px] text-glace-yellow sm:text-[22px] leading-none">
               {totalPrice.toFixed(2)} ₪
             </p>
           </div>
 
-          <AddToCartButton
-            onClick={handleAddToCart}
-            canAdd={!!selectedSize}
-            addedToCart={addedToCart}
-            validationMsg={validationMsg}
-            cartQuantity={productCartQuantity}
-          />
+          {/* Spacer - only visible on tablet+ */}
+          <div className="hidden md:block flex-1" />
+
+          <div className="w-full sm:w-auto">
+            <AddToCartButton
+              onClick={handleAddToCart}
+              canAdd={!!selectedSize}
+              addedToCart={addedToCart}
+              validationMsg={validationMsg}
+              cartQuantity={productCartQuantity}
+            />
+          </div>
         </div>
       </div>
 

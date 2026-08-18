@@ -3,9 +3,10 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, IceCreamCone, ShoppingCart } from "lucide-react";
+import { Heart, IceCreamCone, ShoppingCart, Minus, Plus } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import BackButton from "@/components/Order/BackButton";
+import AddToCartToast from "@/components/Order/AddToCartToast";
 import { iceCreamImg1, iceCreamImg3 } from "@/assets/images";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useCartStore } from "@/store/cartStore";
@@ -71,6 +72,8 @@ export default function FavoritesClientPage() {
   const addItem = useCartStore((s) => s.addItem);
   const { data: products = [] } = useMenuProducts();
   const { data: categories = [] } = useMenuCategories();
+  const [addedItem, setAddedItem] = useState<FavoriteItem | null>(null);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   const categoryLabels = useMemo(
     () => new Map(categories.map((c) => [c.id, c.label])),
@@ -103,7 +106,8 @@ export default function FavoritesClientPage() {
           productId: product.id,
           productSlug: product.slug,
           productName: product.name,
-          category: categoryLabels.get(product.categoryId) ?? product.categoryId,
+          category:
+            categoryLabels.get(product.categoryId) ?? product.categoryId,
         });
       }
     }
@@ -123,19 +127,54 @@ export default function FavoritesClientPage() {
     );
   }, [favoriteItems]);
 
-  function handleAddToCart(item: FavoriteItem) {
-    addItem({
-      productId: item.productId,
-      name: item.label === item.productName
-        ? item.label
-        : `${item.productName} — ${item.label}`,
-      image: item.image,
-      type: item.label,
-      selections: [],
-      addonTotal: 0,
-      unitPrice: item.price,
-      quantity: 1,
+  function getQuantity(itemId: string): number {
+    return quantities[itemId] ?? 0;
+  }
+
+  function incrementQuantity(itemId: string) {
+    setQuantities((prev) => ({
+      ...prev,
+      [itemId]: (prev[itemId] ?? 0) + 1,
+    }));
+  }
+
+  function decrementQuantity(itemId: string) {
+    setQuantities((prev) => {
+      const current = prev[itemId] ?? 0;
+      if (current <= 1) {
+        const { [itemId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [itemId]: current - 1 };
     });
+  }
+
+  function handleAddToCart(item: FavoriteItem) {
+    try {
+      const quantity = getQuantity(item.id);
+      addItem({
+        productId: item.productId,
+        name:
+          item.label === item.productName
+            ? item.label
+            : `${item.productName} — ${item.label}`,
+        image: item.image,
+        type: item.label,
+        selections: [],
+        addonTotal: 0,
+        unitPrice: item.price,
+        quantity: quantity,
+      });
+      setAddedItem(item);
+      setQuantities((prev) => {
+        const { [item.id]: _, ...rest } = prev;
+        return rest;
+      });
+      const timeoutId = setTimeout(() => setAddedItem(null), 3000);
+      return () => clearTimeout(timeoutId);
+    } catch (error) {
+      console.error("Failed to add item to cart:", error);
+    }
   }
 
   const countLabel =
@@ -148,10 +187,17 @@ export default function FavoritesClientPage() {
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
-
-      <BackButton />
+      {addedItem && (
+        <AddToCartToast
+          message={`تمت إضافة ${addedItem.label} إلى السلة`}
+          onClose={() => setAddedItem(null)}
+        />
+      )}
 
       <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-28 max-w-3xl">
+        <div className="mb-3 text-start">
+          <BackButton />
+        </div>
         <div className="relative flex flex-col items-center pt-4 sm:pt-6 pb-6 sm:pb-8 text-center">
           <Image
             src={iceCreamImg1}
@@ -176,7 +222,7 @@ export default function FavoritesClientPage() {
             <h1 className="drop-shadow-lg font-bold text-[32px] text-white sm:text-[44px] leading-tight">
               المفضلة
             </h1>
-            <p className="mt-2 max-w-70 sm:max-w-90 text-[14px] sm:text-[16px] text-white/65 leading-relaxed">
+            <p className="mt-2 max-w-70 sm:max-w-90 text-[14px] text-white/65 sm:text-[16px] leading-relaxed">
               الأصناف اللي بتحبها، جاهزة ترجع تطلبها بضغطة
             </p>
             <p className="mt-2 text-[14px] text-white/55">{countLabel}</p>
@@ -184,7 +230,7 @@ export default function FavoritesClientPage() {
         </div>
 
         {favoriteItems.length === 0 ? (
-          <div className="bg-white/12 backdrop-blur-[15px] border border-white/20 rounded-[24px] px-6 py-12 text-center">
+          <div className="bg-white/12 backdrop-blur-[15px] px-6 py-12 border border-white/20 rounded-[24px] text-center">
             <Heart size={48} className="mx-auto mb-4 text-white/30" />
             <p className="font-medium text-[18px] text-white">
               لم تضيف أي عناصر للمفضلة
@@ -194,7 +240,7 @@ export default function FavoritesClientPage() {
             </p>
             <Link
               href="/menu"
-              className="inline-flex items-center justify-center mt-6 px-6 py-2.5 rounded-full font-bold text-[14px] bg-glace-yellow hover:bg-yellow-300 text-[#1a4a5a] transition-all"
+              className="inline-flex justify-center items-center bg-glace-yellow hover:bg-yellow-300 mt-6 px-6 py-2.5 rounded-full font-bold text-[#1a4a5a] text-[14px] transition-all"
             >
               استكشف المنيو
             </Link>
@@ -202,7 +248,7 @@ export default function FavoritesClientPage() {
         ) : (
           Object.entries(groupedByCategory).map(([category, items]) => (
             <section key={category} className="mb-8">
-              <h2 className="mb-3 font-bold text-[16px] sm:text-[18px] text-white">
+              <h2 className="mb-3 font-bold text-[16px] text-white sm:text-[18px]">
                 {category}
               </h2>
               <div className="flex flex-col gap-2.5">
@@ -211,7 +257,7 @@ export default function FavoritesClientPage() {
                   return (
                     <article
                       key={item.id}
-                      className="flex items-center gap-3 bg-white/12 hover:bg-white/18 border border-white/20 hover:border-white/35 rounded-[18px] px-3 py-3 shadow-[0_6px_18px_rgba(0,0,0,0.1)] transition-all duration-200"
+                      className="flex items-center gap-3 bg-white/12 hover:bg-white/18 shadow-[0_6px_18px_rgba(0,0,0,0.1)] px-3 py-3 border border-white/20 hover:border-white/35 rounded-[18px] transition-all duration-200"
                     >
                       <Link
                         href={`/menu/order/${item.productSlug}`}
@@ -232,28 +278,65 @@ export default function FavoritesClientPage() {
                             {item.productName}
                           </p>
                         )}
-                        <p className="mt-1 font-bold text-[15px] text-glace-yellow tabular-nums">
+                        <p className="mt-1 font-bold tabular-nums text-[15px] text-glace-yellow">
                           {item.price} ₪
                         </p>
                       </Link>
 
-                      <button
-                        type="button"
-                        onClick={() => toggleFavorite(item.id)}
-                        aria-label="إزالة من المفضلة"
-                        className="flex justify-center items-center bg-white/10 hover:bg-white/20 border border-white/15 rounded-full w-9 h-9 cursor-pointer shrink-0"
-                      >
-                        <Heart size={16} className="fill-red-500 text-red-500" />
-                      </button>
+                      <div className="relative z-10 flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleFavorite(item.id)}
+                          aria-label="إزالة من المفضلة"
+                          className="flex justify-center items-center bg-white/10 hover:bg-white/20 border border-white/15 rounded-full w-9 h-9 cursor-pointer"
+                        >
+                          <Heart
+                            size={16}
+                            className="fill-red-500 text-red-500"
+                          />
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleAddToCart(item)}
-                        className="inline-flex items-center justify-center gap-1.5 bg-glace-yellow hover:brightness-105 px-3.5 py-2 rounded-full font-bold text-[#1a4a5a] text-[13px] cursor-pointer shrink-0 transition-all"
-                      >
-                        <ShoppingCart size={14} />
-                        أضف
-                      </button>
+                        {getQuantity(item.id) > 0 ? (
+                          <div className="flex items-center gap-1.5 bg-white/10 px-2 py-1 border border-white/15 rounded-full">
+                            <button
+                              type="button"
+                              onClick={() => decrementQuantity(item.id)}
+                              className="flex justify-center items-center hover:bg-white/20 rounded-full w-6 h-6 text-white transition"
+                              aria-label="إنقاص الكمية"
+                            >
+                              <Minus size={11} />
+                            </button>
+                            <span className="min-w-5 font-bold text-[13px] text-white text-center">
+                              {getQuantity(item.id)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => incrementQuantity(item.id)}
+                              className="flex justify-center items-center hover:bg-white/20 rounded-full w-6 h-6 text-white transition"
+                              aria-label="زيادة الكمية"
+                            >
+                              <Plus size={11} />
+                            </button>
+                          </div>
+                        ) : null}
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (getQuantity(item.id) > 0) {
+                              handleAddToCart(item);
+                            } else {
+                              incrementQuantity(item.id);
+                            }
+                          }}
+                          className="inline-flex justify-center items-center gap-1.5 bg-glace-yellow hover:brightness-105 px-3.5 py-2 rounded-full font-bold text-[#1a4a5a] text-[13px] transition-all cursor-pointer"
+                        >
+                          <ShoppingCart size={14} />
+                          أضف للسلة
+                        </button>
+                      </div>
                     </article>
                   );
                 })}
