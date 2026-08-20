@@ -116,6 +116,11 @@ function ItemCard({
             {item.size}
           </span>
         )}
+        {item.container && (
+          <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
+            {item.container}
+          </span>
+        )}
         {item.type && (
           <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
             {item.type}
