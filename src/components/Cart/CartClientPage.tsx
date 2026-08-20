@@ -136,17 +136,22 @@ function ItemCard({
               {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
             </span>
           ))}
-        {item.selections
-          .filter((s) => s.kind === "addon")
-          .map((s) => (
-            <span
-              key={`addon-${s.id}`}
-              className="bg-white/8 px-2.5 py-1 rounded-lg text-[11px] text-white/65"
-            >
-              {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
-            </span>
-          ))}
       </div>
+
+      {item.selections.some((s) => s.kind === "addon") && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {item.selections
+            .filter((s) => s.kind === "addon")
+            .map((s) => (
+              <span
+                key={`addon-${s.id}`}
+                className="bg-orange-400/15 text-orange-300 px-2.5 py-1 rounded-lg text-[11px] font-medium"
+              >
+                {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
+              </span>
+            ))}
+        </div>
+      )}
 
       {item.units &&
         (() => {
