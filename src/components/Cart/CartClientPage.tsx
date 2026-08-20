@@ -12,6 +12,8 @@ import {
   ChevronLeft,
   NotebookPen,
   SlidersHorizontal,
+  IceCreamCone,
+  Sparkles,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import CustomizeAdditionsDialog from "@/components/Cart/CustomizeAdditionsDialog";
@@ -20,6 +22,7 @@ import type { IAddonOption } from "@/types/menu.types";
 import {
   useCartStore,
   getLineItemTotal,
+  getLineItemSummaryParts,
   type CartItem,
 } from "@/store/cartStore";
 
@@ -110,83 +113,104 @@ function ItemCard({
 
       {/* Body — full width on mobile, indented beside the image on md+ (image 56px + gap 16px) */}
       <div className="md:ps-[72px]">
-      <div className="flex flex-wrap gap-1.5 mt-3 mb-3">
-        {item.size && (
-          <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
-            {item.size}
-          </span>
-        )}
-        {item.container && (
-          <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
-            {item.container}
-          </span>
-        )}
-        {item.type && (
-          <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
-            {item.type}
-          </span>
-        )}
-        {item.selections
-          .filter((s) => s.kind === "flavor" || s.kind === "mix")
-          .map((s) => (
-            <span
-              key={`${s.kind}-${s.id}`}
-              className="bg-glace-yellow/15 text-glace-yellow px-2.5 py-1 rounded-lg text-[11px] font-medium"
-            >
-              {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
-            </span>
-          ))}
-      </div>
-
-      {item.selections.some((s) => s.kind === "addon") && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {item.selections
-            .filter((s) => s.kind === "addon")
-            .map((s) => (
-              <span
-                key={`addon-${s.id}`}
-                className="bg-orange-400/15 text-orange-300 px-2.5 py-1 rounded-lg text-[11px] font-medium"
-              >
-                {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
+      <div className="flex flex-col gap-2 mt-3 mb-3">
+        {(item.size || item.container || item.type) && (
+          <div className="flex flex-wrap gap-1.5">
+            {item.size && (
+              <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
+                {item.size}
               </span>
-            ))}
-        </div>
-      )}
+            )}
+            {item.container && (
+              <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
+                {item.container}
+              </span>
+            )}
+            {item.type && (
+              <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
+                {item.type}
+              </span>
+            )}
+          </div>
+        )}
+
+        {item.selections.some((s) => s.kind === "flavor" || s.kind === "mix") && (
+          <div className="rounded-[14px] border border-glace-yellow/25 bg-glace-yellow/6 p-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="flex items-center gap-1 text-[11px] font-bold text-glace-yellow/90">
+                <IceCreamCone size={13} />
+                النكهات:
+              </span>
+              {item.selections
+                .filter((s) => s.kind === "flavor" || s.kind === "mix")
+                .map((s) => (
+                  <span
+                    key={`${s.kind}-${s.id}`}
+                    className="bg-glace-yellow/15 text-glace-yellow px-2.5 py-1 rounded-lg text-[11px] font-medium"
+                  >
+                    {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
+                  </span>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {item.selections.some((s) => s.kind === "addon") && (
+          <div className="rounded-[14px] border border-orange-400/25 bg-orange-400/6 p-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="flex items-center gap-1 text-[11px] font-bold text-orange-300/90">
+                <Sparkles size={13} />
+                الإضافات:
+              </span>
+              {item.selections
+                .filter((s) => s.kind === "addon")
+                .map((s) => (
+                  <span
+                    key={`addon-${s.id}`}
+                    className="bg-orange-400/15 text-orange-300 px-2.5 py-1 rounded-lg text-[11px] font-medium"
+                  >
+                    {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
+                  </span>
+                ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {item.units &&
         (() => {
-          // Units with additions first; units without are collapsed into a
-          // single "بدون إضافات ×N" line at the end.
-          const withAddons = item.units.filter((u) =>
-            u.selections.some((s) => s.kind === "addon"),
+          // Group units that ended up with the identical addon picks so
+          // "وحدة 1، 2، 3" shows once instead of repeating the same line.
+          const groups: { unitNumbers: number[]; label: string }[] = [];
+          item.units.forEach((unit, i) => {
+            const addonLabels = unit.selections
+              .filter((s) => s.kind === "addon")
+              .map((s) => (s.qty > 1 ? `${s.label} ×${s.qty}` : s.label));
+            const label =
+              addonLabels.length > 0 ? addonLabels.join("، ") : "بدون إضافات";
+            const existing = groups.find((g) => g.label === label);
+            if (existing) existing.unitNumbers.push(i + 1);
+            else groups.push({ unitNumbers: [i + 1], label });
+          });
+          // Units without addons last, regardless of where they fell.
+          groups.sort((a, b) =>
+            a.label === "بدون إضافات" ? 1 : b.label === "بدون إضافات" ? -1 : 0,
           );
-          const withoutCount = item.units.length - withAddons.length;
           return (
-            <div className="mb-3 space-y-1.5 rounded-[14px] border border-white/10 bg-white/[0.04] p-3">
-              {withAddons.map((unit, i) => (
+            <div className="mb-3 space-y-1.5 rounded-[14px] border border-white/10 bg-white/4 p-3">
+              {groups.map((g) => (
                 <div
-                  key={i}
+                  key={g.unitNumbers.join(",")}
                   className="flex items-start gap-2 text-[12px] leading-relaxed"
                 >
-                  <span className="shrink-0 font-bold text-glace-yellow/90">
-                    وحدة {i + 1}:
+                  <span className="shrink-0 font-bold text-glace-yellow/90 tabular-nums">
+                    {g.unitNumbers.length > 1
+                      ? `${g.unitNumbers.length} وحدات:`
+                      : `وحدة ${g.unitNumbers[0]}:`}
                   </span>
-                  <span className="text-white/65">
-                    {unit.selections
-                      .filter((s) => s.kind === "addon")
-                      .map((s) => (s.qty > 1 ? `${s.label} ×${s.qty}` : s.label))
-                      .join("، ")}
-                  </span>
+                  <span className="text-white/65">{g.label}</span>
                 </div>
               ))}
-              {withoutCount > 0 && (
-                <div className="flex items-center gap-2 text-[12px] leading-relaxed">
-                  <span className="font-bold text-glace-yellow/90">بدون إضافات</span>
-                  <span className="text-glace-yellow/90 tabular-nums">
-                    ×{withoutCount}
-                  </span>
-                </div>
-              )}
             </div>
           );
         })()}
@@ -194,11 +218,11 @@ function ItemCard({
       <div className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between gap-3">
           {item.units ? (
-            <p className="text-[12px] text-glace-yellow/90">
+            <p className="inline-flex items-center bg-glace-yellow/12 px-2.5 py-1 rounded-lg text-[12px] font-medium text-glace-yellow/90 w-fit">
               {item.quantity} وحدات · إضافات مخصّصة
             </p>
           ) : (
-            <p className="text-[12px] text-glace-yellow/90 tabular-nums">
+            <p className="inline-flex items-center bg-glace-yellow/12 px-2.5 py-1 rounded-lg text-[12px] font-medium text-glace-yellow/90 tabular-nums w-fit">
               {(item.unitPrice + (item.addonTotal ?? 0)).toFixed(2)} ₪ للوحدة
             </p>
           )}
@@ -333,6 +357,7 @@ function EmptyCart() {
 }
 
 function OrderSummary() {
+  const items = useCartStore((s) => s.items);
   const itemsSubtotal = useCartStore((s) => s.itemsSubtotal);
   const subtotal = useCartStore((s) => s.subtotal);
 
@@ -340,13 +365,39 @@ function OrderSummary() {
     <aside className="rounded-[28px] border border-white/15 bg-white/14 backdrop-blur-xl p-6 text-white shadow-[0_20px_50px_rgba(0,0,0,0.12)]">
       <h2 className="text-[20px] font-bold mb-5">ملخص الطلب</h2>
 
-      <div className="space-y-3 mb-5">
-        <div className="flex justify-between text-[14px]">
-          <span className="text-white/65">المنتجات</span>
-          <span className="font-semibold tabular-nums">
-            {itemsSubtotal().toFixed(2)} ₪
-          </span>
-        </div>
+      <div className="space-y-2 mb-5">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="rounded-[16px] bg-white/6 border border-white/10 p-3"
+          >
+            <div className="flex justify-between items-start gap-2 mb-1">
+              <span className="text-white text-[14px] font-bold leading-snug flex items-center gap-1.5">
+                <span className="shrink-0 flex items-center justify-center size-[18px] rounded-full bg-glace-yellow/20 text-glace-yellow text-[10px] font-black tabular-nums">
+                  {item.quantity}
+                </span>
+                {item.name}
+              </span>
+              <span className="shrink-0 font-bold text-glace-yellow text-[14px] tabular-nums">
+                {getLineItemTotal(item).toFixed(2)} ₪
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              {getLineItemSummaryParts(item).map((line, i) => (
+                <p key={i} className="text-white/55 text-[11.5px] leading-relaxed">
+                  {line}
+                </p>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-between text-[14px] mb-5">
+        <span className="text-white/65">المنتجات</span>
+        <span className="font-semibold tabular-nums">
+          {itemsSubtotal().toFixed(2)} ₪
+        </span>
       </div>
 
       <div className="h-px bg-white/15 mb-5" />
