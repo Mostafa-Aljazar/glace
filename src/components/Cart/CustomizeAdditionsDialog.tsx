@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Minus, Plus, X } from "lucide-react";
+import { AlertTriangle, Check, Minus, Plus, X } from "lucide-react";
 import {
   useCartStore,
   type CartItem,
@@ -59,6 +59,9 @@ export default function CustomizeAdditionsDialog({
   const [sharedQty, setSharedQty] = useState<Record<string, number>>({});
   // "perUnit" mode: one qty map per physical unit.
   const [unitQty, setUnitQty] = useState<Record<string, number>[]>([]);
+  // Pending mode switch awaiting confirmation (only asked when it would
+  // discard picks already made in the mode being left).
+  const [pendingMode, setPendingMode] = useState<Mode | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -67,6 +70,7 @@ export default function CustomizeAdditionsDialog({
   // Seed local state from the line's current customization each time it opens.
   useEffect(() => {
     if (!open) return;
+    setPendingMode(null);
     if (item.units) {
       setMode("perUnit");
       setUnitQty(item.units.map((u) => selectionsToQty(u.selections)));
@@ -112,8 +116,15 @@ export default function CustomizeAdditionsDialog({
     );
   }
 
-  function switchMode(next: Mode) {
-    if (next === mode) return;
+  // Whether the mode being left currently has any addon picked — switching
+  // away discards that mode's per-unit-vs-shared distinction, so it's worth
+  // a confirmation instead of silently collapsing the picks.
+  function modeHasPicks(m: Mode): boolean {
+    if (m === "all") return Object.keys(sharedQty).length > 0;
+    return unitQty.some((q) => Object.keys(q).length > 0);
+  }
+
+  function applyModeSwitch(next: Mode) {
     if (next === "perUnit") {
       // Carry the shared picks into every unit as a starting point.
       setUnitQty(Array.from({ length: item.quantity }, () => ({ ...sharedQty })));
@@ -122,6 +133,20 @@ export default function CustomizeAdditionsDialog({
       setSharedQty(unitQty[0] ? { ...unitQty[0] } : {});
     }
     setMode(next);
+  }
+
+  function switchMode(next: Mode) {
+    if (next === mode) return;
+    if (modeHasPicks(mode)) {
+      setPendingMode(next);
+      return;
+    }
+    applyModeSwitch(next);
+  }
+
+  function confirmModeSwitch() {
+    if (pendingMode) applyModeSwitch(pendingMode);
+    setPendingMode(null);
   }
 
   function qtyToSelections(map: Record<string, number>): CartSelection[] {
@@ -229,6 +254,35 @@ export default function CustomizeAdditionsDialog({
             إضافات مختلفة لكل وحدة
           </button>
         </div>
+
+        {pendingMode && (
+          <div className="mt-3 p-4 rounded-[18px] border-2 border-red-400/70 bg-red-500/20 shadow-[0_8px_24px_rgba(0,0,0,0.25)]">
+            <div className="flex items-start gap-2.5 mb-3.5">
+              <span className="flex items-center justify-center shrink-0 size-8 rounded-full bg-red-500/30 text-red-200">
+                <AlertTriangle size={17} strokeWidth={2.4} />
+              </span>
+              <p className="text-[14px] font-bold text-white leading-snug pt-1">
+                سيتم حذف كل الإضافات المحددة حالياً عند تبديل الوضع
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingMode(null)}
+                className="flex-1 bg-white/15 hover:bg-white/22 px-3 py-2.5 border border-white/25 rounded-full font-bold text-[13px] text-white transition"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={confirmModeSwitch}
+                className="flex-1 bg-red-500 hover:bg-red-400 px-3 py-2.5 rounded-full font-bold text-[13px] text-white transition"
+              >
+                نعم، تبديل الوضع
+              </button>
+            </div>
+          </div>
+        )}
         </div>
 
         {/* Scrollable content */}

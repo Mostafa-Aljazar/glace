@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useCartStore } from "@/store/cartStore";
+import { useCartStore, getLineItemSummary } from "@/store/cartStore";
 
 type DeliveryMethod = "delivery" | "pickup";
 
@@ -274,18 +274,23 @@ export default function CheckoutClientPage() {
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className="flex justify-between text-[16px] border-b border-white/20 pb-2"
+                    className="flex flex-col gap-1 text-[14px] border-b border-white/20 pb-2"
                   >
-                    <span>
-                      {item.name} × {item.quantity}
-                    </span>
-                    <span>
-                      {(
-                        (item.unitPrice + (item.addonTotal ?? 0)) *
-                        item.quantity
-                      ).toFixed(2)}{" "}
-                      ₪
-                    </span>
+                    <div className="flex justify-between gap-2 text-[16px]">
+                      <span>
+                        {item.name} × {item.quantity}
+                      </span>
+                      <span className="shrink-0">
+                        {(
+                          (item.unitPrice + (item.addonTotal ?? 0)) *
+                          item.quantity
+                        ).toFixed(2)}{" "}
+                        ₪
+                      </span>
+                    </div>
+                    <p className="text-white/70 leading-relaxed">
+                      {getLineItemSummary(item, { includeName: false })}
+                    </p>
                   </div>
                 ))}
                 {cartAddonTotal > 0 && (

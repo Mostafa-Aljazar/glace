@@ -77,6 +77,69 @@ export function getLineItemTotal(item: CartItem): number {
   return item.unitPrice * item.quantity + addonCost;
 }
 
+function labelWithQty(s: CartSelection): string {
+  return s.qty > 1 ? `${s.label} ×${s.qty}` : s.label;
+}
+
+/** Invoice-ready detail lines for a cart item — size/container/type, flavors,
+ *  and addons (per-unit when customized) each as their own line, so
+ *  kitchen/delivery staff never has to open the item or ask what's in it. */
+export function getLineItemSummaryParts(item: CartItem): string[] {
+  const parts: string[] = [];
+
+  const props = [item.size, item.container, item.type].filter(Boolean);
+  if (props.length > 0) parts.push(props.join(" · "));
+
+  const flavors = item.selections
+    .filter((s) => s.kind === "flavor" || s.kind === "mix")
+    .map(labelWithQty);
+  if (flavors.length > 0) parts.push(`الأطعمة: ${flavors.join("، ")}`);
+
+  if (item.units) {
+    // Group units that ended up with identical addon picks so the count is
+    // stated once ("3 وحدات: ...") instead of repeating the same line per unit.
+    const groups: { unitNumbers: number[]; label: string }[] = [];
+    item.units.forEach((unit, i) => {
+      const addons = unit.selections
+        .filter((s) => s.kind === "addon")
+        .map(labelWithQty);
+      const label =
+        addons.length > 0 ? `إضافات: ${addons.join("، ")}` : "بدون إضافات";
+      const existing = groups.find((g) => g.label === label);
+      if (existing) existing.unitNumbers.push(i + 1);
+      else groups.push({ unitNumbers: [i + 1], label });
+    });
+    groups.sort((a, b) =>
+      a.label === "بدون إضافات" ? 1 : b.label === "بدون إضافات" ? -1 : 0,
+    );
+    for (const g of groups) {
+      const unitLabel =
+        g.unitNumbers.length > 1
+          ? `${g.unitNumbers.length} وحدات`
+          : `وحدة ${g.unitNumbers[0]}`;
+      parts.push(`${unitLabel} ${g.label}`);
+    }
+  } else {
+    const addons = item.selections
+      .filter((s) => s.kind === "addon")
+      .map(labelWithQty);
+    if (addons.length > 0) parts.push(`إضافات: ${addons.join("، ")}`);
+  }
+
+  return parts;
+}
+
+/** Same detail as `getLineItemSummaryParts`, joined into one line. Pass
+ *  `includeName: false` where the item name is already shown alongside it. */
+export function getLineItemSummary(
+  item: CartItem,
+  { includeName = true }: { includeName?: boolean } = {},
+): string {
+  const parts = getLineItemSummaryParts(item);
+  if (includeName) parts.unshift(item.name);
+  return parts.join("  •  ");
+}
+
 interface CartState {
   items: CartItem[];
   /** Shared cart addons — charged once for the whole order */

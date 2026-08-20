@@ -19,7 +19,7 @@ export default function FloatingFavoritesButton() {
   return (
     <Link
       href="/favorites"
-      className="fixed bottom-32 right-4 z-[9999998] lg:bottom-8 lg:right-8 flex flex-col items-center gap-1 transition-all duration-200 active:scale-90 hover:scale-110"
+      className="hidden lg:flex fixed lg:bottom-8 lg:right-8 z-9999998 flex-col items-center gap-1 transition-all duration-200 active:scale-90 hover:scale-110"
       aria-label="عرض المفضلة"
     >
       <span
@@ -39,7 +39,7 @@ export default function FloatingFavoritesButton() {
           </span>
         )}
       </span>
-      <span className="text-[10px] font-medium leading-none text-white/70 hidden sm:block">
+      <span className="text-[10px] font-medium leading-none text-white/70">
         المفضلة
       </span>
     </Link>
