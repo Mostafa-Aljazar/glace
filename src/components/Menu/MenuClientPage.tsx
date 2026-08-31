@@ -16,7 +16,7 @@ import {
   iceCreamImg2,
   iceCreamImg3,
 } from "@/assets/images";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Clock } from "lucide-react";
 import { useMenuCategories } from "@/hooks/menu/useMenuCategories";
 import { useMenuProducts } from "@/hooks/menu/useMenuProducts";
 import {
@@ -24,6 +24,15 @@ import {
   type IMenuCategory,
   type IProduct,
 } from "@/types/menu.types";
+import { isStoreOpen, getReopenLabel } from "@/lib/storeStatus";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 // ── Product card ────────────────────────────────────────────────────────────
 
@@ -147,6 +156,7 @@ export default function MenuClientPage() {
   const [activeCategory, setActiveCategory] = useState(
     queryCategory ?? "ice-cream",
   );
+  const [closedDialogOpen, setClosedDialogOpen] = useState(() => !isStoreOpen());
 
   useEffect(() => {
     if (!queryCategory) return;
@@ -241,6 +251,35 @@ export default function MenuClientPage() {
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen">
       <EventsBackground />
 
+      <Dialog open={closedDialogOpen} onOpenChange={setClosedDialogOpen}>
+        <DialogContent
+          showCloseButton={false}
+          className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] text-center text-white ring-0"
+        >
+          <DialogHeader className="items-center gap-3">
+            <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
+              <Clock className="size-8 text-white" strokeWidth={2.5} />
+            </div>
+            <DialogTitle className="text-2xl text-white">
+              المحل مغلق حاليًا
+            </DialogTitle>
+            <DialogDescription className="text-base text-white/90">
+              رح نفتح من جديد يوم {getReopenLabel()}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogClose
+            render={
+              <button
+                type="button"
+                className="bg-glace-yellow hover:bg-yellow-300 mt-4 px-6 py-2.5 rounded-[30px] w-full text-[#1e6a7f] font-bold text-lg transition-colors cursor-pointer"
+              />
+            }
+          >
+            رجوع
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
+
       <Image
         src={imgIesPP}
         alt=""
@@ -302,7 +341,7 @@ export default function MenuClientPage() {
           </div>
 
           <div className="z-10 relative">
-            <h1 className="drop-shadow-lg font-bold text-white text-3xl sm:text-4xl lg:text-5xl leading-tight">
+            <h1 className="drop-shadow-lg font-bold text-white text-[36px] sm:text-[46px] leading-tight">
               منيو جلاسيه الأمير - غزة
             </h1>
           </div>

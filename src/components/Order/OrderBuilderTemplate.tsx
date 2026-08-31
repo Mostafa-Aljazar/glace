@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import EventsBackground from "@/components/Events/EventsBackground";
 import AddToCartButton from "@/components/Order/AddToCartButton";
 import AddToCartToast from "@/components/Order/AddToCartToast";
-import BackButton from "@/components/Order/BackButton";
 import FlavorBall from "@/components/Order/FlavorBall";
 import OrderLeaveConfirmationDialog from "@/components/Order/OrderLeaveConfirmationDialog";
 import { ExtraBiscuitCounter } from "@/components/Order/BiscuitAddons";
@@ -16,6 +15,7 @@ import { useLeavePageGuard, useAddToCartFeedback } from "@/hooks/order";
 import { useMenuAddons } from "@/hooks/menu";
 import { useCartStore, type CartSelection } from "@/store/cartStore";
 import {
+  EXTRA_BISCUIT_ADDON_ID,
   pickPriceCell,
   resolveBuilderPrice,
   resolveMenuImageSrc,
@@ -23,9 +23,6 @@ import {
   type IFlavorOption,
   type ISizeOption,
 } from "@/types/menu.types";
-
-/** Backend id of the extra-biscuit addon inside `GET /menu/addons`. */
-const EXTRA_BISCUIT_ADDON_ID = "extra-biscuit";
 
 /** Size-pill caption: ball count when the size holds flavors, otherwise the
  *  size's own price (برادة has no balls, so each pill shows e.g. "3 ₪"). */
@@ -74,21 +71,29 @@ function PriceTable({
   title,
   sizes,
   showFamilySplit,
+  rowLabel,
 }: {
   title: string;
   sizes: IBuilderProduct["sizes"];
   showFamilySplit: boolean;
+  /** Overrides each row's size label, e.g. to prefix the container name
+   *  ("1/2 لتر بلاستيك") when merging multiple containers into one table. */
+  rowLabel?: (size: IBuilderProduct["sizes"][number]) => string;
 }) {
+  const showMix = sizes.some((s) =>
+    s.prices.some((p) => p.flavorFamily === "mix"),
+  );
+
   return (
     <div className="bg-white/10 border border-white/15 rounded-[20px] overflow-hidden">
       <h3 className="px-4 pt-3.5 pb-2 font-bold text-[14px] text-white/85">
         {title}
       </h3>
       <div
-        className="gap-y-1 grid px-4 pb-3 text-[13px]"
+        className="gap-y-1.5 grid px-4 pb-3 text-[12px] items-center"
         style={{
           gridTemplateColumns: showFamilySplit
-            ? "1.4fr 0.8fr 0.8fr 0.8fr"
+            ? `1.5fr 0.75fr 0.75fr 0.75fr${showMix ? " 0.75fr" : ""}`
             : "1.4fr 0.9fr",
         }}
       >
@@ -106,6 +111,11 @@ function PriceTable({
             سبيشال
           </div>
         )}
+        {showFamilySplit && showMix && (
+          <div className="pb-1.5 font-bold text-[11px] text-white/50 text-center">
+            مكس
+          </div>
+        )}
 
         {sizes.map((size) => {
           const classic = size.prices.find(
@@ -114,20 +124,30 @@ function PriceTable({
           const special = size.prices.find(
             (p) => p.flavorFamily === "special",
           )?.price;
+          const mix = size.prices.find(
+            (p) => p.flavorFamily === "mix",
+          )?.price;
           return (
             <div key={size.id} className="contents">
-              <div className="py-1 text-white">{size.label}</div>
+              <div className="py-1 font-medium text-[12px] text-white whitespace-nowrap">
+                {rowLabel ? rowLabel(size) : size.label}
+              </div>
               {showFamilySplit && (
-                <div className="py-1 tabular-nums text-white/70 text-center">
+                <div className="py-1 text-[12px] tabular-nums text-white/70 text-center">
                   {size.maxBalls > 0 ? `×${size.maxBalls}` : "—"}
                 </div>
               )}
-              <div className="py-1 font-bold tabular-nums text-[#a8e8f8] text-center">
+              <div className="py-1 font-bold text-[12px] tabular-nums text-[#a8e8f8] text-center">
                 {classic !== undefined ? `${classic} ₪` : "—"}
               </div>
               {showFamilySplit && (
-                <div className="py-1 font-bold tabular-nums text-glace-yellow text-center">
+                <div className="py-1 font-bold text-[12px] tabular-nums text-glace-yellow text-center">
                   {special !== undefined ? `${special} ₪` : "—"}
+                </div>
+              )}
+              {showFamilySplit && showMix && (
+                <div className="py-1 font-bold text-[12px] tabular-nums text-[#c9f2a8] text-center">
+                  {mix !== undefined ? `${mix} ₪` : "—"}
                 </div>
               )}
             </div>
@@ -268,12 +288,8 @@ export default function OrderBuilderTemplate({
     setQuantity(1);
   }, [firstAvailableContainer, product]);
 
-  const {
-    showCloseConfirm,
-    handleCancelLeave,
-    handleConfirmLeave,
-    handleBeforeBack: guardBeforeBack,
-  } = useLeavePageGuard(hasPendingSelections, clearSelections);
+  const { showCloseConfirm, handleCancelLeave, handleConfirmLeave } =
+    useLeavePageGuard(hasPendingSelections, clearSelections);
 
   const addItem = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);
@@ -355,12 +371,12 @@ export default function OrderBuilderTemplate({
         (flavorFamily || "classic") as FlavorFamily,
       )
     : 0;
-  const addonSum = showExtraBiscuit ? extraBiscuitCount * extraBiscuitPrice : 0;
-  const totalPrice = (unitBasePrice + addonSum) * quantity;
-
-  function handleBeforeBack(): boolean {
-    return guardBeforeBack();
-  }
+  // Extra biscuit is priced once for the whole line — it does NOT scale with
+  // quantity (4 بسكوت stays 4 regardless of how many units are ordered).
+  const flatAddonSum = showExtraBiscuit
+    ? extraBiscuitCount * extraBiscuitPrice
+    : 0;
+  const totalPrice = unitBasePrice * quantity + flatAddonSum;
 
   function handleAddToCart() {
     if (containerSizesList.length > 0) {
@@ -404,15 +420,18 @@ export default function OrderBuilderTemplate({
       }),
     );
 
-    if (showExtraBiscuit && extraBiscuitCount > 0) {
-      selections.push({
-        kind: "addon",
-        id: EXTRA_BISCUIT_ADDON_ID,
-        label: extraBiscuitAddon?.label ?? "بسكوت إضافي",
-        qty: extraBiscuitCount,
-        unitPrice: extraBiscuitPrice,
-      });
-    }
+    const flatSelections: CartSelection[] =
+      showExtraBiscuit && extraBiscuitCount > 0
+        ? [
+            {
+              kind: "addon",
+              id: EXTRA_BISCUIT_ADDON_ID,
+              label: extraBiscuitAddon?.label ?? "بسكوت إضافي",
+              qty: extraBiscuitCount,
+              unitPrice: extraBiscuitPrice,
+            },
+          ]
+        : [];
 
     const cartName = selectedContainer?.name ?? product.name;
 
@@ -431,7 +450,9 @@ export default function OrderBuilderTemplate({
         ? FAMILY_LABELS[flavorFamily as FlavorFamily]
         : selectedContainer?.label,
       selections,
-      addonTotal: addonSum,
+      addonTotal: 0,
+      flatSelections,
+      flatAddonTotal: flatAddonSum,
       unitPrice: unitBasePrice,
       quantity,
     });
@@ -456,6 +477,7 @@ export default function OrderBuilderTemplate({
       label: string;
       available: boolean;
       image?: string;
+      maxBalls: number;
     }> = [];
     for (const container of product.containerOptions) {
       const containerSizes = product.sizes.filter(
@@ -475,6 +497,7 @@ export default function OrderBuilderTemplate({
             : container.image
               ? resolveMenuImageSrc(container.image)
               : undefined,
+          maxBalls: size.maxBalls,
         });
       }
     }
@@ -505,27 +528,31 @@ export default function OrderBuilderTemplate({
     priceGroups.find((g) => g.key === (containerId || "shared")) ??
     priceGroups[0];
 
+  // Family product: one merged table across every container (بلاستيك/فلين)
+  // instead of switching tables with the selected container.
+  const mergedFamilyPriceGroup = useMemo(() => {
+    if (!isFamilyProduct || !product.containerOptions?.length) return null;
+    const sizes = product.containerOptions.flatMap((container) =>
+      product.sizes.filter((s) => s.containerId === container.id),
+    );
+    return {
+      key: "family-merged",
+      title: priceTableTitle(product.pricingLabel, product.name),
+      sizes,
+    };
+  }, [isFamilyProduct, product]);
+
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
       <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-52 lg:pb-36 max-w-3xl">
-        <div className="mb-3 text-start">
-          <BackButton onBeforeBack={handleBeforeBack} />
-        </div>
         <div className="bg-white/17 backdrop-blur-[15px] mb-6 rounded-[28px] overflow-hidden">
           <div className="flex md:flex-row flex-col gap-4 p-5">
             {/* Hero (right side in RTL) */}
             <div className="flex flex-col flex-1 justify-center items-center gap-3 text-center">
-              <div>
-                <h1 className="font-bold text-[24px] text-white sm:text-[28px] leading-tight">
-                  {product.name}
-                </h1>
-                {product.description ? (
-                  <p className="text-[16px] text-white/55 md:text-[18px]">
-                    {product.description}
-                  </p>
-                ) : null}
-              </div>
+              <h1 className="font-bold text-[36px] text-white sm:text-[46px] leading-tight">
+                {product.name}
+              </h1>
               <div className="flex items-end gap-1">
                 <Image
                   src={resolveMenuImageSrc(product.image)}
@@ -560,17 +587,37 @@ export default function OrderBuilderTemplate({
               )}
             </div>
 
-            {/* Price table for the currently selected container (left side in RTL) */}
+            {/* Price table (left side in RTL): merged across containers for
+                the family product, otherwise just the selected container's */}
             <div className="flex flex-col flex-1 justify-center gap-3">
-              {activePriceGroup && (
+              {mergedFamilyPriceGroup ? (
                 <PriceTable
-                  key={activePriceGroup.key}
-                  title={activePriceGroup.title}
-                  sizes={activePriceGroup.sizes}
-                  showFamilySplit={activePriceGroup.sizes.some((s) =>
+                  key={mergedFamilyPriceGroup.key}
+                  title={mergedFamilyPriceGroup.title}
+                  sizes={mergedFamilyPriceGroup.sizes}
+                  showFamilySplit={mergedFamilyPriceGroup.sizes.some((s) =>
                     s.prices.some((p) => p.flavorFamily === "special"),
                   )}
+                  rowLabel={(size) => {
+                    const container = product.containerOptions?.find(
+                      (c) => c.id === size.containerId,
+                    );
+                    return container
+                      ? `${size.label} ${container.label}`
+                      : size.label;
+                  }}
                 />
+              ) : (
+                activePriceGroup && (
+                  <PriceTable
+                    key={activePriceGroup.key}
+                    title={activePriceGroup.title}
+                    sizes={activePriceGroup.sizes}
+                    showFamilySplit={activePriceGroup.sizes.some((s) =>
+                      s.prices.some((p) => p.flavorFamily === "special"),
+                    )}
+                  />
+                )
               )}
             </div>
           </div>
@@ -621,18 +668,34 @@ export default function OrderBuilderTemplate({
                         aria-hidden
                       />
                     )}
-                    <span
-                      className={`text-[14px] font-medium ${
-                        !option.available
-                          ? "text-white/70"
-                          : containerId === option.containerId &&
-                              sizeId === option.sizeId
-                            ? "text-[#1e6a7f] font-bold"
-                            : "text-white"
-                      }`}
-                    >
-                      {option.label}
-                    </span>
+                    <div className="flex flex-col items-start min-w-0">
+                      <span
+                        className={`text-start text-[14px] font-medium ${
+                          !option.available
+                            ? "text-white/70"
+                            : containerId === option.containerId &&
+                                sizeId === option.sizeId
+                              ? "text-[#1e6a7f] font-bold"
+                              : "text-white"
+                        }`}
+                      >
+                        {option.label}
+                      </span>
+                      {option.maxBalls > 0 && (
+                        <span
+                          className={`text-start text-[12px] ${
+                            !option.available
+                              ? "text-white/50"
+                              : containerId === option.containerId &&
+                                  sizeId === option.sizeId
+                                ? "text-[#1e6a7f]/70"
+                                : "text-white/60"
+                          }`}
+                        >
+                          {option.maxBalls} كورة
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {!option.available && (
                     <div className="flex justify-center items-center bg-red-500/90 rounded-full w-12 h-12 shrink-0">

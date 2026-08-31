@@ -14,6 +14,7 @@ import {
   SlidersHorizontal,
   IceCreamCone,
   Sparkles,
+  Clock,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import CustomizeAdditionsDialog from "@/components/Cart/CustomizeAdditionsDialog";
@@ -22,7 +23,7 @@ import type { IAddonOption } from "@/types/menu.types";
 import {
   useCartStore,
   getLineItemTotal,
-  getLineItemSummaryParts,
+  getLineItemRows,
   type CartItem,
 } from "@/store/cartStore";
 
@@ -59,6 +60,13 @@ function QtyControl({
       </button>
     </div>
   );
+}
+
+/** Full line title — product name plus size/container/type, e.g. "بوظة كاسة وسط سبيشال". */
+function itemFullTitle(item: CartItem): string {
+  return [item.name, item.size, item.container, item.type]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function ItemCard({
@@ -101,13 +109,10 @@ function ItemCard({
           )}
         </div>
 
-        <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
           <h3 className="font-bold text-[16px] sm:text-[17px] text-white leading-snug">
-            {item.name}
+            {itemFullTitle(item)}
           </h3>
-          <p className="shrink-0 font-bold text-[17px] text-glace-yellow tabular-nums">
-            {productLine.toFixed(2)} ₪
-          </p>
         </div>
       </div>
 
@@ -117,17 +122,17 @@ function ItemCard({
         {(item.size || item.container || item.type) && (
           <div className="flex flex-wrap gap-1.5">
             {item.size && (
-              <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
+              <span className="bg-white/14 px-2.5 py-1 rounded-lg text-[12px] font-medium text-white/90">
                 {item.size}
               </span>
             )}
             {item.container && (
-              <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
+              <span className="bg-white/14 px-2.5 py-1 rounded-lg text-[12px] font-medium text-white/90">
                 {item.container}
               </span>
             )}
             {item.type && (
-              <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[11px] text-white/75">
+              <span className="bg-white/14 px-2.5 py-1 rounded-lg text-[12px] font-medium text-white/90">
                 {item.type}
               </span>
             )}
@@ -135,10 +140,10 @@ function ItemCard({
         )}
 
         {item.selections.some((s) => s.kind === "flavor" || s.kind === "mix") && (
-          <div className="rounded-[14px] border border-glace-yellow/25 bg-glace-yellow/6 p-3">
+          <div className="rounded-[14px] border border-glace-yellow/30 bg-glace-yellow/8 p-3">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="flex items-center gap-1 text-[11px] font-bold text-glace-yellow/90">
-                <IceCreamCone size={13} />
+              <span className="flex items-center gap-1.5 text-[12px] font-bold text-glace-yellow">
+                <IceCreamCone size={14} />
                 النكهات:
               </span>
               {item.selections
@@ -146,7 +151,7 @@ function ItemCard({
                 .map((s) => (
                   <span
                     key={`${s.kind}-${s.id}`}
-                    className="bg-glace-yellow/15 text-glace-yellow px-2.5 py-1 rounded-lg text-[11px] font-medium"
+                    className="bg-glace-yellow/18 text-glace-yellow px-2.5 py-1 rounded-lg text-[13px] font-semibold"
                   >
                     {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
                   </span>
@@ -156,10 +161,10 @@ function ItemCard({
         )}
 
         {item.selections.some((s) => s.kind === "addon") && (
-          <div className="rounded-[14px] border border-orange-400/25 bg-orange-400/6 p-3">
+          <div className="rounded-[14px] border border-orange-400/30 bg-orange-400/8 p-3">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="flex items-center gap-1 text-[11px] font-bold text-orange-300/90">
-                <Sparkles size={13} />
+              <span className="flex items-center gap-1.5 text-[12px] font-bold text-orange-300">
+                <Sparkles size={14} />
                 الإضافات:
               </span>
               {item.selections
@@ -167,11 +172,30 @@ function ItemCard({
                 .map((s) => (
                   <span
                     key={`addon-${s.id}`}
-                    className="bg-orange-400/15 text-orange-300 px-2.5 py-1 rounded-lg text-[11px] font-medium"
+                    className="bg-orange-400/18 text-orange-300 px-2.5 py-1 rounded-lg text-[13px] font-semibold"
                   >
                     {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
                   </span>
                 ))}
+            </div>
+          </div>
+        )}
+
+        {(item.flatSelections?.length ?? 0) > 0 && (
+          <div className="rounded-[14px] border border-orange-400/30 bg-orange-400/8 p-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="flex items-center gap-1.5 text-[12px] font-bold text-orange-300">
+                <Sparkles size={14} />
+                إضافات ثابتة لكامل الطلبية:
+              </span>
+              {item.flatSelections!.map((s) => (
+                <span
+                  key={`flat-addon-${s.id}`}
+                  className="bg-orange-400/18 text-orange-300 px-2.5 py-1 rounded-lg text-[13px] font-semibold"
+                >
+                  {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
+                </span>
+              ))}
             </div>
           </div>
         )}
@@ -197,18 +221,18 @@ function ItemCard({
             a.label === "بدون إضافات" ? 1 : b.label === "بدون إضافات" ? -1 : 0,
           );
           return (
-            <div className="mb-3 space-y-1.5 rounded-[14px] border border-white/10 bg-white/4 p-3">
+            <div className="mb-3 space-y-2 rounded-[14px] border border-white/10 bg-white/5 p-3">
               {groups.map((g) => (
                 <div
                   key={g.unitNumbers.join(",")}
-                  className="flex items-start gap-2 text-[12px] leading-relaxed"
+                  className="flex items-start gap-2 text-[16px] leading-relaxed"
                 >
-                  <span className="shrink-0 font-bold text-glace-yellow/90 tabular-nums">
+                  <span className="shrink-0 font-bold text-glace-yellow tabular-nums">
                     {g.unitNumbers.length > 1
                       ? `${g.unitNumbers.length} وحدات:`
                       : `وحدة ${g.unitNumbers[0]}:`}
                   </span>
-                  <span className="text-white/65">{g.label}</span>
+                  <span className="text-white/70">{g.label}</span>
                 </div>
               ))}
             </div>
@@ -217,15 +241,23 @@ function ItemCard({
 
       <div className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between gap-3">
-          {item.units ? (
-            <p className="inline-flex items-center bg-glace-yellow/12 px-2.5 py-1 rounded-lg text-[12px] font-medium text-glace-yellow/90 w-fit">
-              {item.quantity} وحدات · إضافات مخصّصة
+          <div className="flex flex-wrap items-center gap-2">
+            {item.units ? (
+              <p className="inline-flex items-center bg-white/10 px-2.5 py-1 rounded-lg text-[12px] font-medium text-white/70 w-fit">
+                {item.quantity} وحدات · إضافات مخصّصة
+              </p>
+            ) : (
+              <p className="inline-flex items-center bg-white/10 px-2.5 py-1 rounded-lg text-[12px] font-medium text-white/70 tabular-nums w-fit">
+                {(item.unitPrice + (item.addonTotal ?? 0)).toFixed(2)} ₪ للوحدة
+              </p>
+            )}
+            <p className="flex items-baseline gap-1 font-bold text-[17px] text-glace-yellow tabular-nums">
+              <span className="text-[12px] font-medium text-white/70">
+                الإجمالي:
+              </span>
+              {productLine.toFixed(2)} ₪
             </p>
-          ) : (
-            <p className="inline-flex items-center bg-glace-yellow/12 px-2.5 py-1 rounded-lg text-[12px] font-medium text-glace-yellow/90 tabular-nums w-fit">
-              {(item.unitPrice + (item.addonTotal ?? 0)).toFixed(2)} ₪ للوحدة
-            </p>
-          )}
+          </div>
           <div className="flex items-center gap-2 shrink-0">
             <QtyControl
               value={item.quantity}
@@ -236,7 +268,7 @@ function ItemCard({
               type="button"
               onClick={() => removeItem(item.id)}
               aria-label="حذف المنتج"
-              className="flex items-center justify-center size-9 rounded-full border border-rose-400/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/30 hover:border-rose-400/60 hover:text-rose-100 transition cursor-pointer"
+              className="flex items-center justify-center size-9 rounded-full border border-white/15 bg-white/8 text-white/50 hover:border-rose-400/50 hover:bg-rose-500/20 hover:text-rose-200 transition cursor-pointer"
             >
               <Trash2 size={15} />
             </button>
@@ -246,7 +278,7 @@ function ItemCard({
           <button
             type="button"
             onClick={() => setCustomizeOpen(true)}
-            className="flex w-full sm:w-auto sm:self-start items-center justify-center gap-1.5 rounded-full border border-glace-yellow/40 bg-glace-yellow/12 px-3 py-2.5 text-[12px] font-bold text-glace-yellow hover:bg-glace-yellow/22 transition cursor-pointer"
+            className="flex w-full sm:w-auto sm:self-start items-center justify-center gap-1.5 rounded-full bg-glace-yellow px-3.5 py-2.5 text-[12px] font-bold text-[#1e6a7f] hover:bg-yellow-300 shadow-[0_4px_14px_rgba(244,228,81,0.25)] transition cursor-pointer"
           >
             <SlidersHorizontal size={14} />
             تخصيص الإضافات
@@ -358,56 +390,96 @@ function EmptyCart() {
 
 function OrderSummary() {
   const items = useCartStore((s) => s.items);
-  const itemsSubtotal = useCartStore((s) => s.itemsSubtotal);
+  const cartAddons = useCartStore((s) => s.cartAddons);
+  const cartAddonTotal = useCartStore((s) => s.cartAddonTotal);
+  const discount = useCartStore((s) => s.discount);
   const subtotal = useCartStore((s) => s.subtotal);
 
   return (
     <aside className="rounded-[28px] border border-white/15 bg-white/14 backdrop-blur-xl p-6 text-white shadow-[0_20px_50px_rgba(0,0,0,0.12)]">
-      <h2 className="text-[20px] font-bold mb-5">ملخص الطلب</h2>
+      <h2 className="mb-3 text-[20px] font-bold">ملخص الطلب</h2>
 
-      <div className="space-y-2 mb-5">
+      <div className="flex items-center gap-2 mb-5 text-glace-yellow bg-glace-yellow/10 border border-glace-yellow/25 rounded-[14px] px-3.5 py-2.5">
+        <Clock size={16} className="shrink-0" />
+        <span className="text-[13px] font-semibold leading-snug">
+          مدة تحضير الطلب بالكامل تتراوح بين 5-25 دقيقة
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-3 mb-5">
         {items.map((item) => (
           <div
             key={item.id}
-            className="rounded-[16px] bg-white/6 border border-white/10 p-3"
+            className="flex flex-col gap-3 bg-white/8 border border-white/10 rounded-[18px] p-3"
           >
-            <div className="flex justify-between items-start gap-2 mb-1">
-              <span className="text-white text-[14px] font-bold leading-snug flex items-center gap-1.5">
-                <span className="shrink-0 flex items-center justify-center size-[18px] rounded-full bg-glace-yellow/20 text-glace-yellow text-[10px] font-black tabular-nums">
-                  {item.quantity}
-                </span>
-                {item.name}
+            <div className="flex items-start justify-between gap-3">
+              <span className="flex-1 min-w-0 text-[15px] font-bold leading-snug">
+                {itemFullTitle(item)}
               </span>
-              <span className="shrink-0 font-bold text-glace-yellow text-[14px] tabular-nums">
+              <span className="shrink-0 font-bold text-glace-yellow text-[15px] tabular-nums">
                 {getLineItemTotal(item).toFixed(2)} ₪
               </span>
             </div>
-            <div className="flex flex-col gap-0.5">
-              {getLineItemSummaryParts(item).map((line, i) => (
-                <p key={i} className="text-white/55 text-[11.5px] leading-relaxed">
-                  {line}
-                </p>
+
+            <div className="w-full rounded-[12px] border border-white/10 overflow-hidden text-[12.5px]">
+              <div className="grid grid-cols-[26%_26%_12%_18%_18%] bg-white/8 text-white/60 font-semibold">
+                <div className="px-2 py-2 text-start">النوع</div>
+                <div className="px-2 py-2 text-start">الطعمة</div>
+                <div className="px-1.5 py-2 text-center">العدد</div>
+                <div className="px-1.5 py-2 text-center">
+                  <span className="sm:hidden">السعر</span>
+                  <span className="hidden sm:inline">سعر الوحدة</span>
+                </div>
+                <div className="px-2 py-2 text-end">المجموع</div>
+              </div>
+              {getLineItemRows(item).map((row, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-[26%_26%_12%_18%_18%] border-t border-white/10 text-white/80"
+                >
+                  <div className="px-2 py-2 break-words">{row.addons}</div>
+                  <div className="px-2 py-2 break-words">{row.flavor}</div>
+                  <div className="px-1.5 py-2 text-center tabular-nums">
+                    {row.qty}
+                  </div>
+                  <div className="px-1.5 py-2 text-center tabular-nums">
+                    {row.unitPrice.toFixed(2)} ₪
+                  </div>
+                  <div className="px-2 py-2 text-end font-semibold text-white tabular-nums">
+                    {row.total.toFixed(2)} ₪
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         ))}
+        {cartAddonTotal > 0 && (
+          <div className="flex justify-between items-center gap-2 text-[14px] text-glace-yellow bg-glace-yellow/8 border border-glace-yellow/20 rounded-[18px] p-3">
+            <span>
+              إضافات السلة
+              {cartAddons.length > 0 ? ` (${cartAddons.join(" · ")})` : ""}
+            </span>
+            <span className="shrink-0 tabular-nums">
+              +{cartAddonTotal.toFixed(2)} ₪
+            </span>
+          </div>
+        )}
       </div>
 
-      <div className="flex justify-between text-[14px] mb-5">
-        <span className="text-white/65">المنتجات</span>
-        <span className="font-semibold tabular-nums">
-          {itemsSubtotal().toFixed(2)} ₪
-        </span>
-      </div>
-
-      <div className="h-px bg-white/15 mb-5" />
-
-      <div className="flex justify-between items-end mb-6">
-        <span className="text-[15px] text-white/70">الإجمالي</span>
-        <span className="text-glace-yellow text-[28px] font-bold leading-none tabular-nums">
-          {subtotal().toFixed(2)}
-          <span className="text-[16px] ms-1">₪</span>
-        </span>
+      <div className="rounded-[18px] bg-white/6 border border-white/10 p-4 mb-5">
+        {discount > 0 && (
+          <div className="flex justify-between text-[14px] text-glace-yellow mb-2">
+            <span>الخصم</span>
+            <span className="tabular-nums">-{discount.toFixed(2)} ₪</span>
+          </div>
+        )}
+        <div className="flex justify-between items-end">
+          <span className="text-[15px] text-white/70">المجموع الجزئي</span>
+          <span className="text-glace-yellow text-[28px] font-bold leading-none tabular-nums">
+            {subtotal().toFixed(2)}
+            <span className="text-[16px] ms-1">₪</span>
+          </span>
+        </div>
       </div>
 
       <Link
@@ -417,9 +489,6 @@ function OrderSummary() {
         إتمام الطلب
         <ChevronLeft size={18} />
       </Link>
-      <p className="text-white/35 text-[11px] text-center mt-3">
-        الأسعار بالشيكل الإسرائيلي ₪
-      </p>
     </aside>
   );
 }
@@ -457,8 +526,21 @@ export default function CartClientPage() {
       .filter((p) => p.addons && p.addons.length > 0)
       .map((p) => [p.id, p.addons as IAddonOption[]]),
   );
+  const slugByProductId = new Map<string, string>(
+    (products ?? []).map((p) => [p.id, p.slug]),
+  );
 
-  function resolveAddons(productId: string): IAddonOption[] {
+  // "تخصيص الإضافات" is only offered for cup ice cream in a "كاسة"/"بسكوت"
+  // container, or the family-size product — regardless of category or
+  // whether the product ships its own addons catalog. Every other line
+  // (pancake, milkshake, ...) never gets this button.
+  const CUP_CONTAINERS = ["كاسة", "بسكوت"];
+
+  function resolveAddons(item: CartItem): IAddonOption[] {
+    const productId = item.productId;
+    const isFamilyProduct = slugByProductId.get(productId) === "family";
+    const isCupContainer = !!item.container && CUP_CONTAINERS.includes(item.container);
+    if (!isFamilyProduct && !isCupContainer) return [];
     // A product's own catalog overrides the shared one; both come from the API.
     const productSpecific = addonsByProductId.get(productId);
     if (productSpecific && productSpecific.length > 0) return productSpecific;
@@ -469,14 +551,11 @@ export default function CartClientPage() {
     <div className="relative min-h-screen overflow-x-hidden bg-[radial-gradient(ellipse_at_top,#4eb4d4_0%,#388dab_45%,#2f7a96_100%)]">
       <EventsBackground />
 
-      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-20 max-w-6xl">
+      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-28 lg:pb-12 max-w-6xl">
         {/* Header */}
         <header className="mb-8 sm:mb-10 animate-in fade-in duration-500">
           <div className="flex items-end justify-between gap-4 flex-wrap">
             <div>
-              <p className="text-glace-yellow/90 text-[13px] font-medium mb-1.5 tracking-wide">
-                Glace
-              </p>
               <h1 className="text-white text-[36px] sm:text-[46px] font-bold leading-none">
                 سلة التسوق
               </h1>
@@ -522,7 +601,7 @@ export default function CartClientPage() {
                       key={item.id}
                       item={item}
                       index={index}
-                      addons={resolveAddons(item.productId)}
+                      addons={resolveAddons(item)}
                     />
                   ))}
                 </div>

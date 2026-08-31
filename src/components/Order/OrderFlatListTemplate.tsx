@@ -6,7 +6,6 @@ import { Minus, Plus, ShoppingCart, Check, Heart } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import AddToCartButton from "@/components/Order/AddToCartButton";
 import AddToCartToast from "@/components/Order/AddToCartToast";
-import BackButton from "@/components/Order/BackButton";
 import ImageZoomDialog from "@/components/Order/ImageZoomDialog";
 import OrderLeaveConfirmationDialog from "@/components/Order/OrderLeaveConfirmationDialog";
 import { useLeavePageGuard, useAddToCartFeedback } from "@/hooks/order";
@@ -55,12 +54,8 @@ export default function OrderFlatListTemplate({
     setMixSelections([]);
   }, []);
 
-  const {
-    showCloseConfirm,
-    handleCancelLeave,
-    handleConfirmLeave,
-    handleBeforeBack: guardBeforeBack,
-  } = useLeavePageGuard(hasPendingSelections, clearSelections);
+  const { showCloseConfirm, handleCancelLeave, handleConfirmLeave } =
+    useLeavePageGuard(hasPendingSelections, clearSelections);
 
   const addItem = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);
@@ -146,10 +141,6 @@ export default function OrderFlatListTemplate({
     clearSelections();
   }
 
-  function handleBeforeBack(): boolean {
-    return guardBeforeBack();
-  }
-
   const totalPrice =
     Object.entries(counts).reduce((sum, [itemId, qty]) => {
       const item = product.items.find((i) => i.id === itemId);
@@ -166,20 +157,12 @@ export default function OrderFlatListTemplate({
       <EventsBackground />
 
       <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-52 lg:pb-36 max-w-3xl">
-        <div className="mb-3 text-start">
-          <BackButton onBeforeBack={handleBeforeBack} />
-        </div>
         <div className="bg-white/17 backdrop-blur-[15px] mb-6 rounded-[28px] overflow-hidden">
           <div className="flex justify-center items-center p-5 sm:p-8">
             <div className="flex flex-col items-center gap-6 text-center">
-              <div>
-                <h1 className="font-bold text-[28px] text-white sm:text-[34px] leading-tight">
-                  {product.name}
-                </h1>
-                <p className="text-[14px] text-white/55 text-justify">
-                  {product.description || "خصّص طلبك خطوة بخطوة"}
-                </p>
-              </div>
+              <h1 className="font-bold text-[36px] text-white sm:text-[46px] leading-tight">
+                {product.name}
+              </h1>
               <Image
                 src={resolveMenuImageSrc(product.image)}
                 alt={product.name}
@@ -195,7 +178,7 @@ export default function OrderFlatListTemplate({
           <div className="flex items-start gap-3 bg-yellow-400/15 mb-4 px-4 py-3.5 border border-yellow-400/30 rounded-[20px]">
             <span className="text-[22px] shrink-0">⚠️</span>
             <p className="text-[13px] text-yellow-100 leading-relaxed">
-              هذا المنتج لا يتناسب للتوصيل — متوفر داخل المعرض فقط
+              هذا المنتج متوفر داخل المحل فقط — غير متاح للتوصيل أو الاستلام (Take Away)
             </p>
           </div>
         )}

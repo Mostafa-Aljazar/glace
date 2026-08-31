@@ -62,6 +62,12 @@ export interface CartItem {
   /** When present, per-unit additions override the shared `selections`/`addonTotal`.
    *  Invariant: `units.length === quantity`. Absent = uniform line (default). */
   units?: CartUnit[];
+  /** Addons priced once for the whole line, independent of quantity — e.g.
+   *  "4 بسكوت إضافي" for the line stays 4 regardless of how many units are
+   *  ordered. Kept separate from `selections`/`addonTotal`, which are always
+   *  per-unit and scale with `quantity`. */
+  flatSelections?: CartSelection[];
+  flatAddonTotal?: number;
 }
 
 /** Sum of priced picks in a selection array (per-unit addon cost). */
@@ -69,12 +75,13 @@ export function sumSelections(selections: CartSelection[]): number {
   return selections.reduce((s, x) => s + x.unitPrice * x.qty, 0);
 }
 
-/** Full price of a cart line — base×qty plus addons, whether uniform or per-unit. */
+/** Full price of a cart line — base×qty plus addons, whether uniform or per-unit,
+ *  plus any flat addons priced once for the whole line (never scaled by qty). */
 export function getLineItemTotal(item: CartItem): number {
   const addonCost = item.units
     ? item.units.reduce((s, u) => s + sumSelections(u.selections), 0)
     : (item.addonTotal ?? 0) * item.quantity;
-  return item.unitPrice * item.quantity + addonCost;
+  return item.unitPrice * item.quantity + addonCost + (item.flatAddonTotal ?? 0);
 }
 
 function labelWithQty(s: CartSelection): string {
@@ -126,6 +133,12 @@ export function getLineItemSummaryParts(item: CartItem): string[] {
     if (addons.length > 0) parts.push(`إضافات: ${addons.join("، ")}`);
   }
 
+  const flatAddons = (item.flatSelections ?? []).map(labelWithQty);
+  if (flatAddons.length > 0) {
+    // HINT: fixed for the whole line — does not scale with quantity.
+    parts.push(`إضافات ثابتة لكامل الطلبية: ${flatAddons.join("، ")}`);
+  }
+
   return parts;
 }
 
@@ -138,6 +151,68 @@ export function getLineItemSummary(
   const parts = getLineItemSummaryParts(item);
   if (includeName) parts.unshift(item.name);
   return parts.join("  •  ");
+}
+
+/** One priced table row for an invoice-style line-item breakdown. */
+export interface LineItemRow {
+  flavor: string; // flavors/mix for this row, or "—" when the line has none
+  addons: string; // addons for this row, or "—" when there are none
+  qty: number;
+  unitPrice: number;
+  total: number;
+}
+
+/** Same data as `getLineItemSummaryParts`, shaped as priced table rows
+ *  instead of free-text lines — one row per unit-group when the line has
+ *  per-unit customization, one row for the whole line otherwise. */
+export function getLineItemRows(item: CartItem): LineItemRow[] {
+  const flavors = item.selections
+    .filter((s) => s.kind === "flavor" || s.kind === "mix")
+    .map(labelWithQty)
+    .join("، ") || "—";
+
+  const flatAddonLabels = (item.flatSelections ?? []).map(labelWithQty);
+
+  if (!item.units) {
+    const addonLabels = item.selections
+      .filter((s) => s.kind === "addon")
+      .map(labelWithQty)
+      .concat(flatAddonLabels)
+      .join("، ") || "—";
+    const addonUnitCost = item.addonTotal ?? 0;
+    return [
+      {
+        flavor: flavors,
+        addons: addonLabels,
+        qty: item.quantity,
+        unitPrice: item.unitPrice + addonUnitCost,
+        total: getLineItemTotal(item),
+      },
+    ];
+  }
+
+  const groups: { unitNumbers: number[]; addons: string; addonCost: number }[] = [];
+  item.units.forEach((unit, i) => {
+    const addonLabels = unit.selections
+      .filter((s) => s.kind === "addon")
+      .map(labelWithQty)
+      .join("، ") || "—";
+    const addonCost = sumSelections(unit.selections);
+    const existing = groups.find((g) => g.addons === addonLabels);
+    if (existing) existing.unitNumbers.push(i + 1);
+    else groups.push({ unitNumbers: [i + 1], addons: addonLabels, addonCost });
+  });
+  groups.sort((a, b) =>
+    a.addons === "—" ? 1 : b.addons === "—" ? -1 : 0,
+  );
+
+  return groups.map((g) => ({
+    flavor: flavors,
+    addons: g.addons,
+    qty: g.unitNumbers.length,
+    unitPrice: item.unitPrice + g.addonCost,
+    total: (item.unitPrice + g.addonCost) * g.unitNumbers.length,
+  }));
 }
 
 interface CartState {
@@ -155,6 +230,9 @@ interface CartState {
   setItemSharedAddons: (id: string, selections: CartSelection[], addonTotal: number) => void;
   /** Apply per-unit additions to a line; drives quantity from `units.length`. */
   setItemUnits: (id: string, units: CartUnit[]) => void;
+  /** Replace a line's flat addons — priced once for the whole line, independent
+   *  of quantity (e.g. "4 بسكوت إضافي" for the whole order, not per unit). */
+  setItemFlatAddons: (id: string, selections: CartSelection[], addonTotal: number) => void;
   setOrderNote: (note: string) => void;
   setCartAddons: (addons: string[], addonTotal: number) => void;
   applyCoupon: (code: string) => void;
@@ -168,12 +246,27 @@ const VALID_COUPONS: Record<string, number> = {
   GLACE10: 10,
   GLACE20: 20,
   WELCOME5: 5,
+  "1234": 15,
 };
 
 const CART_ADDON_NAMES = new Set(ADDONS.map((a) => a.name));
 
 function genId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/** Combine two flat-selection arrays, summing qty for matching addon ids —
+ *  used when a matching cart line is re-added with its own flat picks. */
+function mergeFlatSelections(
+  a: CartSelection[],
+  b: CartSelection[],
+): CartSelection[] {
+  const merged = new Map<string, CartSelection>();
+  for (const sel of [...a, ...b]) {
+    const prev = merged.get(sel.id);
+    merged.set(sel.id, prev ? { ...prev, qty: prev.qty + sel.qty } : sel);
+  }
+  return Array.from(merged.values());
 }
 
 /** Check if two selection arrays are identical */
@@ -383,10 +476,23 @@ export const useCartStore = create<CartState>()(
         set((state) => {
           const existing = findMatchingItem(state.items, item);
           if (existing) {
-            // Increment quantity of existing matching item
+            // Increment quantity, and sum flat addons (each add's own flat
+            // picks stack — e.g. 4 + 4 بسكوت = 8) rather than per-unit addons,
+            // which already scale with quantity and stay untouched here.
             return {
               items: state.items.map((i) =>
-                i.id === existing.id ? { ...i, quantity: i.quantity + item.quantity } : i,
+                i.id === existing.id
+                  ? {
+                      ...i,
+                      quantity: i.quantity + item.quantity,
+                      flatSelections: mergeFlatSelections(
+                        i.flatSelections ?? [],
+                        item.flatSelections ?? [],
+                      ),
+                      flatAddonTotal:
+                        (i.flatAddonTotal ?? 0) + (item.flatAddonTotal ?? 0),
+                    }
+                  : i,
               ),
             };
           }
@@ -398,6 +504,10 @@ export const useCartStore = create<CartState>()(
                 ...item,
                 selections: item.selections ? [...item.selections] : [],
                 addonTotal: item.addonTotal ?? 0,
+                flatSelections: item.flatSelections
+                  ? [...item.flatSelections]
+                  : [],
+                flatAddonTotal: item.flatAddonTotal ?? 0,
                 id: genId(),
               },
             ],
@@ -470,6 +580,19 @@ export const useCartStore = create<CartState>()(
                   // Per-unit additions supersede the line-level shared ones.
                   selections: [],
                   addonTotal: 0,
+                }
+              : i,
+          ),
+        })),
+
+      setItemFlatAddons: (id, selections, addonTotal) =>
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.id === id
+              ? {
+                  ...i,
+                  flatSelections: [...selections],
+                  flatAddonTotal: Math.max(0, addonTotal),
                 }
               : i,
           ),

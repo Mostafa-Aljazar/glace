@@ -13,7 +13,7 @@ export function useLogout() {
     onSettled: () => {
       clearAuth();
       queryClient.clear();
-      router.push("/login");
+      router.push("/auth/login");
     },
   });
 }

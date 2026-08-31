@@ -985,6 +985,13 @@ components:
           type: string
           description: CSS border-radius for the map frame
           example: "32% 68% 69% 31% / 30% 28% 72% 70%"
+        available:
+          type: boolean
+          description: >-
+            Whether the branch can be selected. Omitted or absent is treated
+            as available (`true`) by the frontend, for backward compatibility
+            with responses that don't send this field yet.
+          example: true
 
     IHomeBranchesData:
       type: object

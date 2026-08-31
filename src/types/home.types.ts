@@ -49,6 +49,9 @@ export interface IHomeBranch {
   weekdayHours: string;
   fridayHours: string;
   borderRadius: string;
+  /** Whether the branch can be selected. Optional — older API responses
+   *  that don't send it are treated as available (`true`). */
+  available?: boolean;
 }
 
 export interface IHomeBranchesData {

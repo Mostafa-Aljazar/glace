@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import MyAccountClientPage from "@/components/Account/MyAccountClientPage";
+import SettingsLinksPanel from "@/components/Account/dashboard/panels/SettingsLinksPanel";
 
 export const metadata: Metadata = {
-  title: "حسابي | جلاسيه الأمير",
+  title: "الإعدادات | جلاسيه الأمير",
 };
 
 export default function MyAccountPage() {
-  return (
-    <Suspense>
-      <MyAccountClientPage />
-    </Suspense>
-  );
+  return <SettingsLinksPanel />;
 }

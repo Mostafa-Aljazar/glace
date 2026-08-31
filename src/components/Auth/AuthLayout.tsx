@@ -23,18 +23,22 @@ export default function AuthLayout({
       <ContactBackground />
 
       {/* .bodyLogin.container */}
-      <div className="z-90 relative flex md:flex-row flex-col justify-between items-center gap-8 mx-auto px-4 pt-22.5 lg:pt-26.5 pb-8 w-full max-w-300 min-h-[calc(100vh-340px)] text-white">
+      <div className="z-90 relative flex lg:flex-row flex-col lg:justify-center items-center gap-8 lg:gap-16 mx-auto px-4 pt-22.5 lg:pt-26.5 pb-8 w-full max-w-300 text-white">
         {/* .textBodyLogin */}
-        <div className="mt-7.5 md:mt-0 w-full md:w-1/2 text-center md:text-right">
-          <h1 className="mb-0 text-[44px] md:text-[66px] lg:text-[75px]">
+        <div className="w-full lg:w-1/2 text-center lg:text-right">
+          <h1 className="mb-0.5 lg:mb-1 text-[28px] sm:text-[36px] lg:text-[56px] leading-tight">
             {title}
           </h1>
-          {subtitle && <p className="text-[26px] md:text-[40px]">{subtitle}</p>}
+          {subtitle && (
+            <p className="text-[15px] sm:text-[19px] lg:text-[28px] text-white/80 lg:text-white">
+              {subtitle}
+            </p>
+          )}
         </div>
 
         {/* .formBodyLogin / .formBodyLoginC */}
-        <div className="w-full md:w-1/2">
-          <div className="bg-white/23 backdrop-blur-[10px] mx-auto md:mx-0 md:mr-auto p-[20px_15px] sm:p-[20px_15px] md:p-[20px_35px] lg:p-[40px_50px] rounded-[25px] max-w-[550px] md:max-w-[500px] lg:max-w-[550px]">
+        <div className="w-full lg:w-1/2">
+          <div className="bg-white/[.17] backdrop-blur-[15px] mx-auto lg:mx-0 lg:mr-auto p-6 sm:p-7 lg:p-8 rounded-[30px] max-w-[550px] lg:max-w-[550px]">
             {children}
           </div>
         </div>

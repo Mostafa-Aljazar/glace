@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, IceCreamCone, ShoppingCart, Minus, Plus } from "lucide-react";
+import { Heart, IceCreamCone, Minus, Plus } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
-import BackButton from "@/components/Order/BackButton";
 import AddToCartToast from "@/components/Order/AddToCartToast";
+import AddToCartButton from "@/components/Order/AddToCartButton";
+import { useAddToCartFeedback } from "@/hooks/order";
 import { iceCreamImg1, iceCreamImg3 } from "@/assets/images";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useCartStore } from "@/store/cartStore";
@@ -72,8 +73,15 @@ export default function FavoritesClientPage() {
   const addItem = useCartStore((s) => s.addItem);
   const { data: products = [] } = useMenuProducts();
   const { data: categories = [] } = useMenuCategories();
-  const [addedItem, setAddedItem] = useState<FavoriteItem | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const {
+    addedToCart,
+    validationMsg,
+    showValidation,
+    markAdded,
+    toastMsg,
+    dismissToast,
+  } = useAddToCartFeedback();
 
   const categoryLabels = useMemo(
     () => new Map(categories.map((c) => [c.id, c.label])),
@@ -149,9 +157,22 @@ export default function FavoritesClientPage() {
     });
   }
 
-  function handleAddToCart(item: FavoriteItem) {
-    try {
-      const quantity = getQuantity(item.id);
+  const selectedItems = favoriteItems.filter((item) => getQuantity(item.id) > 0);
+  const totalSelectedCount = selectedItems.reduce(
+    (sum, item) => sum + getQuantity(item.id),
+    0,
+  );
+  const totalPrice = selectedItems.reduce(
+    (sum, item) => sum + item.price * getQuantity(item.id),
+    0,
+  );
+
+  function handleAddToCart() {
+    if (selectedItems.length === 0) {
+      return showValidation("اختر منتج واحد على الأقل");
+    }
+
+    selectedItems.forEach((item) => {
       addItem({
         productId: item.productId,
         name:
@@ -163,18 +184,13 @@ export default function FavoritesClientPage() {
         selections: [],
         addonTotal: 0,
         unitPrice: item.price,
-        quantity: quantity,
+        quantity: getQuantity(item.id),
       });
-      setAddedItem(item);
-      setQuantities((prev) => {
-        const { [item.id]: _, ...rest } = prev;
-        return rest;
-      });
-      const timeoutId = setTimeout(() => setAddedItem(null), 3000);
-      return () => clearTimeout(timeoutId);
-    } catch (error) {
-      console.error("Failed to add item to cart:", error);
-    }
+    });
+
+    markAdded(`تمت إضافة ${totalSelectedCount} صنف إلى السلة`);
+    setQuantities({});
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const countLabel =
@@ -187,17 +203,9 @@ export default function FavoritesClientPage() {
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
-      {addedItem && (
-        <AddToCartToast
-          message={`تمت إضافة ${addedItem.label} إلى السلة`}
-          onClose={() => setAddedItem(null)}
-        />
-      )}
+      <AddToCartToast message={toastMsg} onClose={dismissToast} />
 
-      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-28 max-w-3xl">
-        <div className="mb-3 text-start">
-          <BackButton />
-        </div>
+      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-52 lg:pb-36 max-w-3xl">
         <div className="relative flex flex-col items-center pt-4 sm:pt-6 pb-6 sm:pb-8 text-center">
           <Image
             src={iceCreamImg1}
@@ -296,46 +304,49 @@ export default function FavoritesClientPage() {
                           />
                         </button>
 
-                        {getQuantity(item.id) > 0 ? (
-                          <div className="flex items-center gap-1.5 bg-white/10 px-2 py-1 border border-white/15 rounded-full">
+                        {getQuantity(item.id) === 0 ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              incrementQuantity(item.id);
+                            }}
+                            className="flex items-center gap-1.5 bg-glace-yellow hover:bg-yellow-300 shadow-md px-4 py-2 border-0 rounded-full font-bold text-[#1e6a7f] text-[13px] transition-all cursor-pointer shrink-0"
+                          >
+                            أضف
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-1.5 bg-white/15 px-2 py-1 border border-white/25 rounded-full shrink-0">
                             <button
                               type="button"
-                              onClick={() => decrementQuantity(item.id)}
-                              className="flex justify-center items-center hover:bg-white/20 rounded-full w-6 h-6 text-white transition"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                decrementQuantity(item.id);
+                              }}
+                              className="flex justify-center items-center hover:bg-white/25 rounded-full w-6 h-6 text-white transition-colors cursor-pointer"
                               aria-label="إنقاص الكمية"
                             >
                               <Minus size={11} />
                             </button>
-                            <span className="min-w-5 font-bold text-[13px] text-white text-center">
+                            <span className="min-w-4 font-bold text-[14px] text-white text-center">
                               {getQuantity(item.id)}
                             </span>
                             <button
                               type="button"
-                              onClick={() => incrementQuantity(item.id)}
-                              className="flex justify-center items-center hover:bg-white/20 rounded-full w-6 h-6 text-white transition"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                incrementQuantity(item.id);
+                              }}
+                              className="flex justify-center items-center hover:bg-white/25 rounded-full w-6 h-6 text-white transition-colors cursor-pointer"
                               aria-label="زيادة الكمية"
                             >
                               <Plus size={11} />
                             </button>
                           </div>
-                        ) : null}
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (getQuantity(item.id) > 0) {
-                              handleAddToCart(item);
-                            } else {
-                              incrementQuantity(item.id);
-                            }
-                          }}
-                          className="inline-flex justify-center items-center gap-1.5 bg-glace-yellow hover:brightness-105 px-3.5 py-2 rounded-full font-bold text-[#1a4a5a] text-[13px] transition-all cursor-pointer"
-                        >
-                          <ShoppingCart size={14} />
-                          أضف للسلة
-                        </button>
+                        )}
                       </div>
                     </article>
                   );
@@ -345,6 +356,32 @@ export default function FavoritesClientPage() {
           ))
         )}
       </div>
+
+      {totalSelectedCount > 0 && (
+        <div className="bottom-28 lg:bottom-0 z-9999997 fixed inset-x-0 px-3 sm:px-4 lg:px-6 pt-6 pb-4 pointer-events-none">
+          <div className="flex md:flex-row items-stretch sm:items-center gap-3 sm:gap-4 lg:gap-6 bg-[#2d8aaa]/92 shadow-[0_8px_28px_rgba(0,0,0,0.22)] backdrop-blur-md mx-auto px-4 sm:px-5 lg:px-8 py-3 sm:py-4 lg:py-5 border border-white/35 rounded-[24px] max-w-3xl pointer-events-auto">
+            <div className="flex flex-col shrink-0">
+              <span className="mb-1 text-[11px] text-white/75 sm:text-[12px] leading-none">
+                إجمالي السعر
+              </span>
+              <p className="font-bold tabular-nums text-[16px] text-glace-yellow sm:text-[18px] lg:text-[22px] leading-none">
+                ₪ {totalPrice.toFixed(2)}
+              </p>
+            </div>
+
+            <div className="hidden md:block flex-1" />
+
+            <div className="w-full sm:w-auto">
+              <AddToCartButton
+                onClick={handleAddToCart}
+                canAdd={totalSelectedCount > 0}
+                addedToCart={addedToCart}
+                validationMsg={validationMsg}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

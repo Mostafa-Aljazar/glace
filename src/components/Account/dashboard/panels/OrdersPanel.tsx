@@ -1,40 +1,89 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingBag, Clock, ChefHat, Truck, CheckCircle2, ChevronDown, ChevronUp, Package } from "lucide-react";
-import { useOrderStore, type OrderStatus } from "@/store/orderStore";
+import Link from "next/link";
+import Image from "next/image";
+import {
+  ShoppingBag,
+  ChevronDown,
+  ChevronUp,
+  Package,
+  MapPinned,
+  RotateCcw,
+} from "lucide-react";
+import {
+  useOrderStore,
+  ORDER_STATUS_COLORS,
+  PAYMENT_METHOD_LABELS,
+  type Order,
+  type OrderStatus,
+} from "@/store/orderStore";
+import { getLineItemTotal, useCartStore } from "@/store/cartStore";
+import { getStatusSteps } from "@/lib/orderStatusSteps";
+import { cn } from "@/lib/utils";
 import DashboardCard from "../shared/DashboardCard";
 import EmptyState from "../shared/EmptyState";
 
-const STATUS_STEPS: { key: OrderStatus; label: string; icon: typeof Clock }[] = [
-  { key: "قيد المراجعة", label: "قيد المراجعة", icon: Clock },
-  { key: "قيد التحضير", label: "قيد التحضير", icon: ChefHat },
-  { key: "في الطريق", label: "في الطريق", icon: Truck },
-  { key: "تم التسليم", label: "تم التسليم", icon: CheckCircle2 },
+type FilterTab = "all" | "active" | "completed" | "cancelled" | "refunded";
+
+const TABS: { key: FilterTab; label: string; subtext?: string }[] = [
+  { key: "all", label: "الكل" },
+  { key: "active", label: "نشط" },
+  { key: "completed", label: "مكتمل", subtext: "تم التوصيل" },
+  { key: "cancelled", label: "ملغي", subtext: "المبلغ قيد المراجعة" },
+  { key: "refunded", label: "مسترد", subtext: "تم إرسال المبلغ" },
 ];
 
-const PAYMENT_LABELS: Record<string, string> = {
-  jawwal: "جوال باي",
-  paypal: "باي بال",
-  cash: "كاش",
-  visa: "فيزا",
-  wallet: "محفظة النظام",
-};
+function matchesTab(order: Order, tab: FilterTab): boolean {
+  switch (tab) {
+    case "all":
+      return true;
+    case "active":
+      return (
+        order.status === "قيد المراجعة" ||
+        order.status === "جاري التحضير" ||
+        order.status === "جاهز للاستلام" ||
+        order.status === "في الطريق"
+      );
+    case "completed":
+      return order.status === "تم التسليم" || order.status === "تم الاستلام";
+    case "cancelled":
+      return order.status === "ملغي";
+    case "refunded":
+      return order.status === "مسترد";
+  }
+}
 
-const STATUS_COLORS: Record<OrderStatus, string> = {
-  "قيد المراجعة": "bg-yellow-500/30 text-yellow-200",
-  "قيد التحضير": "bg-blue-500/30 text-blue-200",
-  "في الطريق": "bg-purple-500/30 text-purple-200",
-  "تم التسليم": "bg-green-500/30 text-green-200",
-};
+/** Best-effort customer name for the order — delivery/pickup orders carry it
+ *  on the address, dine-in orders don't collect one. */
+function customerName(order: Order): string | undefined {
+  return order.address?.name;
+}
 
 export default function OrdersPanel() {
   const orders = useOrderStore((s) => s.orders);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [tab, setTab] = useState<FilterTab>("all");
+  const addItem = useCartStore((s) => s.addItem);
 
   const sorted = [...orders].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
+
+  function handleReorder(order: Order) {
+    order.items.forEach((item) => {
+      addItem({
+        productId: item.productId,
+        name: item.name,
+        image: item.image,
+        type: item.type,
+        selections: item.selections || [],
+        addonTotal: item.addonTotal,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+      });
+    });
+  }
 
   if (sorted.length === 0) {
     return (
@@ -48,89 +97,247 @@ export default function OrdersPanel() {
     );
   }
 
+  const filtered = sorted.filter((o) => matchesTab(o, tab));
+
   return (
     <DashboardCard title="طلباتي" icon={ShoppingBag}>
-      <div className="flex flex-col gap-3">
-        {sorted.map((order) => {
-          const isOpen = expandedId === order.id;
-          const currentStep = STATUS_STEPS.findIndex((s) => s.key === order.status);
-
+      {/* Filter tabs, each with a live count */}
+      <div className="flex gap-2 mb-5 pb-1 overflow-x-auto no-scrollbar">
+        {TABS.map(({ key, label, subtext }) => {
+          const count = sorted.filter((o) => matchesTab(o, key)).length;
+          const isActive = tab === key;
           return (
-            <div key={order.id} className="border border-white/20 rounded-[20px] overflow-hidden">
-              {/* Row header */}
-              <button
-                type="button"
-                onClick={() => setExpandedId(isOpen ? null : order.id)}
-                className="flex items-center justify-between w-full px-5 py-4 text-white hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-glace-yellow font-bold text-[15px]">{order.id}</span>
-                  <span className="text-white/60 text-[13px]">
-                    {new Date(order.createdAt).toLocaleDateString("ar-PS", { dateStyle: "medium" })}
-                  </span>
-                  <span className={`text-[12px] px-3 py-1 rounded-full ${STATUS_COLORS[order.status]}`}>
-                    {order.status}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="font-bold text-[17px]">{order.total.toFixed(2)} ₪</span>
-                  {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                </div>
-              </button>
-
-              {/* Expanded detail */}
-              {isOpen && (
-                <div className="px-5 pb-5 border-t border-white/10 pt-4 flex flex-col gap-5">
-                  {/* Status stepper */}
-                  <div className="flex justify-between items-center relative py-2">
-                    <div className="absolute top-[50%] right-[5%] left-[5%] h-[2px] bg-white/20 -translate-y-1/2" />
-                    {STATUS_STEPS.map((step, idx) => {
-                      const Icon = step.icon;
-                      const done = idx <= currentStep;
-                      return (
-                        <div key={step.key} className="z-10 relative flex flex-col items-center gap-1 text-center">
-                          <div className={`flex justify-center items-center rounded-full w-9 h-9 ${done ? "bg-glace-yellow text-[#388dab]" : "bg-white/20 text-white/40"}`}>
-                            <Icon size={18} />
-                          </div>
-                          <span className={`text-[11px] sm:text-[13px] ${done ? "text-white font-bold" : "text-white/40"}`}>
-                            {step.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Items */}
-                  <div>
-                    <p className="flex items-center gap-2 text-white/70 text-[14px] mb-3">
-                      <Package size={16} /> المنتجات
-                    </p>
-                    <div className="flex flex-col gap-2">
-                      {order.items.map((item) => (
-                        <div key={item.id} className="flex justify-between text-[14px] pb-2 border-b border-white/10">
-                          <div>
-                            <span className="font-bold">{item.name}</span>
-                            {item.size && <span className="text-white/60 mr-2">({item.size})</span>}
-                            <span className="text-white/60 mr-2">× {item.quantity}</span>
-                          </div>
-                          <span>{((item.unitPrice + item.addonTotal) * item.quantity).toFixed(2)} ₪</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Meta */}
-                  <div className="flex gap-4 text-[13px] text-white/60 flex-wrap">
-                    <span>الدفع: {PAYMENT_LABELS[order.paymentMethod] ?? order.paymentMethod}</span>
-                    <span>الاستلام: {order.deliveryMethod === "delivery" ? "توصيل" : "من المحل"}</span>
-                    {order.discount > 0 && <span className="text-green-300">خصم: -{order.discount} ₪</span>}
-                  </div>
-                </div>
+            <button
+              key={key}
+              type="button"
+              onClick={() => setTab(key)}
+              title={subtext}
+              className={cn(
+                "flex flex-col items-center px-4 py-2 rounded-full text-[14px] whitespace-nowrap transition-colors cursor-pointer shrink-0",
+                isActive
+                  ? "bg-glace-yellow text-[#1e6a7f] font-bold"
+                  : "bg-white/10 text-white/80 hover:bg-white/20",
               )}
-            </div>
+            >
+              <span className="flex items-center gap-1.5">
+                {label}
+                <span className={isActive ? "opacity-70" : "opacity-50"}>
+                  ({count})
+                </span>
+              </span>
+              {subtext && (
+                <span
+                  className={cn(
+                    "text-[10px]",
+                    isActive ? "text-[#1e6a7f]/70" : "text-white/50",
+                  )}
+                >
+                  {subtext}
+                </span>
+              )}
+            </button>
           );
         })}
       </div>
+
+      {filtered.length === 0 ? (
+        <EmptyState icon={ShoppingBag} message="لا يوجد طلبات في هذا التصنيف" />
+      ) : (
+        <div className="flex flex-col gap-3">
+          {filtered.map((order) => {
+            const isOpen = expandedId === order.id;
+            const currentStep = getStatusSteps(order.deliveryMethod).findIndex(
+              (s: { key: OrderStatus }) => s.key === order.status,
+            );
+
+            const name = customerName(order);
+
+            return (
+              <div
+                key={order.id}
+                className="border border-white/20 rounded-[20px] overflow-hidden"
+              >
+                {/* Row header */}
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(isOpen ? null : order.id)}
+                  className="flex flex-col gap-3 hover:bg-white/10 px-5 py-4 w-full text-white transition-colors cursor-pointer"
+                >
+                  <div className="flex justify-between items-center gap-3">
+                    <span className="font-bold text-[16px]">#{order.id}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={`text-[12px] px-3 py-1 rounded-full ${ORDER_STATUS_COLORS[order.status]}`}
+                      >
+                        {order.status}
+                      </span>
+                      {isOpen ? (
+                        <ChevronUp size={18} />
+                      ) : (
+                        <ChevronDown size={18} />
+                      )}
+                    </div>
+                  </div>
+
+                  {name && (
+                    <>
+                      <p className="text-[14px] text-white/70 text-start">
+                        الزبون: {name}
+                      </p>
+                      <div className="border-white/10 border-t" />
+                    </>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold tabular-nums text-[17px] text-glace-yellow">
+                      {order.total.toFixed(2)} ₪
+                    </span>
+                    <span className="text-[13px] text-white/60">
+                      {new Date(order.createdAt).toLocaleDateString("ar-PS", {
+                        dateStyle: "medium",
+                      })}
+                    </span>
+                  </div>
+                </button>
+
+                {/* Expanded detail */}
+                {isOpen && (
+                  <div className="flex flex-col gap-5 px-5 pt-4 pb-5 border-white/10 border-t">
+                    {/* Status stepper — only meaningful for orders still being handled */}
+                    {order.status === "ملغي" || order.status === "مسترد" ? (
+                      <div
+                        className={`rounded-[16px] px-4 py-3 text-[14px] font-medium text-center ${ORDER_STATUS_COLORS[order.status]}`}
+                      >
+                        {order.status === "ملغي"
+                          ? "تم إلغاء هذا الطلب، والمبلغ قيد المراجعة"
+                          : "تم إرسال المبلغ المسترد لهذا الطلب"}
+                        {order.status === "ملغي" && order.cancelReason && (
+                          <p className="mt-1 font-normal text-[12px]">
+                            سبب الإلغاء: {order.cancelReason}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="relative flex justify-between items-center py-2">
+                        <div className="top-[50%] right-[5%] left-[5%] absolute bg-white/20 h-[2px] -translate-y-1/2" />
+                        {getStatusSteps(order.deliveryMethod).map((step, idx) => {
+                          const Icon = step.icon;
+                          const done = idx <= getStatusSteps(order.deliveryMethod).findIndex((s) => s.key === order.status);
+                          return (
+                            <div
+                              key={step.key}
+                              className="z-10 relative flex flex-col items-center gap-1 text-center"
+                            >
+                              <div
+                                className={`flex justify-center items-center rounded-full w-9 h-9 ${done ? "bg-glace-yellow text-[#388dab]" : "bg-white/20 text-white/40"}`}
+                              >
+                                <Icon size={18} />
+                              </div>
+                              <span
+                                className={`text-[11px] sm:text-[13px] ${done ? "text-white font-bold" : "text-white/40"}`}
+                              >
+                                {step.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Items */}
+                    <div>
+                      <p className="flex items-center gap-2 mb-3 text-[14px] text-white/70">
+                        <Package size={16} /> المنتجات
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        {order.items.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-3 pb-3 border-white/10 border-b text-[14px]"
+                          >
+                            <div className="relative flex justify-center items-center bg-linear-to-br from-white/20 to-white/5 border border-white/15 rounded-2xl size-11 overflow-hidden shrink-0">
+                              {item.image ? (
+                                <Image
+                                  src={item.image}
+                                  alt={item.name}
+                                  width={44}
+                                  height={44}
+                                  className="p-1 size-full object-contain"
+                                />
+                              ) : (
+                                <Package
+                                  size={18}
+                                  strokeWidth={1.6}
+                                  className="text-glace-yellow"
+                                />
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <span className="font-bold">{item.name}</span>
+                              {item.size && (
+                                <span className="mr-2 text-white/60">
+                                  ({item.size})
+                                </span>
+                              )}
+                              <span className="mr-2 text-white/60">
+                                × {item.quantity}
+                              </span>
+                            </div>
+                            <span className="shrink-0">
+                              {getLineItemTotal(item).toFixed(2)} ₪
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Meta */}
+                    <div className="flex flex-wrap gap-4 text-[13px] text-white/60">
+                      <span>
+                        الدفع:{" "}
+                        {PAYMENT_METHOD_LABELS[order.paymentMethod] ??
+                          order.paymentMethod}
+                      </span>
+                      <span>
+                        الاستلام:{" "}
+                        {order.deliveryMethod === "delivery"
+                          ? "توصيل"
+                          : order.deliveryMethod === "pickup"
+                            ? "من المحل"
+                            : "تناول الآن"}
+                      </span>
+                      {order.discount > 0 && (
+                        <span className="text-green-300">
+                          خصم: -{order.discount} ₪
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/order-status/${order.id}`}
+                        className="flex-1 flex items-center justify-center gap-2 bg-glace-yellow hover:brightness-105 rounded-[14px] py-2.5 text-[14px] font-bold text-[#1e6a7f] transition"
+                      >
+                        <MapPinned size={16} />
+                        تتبع الطلب
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleReorder(order)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-glace-yellow/80 hover:bg-glace-yellow border-0 rounded-[14px] py-2.5 text-[14px] font-bold text-[#1e6a7f] transition"
+                      >
+                        <RotateCcw size={16} />
+                        إعادة الطلب
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </DashboardCard>
   );
 }

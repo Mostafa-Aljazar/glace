@@ -5,6 +5,12 @@ import { resolveMediaSrc } from "@/lib/media";
  *  (e.g. flavor list assets the backend does not serve yet). */
 export type MenuImage = StaticIMG | string | null | undefined;
 
+/** Backend id of the extra-biscuit addon inside `GET /menu/addons`. Priced
+ *  once for the whole cart line (flat), never per-unit — kept as one shared
+ *  constant since both the order-page picker and the cart's "تخصيص
+ *  الإضافات" dialog need to agree on which addon id gets that treatment. */
+export const EXTRA_BISCUIT_ADDON_ID = "extra-biscuit";
+
 export function resolveMenuImageSrc(image: MenuImage): string {
   if (image && typeof image !== "string") return image.src;
   return resolveMediaSrc(image);

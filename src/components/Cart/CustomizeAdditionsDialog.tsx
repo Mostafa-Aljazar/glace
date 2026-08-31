@@ -9,7 +9,7 @@ import {
   type CartSelection,
   type CartUnit,
 } from "@/store/cartStore";
-import type { IAddonOption } from "@/types/menu.types";
+import { EXTRA_BISCUIT_ADDON_ID, type IAddonOption } from "@/types/menu.types";
 
 type Mode = "all" | "perUnit";
 
@@ -43,15 +43,23 @@ export default function CustomizeAdditionsDialog({
 }: CustomizeAdditionsDialogProps) {
   const setItemSharedAddons = useCartStore((s) => s.setItemSharedAddons);
   const setItemUnits = useCartStore((s) => s.setItemUnits);
+  const setItemFlatAddons = useCartStore((s) => s.setItemFlatAddons);
 
+  // The flat-priced extras (e.g. بسكوت مخروط) get their own section below —
+  // exclude them here so they aren't also offered as a per-unit multiplier.
   const available = useMemo(
-    () => addons.filter((a) => a.available !== false),
+    () =>
+      addons.filter(
+        (a) => a.available !== false && a.id !== EXTRA_BISCUIT_ADDON_ID,
+      ),
     [addons],
   );
   const addonById = useMemo(
     () => new Map(addons.map((a) => [a.id, a])),
     [addons],
   );
+  const flatAddon = addonById.get(EXTRA_BISCUIT_ADDON_ID);
+  const flatAddonAvailable = !!flatAddon && flatAddon.available !== false;
 
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<Mode>("all");
@@ -59,6 +67,9 @@ export default function CustomizeAdditionsDialog({
   const [sharedQty, setSharedQty] = useState<Record<string, number>>({});
   // "perUnit" mode: one qty map per physical unit.
   const [unitQty, setUnitQty] = useState<Record<string, number>[]>([]);
+  // Flat addons (e.g. بسكوت مخروط) — priced once for the whole line,
+  // independent of `mode`/quantity, so tracked separately from both maps above.
+  const [flatQty, setFlatQty] = useState<Record<string, number>>({});
   // Pending mode switch awaiting confirmation (only asked when it would
   // discard picks already made in the mode being left).
   const [pendingMode, setPendingMode] = useState<Mode | null>(null);
@@ -71,6 +82,7 @@ export default function CustomizeAdditionsDialog({
   useEffect(() => {
     if (!open) return;
     setPendingMode(null);
+    setFlatQty(selectionsToQty(item.flatSelections ?? []));
     if (item.units) {
       setMode("perUnit");
       setUnitQty(item.units.map((u) => selectionsToQty(u.selections)));
@@ -114,6 +126,10 @@ export default function CustomizeAdditionsDialog({
     setUnitQty((prev) =>
       prev.map((q, i) => (i === unitIndex ? withAddonQty(q, addon, qty) : q)),
     );
+  }
+
+  function setFlatAddonQty(addon: IAddonOption, qty: number) {
+    setFlatQty((prev) => withAddonQty(prev, addon, qty));
   }
 
   // Whether the mode being left currently has any addon picked — switching
@@ -173,12 +189,14 @@ export default function CustomizeAdditionsDialog({
   }
 
   const sharedAddonTotal = qtyTotal(sharedQty);
+  // Flat total is added once, never scaled by quantity or unit count.
+  const flatAddonTotal = qtyTotal(flatQty);
 
   const lineTotal =
-    mode === "all"
+    (mode === "all"
       ? (item.unitPrice + sharedAddonTotal) * item.quantity
       : item.unitPrice * item.quantity +
-        unitQty.reduce((sum, q) => sum + qtyTotal(q), 0);
+        unitQty.reduce((sum, q) => sum + qtyTotal(q), 0)) + flatAddonTotal;
 
   function handleSave() {
     if (mode === "all") {
@@ -189,6 +207,7 @@ export default function CustomizeAdditionsDialog({
       }));
       setItemUnits(item.id, units);
     }
+    setItemFlatAddons(item.id, qtyToSelections(flatQty), flatAddonTotal);
     onClose();
   }
 
@@ -287,10 +306,25 @@ export default function CustomizeAdditionsDialog({
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
+        {flatAddonAvailable && flatAddon && (
+          <div className="mb-4">
+            <p className="mb-2 text-[12px] font-bold text-white/60">
+              إضافات ثابتة لكامل الطلبية
+            </p>
+            <AddonRow
+              addon={flatAddon}
+              qty={flatQty[flatAddon.id] ?? 0}
+              onChange={(v) => setFlatAddonQty(flatAddon, v)}
+            />
+          </div>
+        )}
+
         {available.length === 0 ? (
-          <p className="text-[14px] text-white/60 text-center py-6">
-            لا توجد إضافات متاحة لهذا المنتج حالياً
-          </p>
+          !flatAddonAvailable && (
+            <p className="text-[14px] text-white/60 text-center py-6">
+              لا توجد إضافات متاحة لهذا المنتج حالياً
+            </p>
+          )
         ) : mode === "all" ? (
           <div className="space-y-2">
             {available.map((addon) => (

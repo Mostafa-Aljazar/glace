@@ -6,6 +6,15 @@ import { MapPin, Phone, MessageCircle } from "lucide-react";
 import { imgTimesWorkSec, imgbgBS, imgpp, imgpp2 } from "@/assets/images";
 import type { IHomeBranchesData } from "@/types/home.types";
 
+/** Branches without a backend `available` flag yet — matched by label until
+ *  the API sends `available` for every branch (see IHomeBranch.available). */
+const UNAVAILABLE_BRANCH_LABELS = new Set(["فرع النصر", "فرع البحر"]);
+
+function isBranchAvailable(branch: { label: string; available?: boolean }): boolean {
+  if (branch.available === false) return false;
+  return !UNAVAILABLE_BRANCH_LABELS.has(branch.label);
+}
+
 function contactDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
@@ -107,13 +116,20 @@ export default function TimesWorkSection({
         <ul className="flex items-center gap-2 sm:gap-3 m-0 mb-5 p-0 list-none">
           {branches.map((b) => {
             const active = activeBranch === b.id;
+            const available = isBranchAvailable(b);
             return (
               <li key={b.id} className="flex-1 min-w-0 sm:flex-none">
                 <button
                   type="button"
-                  onClick={() => setActiveBranch(b.id)}
-                  className={`relative inline-flex items-center justify-center border-0 bg-transparent w-full sm:w-[158px] lg:w-[180px] h-[44px] sm:h-[52px] lg:h-[58px] cursor-pointer transition-transform duration-200 ${
-                    active ? "scale-[1.06] z-[1]" : "hover:scale-[1.03]"
+                  disabled={!available}
+                  onClick={() => available && setActiveBranch(b.id)}
+                  aria-disabled={!available}
+                  className={`relative inline-flex items-center justify-center border-0 bg-transparent w-full sm:w-[158px] lg:w-[180px] h-[44px] sm:h-[52px] lg:h-[58px] transition-transform duration-200 ${
+                    !available
+                      ? "cursor-not-allowed opacity-60"
+                      : active
+                        ? "scale-[1.06] z-[1] cursor-pointer"
+                        : "hover:scale-[1.03] cursor-pointer"
                   }`}
                 >
                   <BranchWave active={active} />
@@ -124,6 +140,11 @@ export default function TimesWorkSection({
                   >
                     {b.label}
                   </span>
+                  {!available && (
+                    <span className="-top-2.5 z-20 absolute inline-flex items-center bg-rose-600 shadow-[0_2px_8px_rgba(0,0,0,0.35)] px-2 py-0.5 border border-rose-300/40 rounded-full font-bold text-[9px] sm:text-[10px] text-white whitespace-nowrap">
+                      تم تدميره
+                    </span>
+                  )}
                 </button>
               </li>
             );

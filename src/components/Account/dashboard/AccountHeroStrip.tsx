@@ -1,8 +1,6 @@
 "use client";
 
-import { User, ShoppingBag, Wallet } from "lucide-react";
-import { useOrderStore } from "@/store/orderStore";
-import { useWalletStore } from "@/store/walletStore";
+import { User } from "lucide-react";
 import type { AuthUser } from "@/store/authStore";
 
 interface Props {
@@ -10,17 +8,36 @@ interface Props {
   isLoading: boolean;
 }
 
+/** First letter of each of the first two words, e.g. "Mostafa Ibrahim" -> "MI". */
+function initialsFrom(name: string | undefined): string {
+  if (!name) return "";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
+
 export default function AccountHeroStrip({ user, isLoading }: Props) {
-  const orderCount = useOrderStore((s) => s.orders.length);
-  const balance = useWalletStore((s) => s.balance);
+  const initials = initialsFrom(user?.name);
 
   return (
-    <div className="bg-white/[.17] backdrop-blur-[15px] rounded-[30px] p-5 flex sm:flex-row flex-col items-center gap-4 text-white">
-      {/* Avatar */}
-      <div className="flex items-center justify-center bg-white/20 rounded-full size-20 shrink-0">
-        {isLoading
-          ? <div className="bg-white/30 rounded-full size-10 animate-pulse" />
-          : <User size={38} className="text-white" />}
+    <div className="bg-white/[.17] backdrop-blur-[15px] border border-glace-yellow/40 rounded-[30px] p-5 flex sm:flex-row flex-col items-center gap-4 text-white">
+      {/* Avatar — initials on a yellow disc when a name is known, generic icon otherwise */}
+      <div
+        className={`flex items-center justify-center rounded-full size-20 shrink-0 ${
+          !isLoading && initials ? "bg-glace-yellow text-[#1e6a7f]" : "bg-white/20 text-white"
+        }`}
+      >
+        {isLoading ? (
+          <div className="bg-white/30 rounded-full size-10 animate-pulse" />
+        ) : initials ? (
+          <span className="font-bold text-[26px]">{initials}</span>
+        ) : (
+          <User size={38} />
+        )}
       </div>
 
       {/* Name + email */}
@@ -37,18 +54,6 @@ export default function AccountHeroStrip({ user, isLoading }: Props) {
             {user?.phone && <p className="text-white/50 text-[14px]">{user.phone}</p>}
           </>
         )}
-      </div>
-
-      {/* Quick stat pills — hidden on base, shown on sm+ */}
-      <div className="hidden sm:flex gap-3 shrink-0">
-        <div className="flex items-center gap-2 bg-white/20 rounded-full px-4 py-2 text-[15px]">
-          <ShoppingBag size={16} className="text-glace-yellow" />
-          <span>{orderCount} طلب</span>
-        </div>
-        <div className="flex items-center gap-2 bg-white/20 rounded-full px-4 py-2 text-[15px]">
-          <Wallet size={16} className="text-glace-yellow" />
-          <span>{balance.toFixed(0)} ₪</span>
-        </div>
       </div>
     </div>
   );

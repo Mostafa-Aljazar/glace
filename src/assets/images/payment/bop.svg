@@ -1,0 +1,9 @@
+<svg width="160" height="96" viewBox="0 0 160 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="160" height="96" rx="20" fill="#F5F7FA"/>
+  <rect x="10" y="10" width="140" height="76" rx="16" fill="#EAF6FF"/>
+  <rect x="28" y="26" width="44" height="44" rx="12" fill="#0F7CFF"/>
+  <path d="M41 60V36H52.5C58.4 36 62.5 40.1 62.5 46C62.5 51.9 58.4 56 52.5 56H47.5V60H41ZM47.5 51.5H51.6C54.8 51.5 56.8 49.6 56.8 46C56.8 42.4 54.8 40.5 51.6 40.5H47.5V51.5Z" fill="white"/>
+  <path d="M86 36H100.5C110.8 36 117 42.5 117 50.5C117 58.5 110.8 65 100.5 65H86V36ZM92 40.6V60.4H100.2C106.3 60.4 110 56.9 110 50.5C110 44.1 106.3 40.6 100.2 40.6H92Z" fill="#0F7CFF"/>
+  <path d="M91 31H108V35H91V31Z" fill="#F59E0B"/>
+  <text x="118" y="55" text-anchor="middle" font-size="18" font-family="Arial, Helvetica, sans-serif" font-weight="800" fill="#0F172A">BOP</text>
+</svg>

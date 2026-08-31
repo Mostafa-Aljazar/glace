@@ -14,8 +14,6 @@ export default function robots(): MetadataRoute.Robots {
         "/payment",
         "/order-status",
         "/my-account",
-        "/my-orders",
-        "/my-wallet",
         "/favorites",
         "/auth",
         "/coming-soon",
