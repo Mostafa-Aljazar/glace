@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { UserCircle } from "lucide-react";
+import { UserCircle, User, Phone, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,18 +20,19 @@ import { useAuthStore } from "@/store/authStore";
 import { useUpdateProfile } from "@/hooks/auth/useUpdateProfile";
 import type { AuthUser } from "@/store/authStore";
 import DashboardCard from "../shared/DashboardCard";
+import { inputClass, labelClass, fieldIconClass } from "@/components/Auth/authFieldStyles";
 
 const schema = z.object({
   name: z.string().min(1, "الاسم مطلوب"),
   phone: z.string().min(1, "رقم الهاتف مطلوب"),
-  email: z.string().email("بريد إلكتروني غير صالح"),
+  email: z
+    .string()
+    .email("بريد إلكتروني غير صالح")
+    .optional()
+    .or(z.literal("")),
 });
 
 type ProfileForm = z.infer<typeof schema>;
-
-const inputClass =
-  "bg-transparent border-white text-white placeholder:text-white/60 rounded-[20px] focus-visible:ring-white/30";
-const labelClass = "text-white text-[17px]";
 
 export default function ProfilePanel() {
   // prefer reading user from the persisted auth store for correct typing
@@ -73,9 +74,12 @@ export default function ProfilePanel() {
               <FormItem>
                 <FormLabel className={labelClass}>الاسم الكامل</FormLabel>
                 <FormControl>
-                  <Input {...field} className={inputClass} />
+                  <div className="relative">
+                    <User size={18} className={fieldIconClass} />
+                    <Input {...field} placeholder="الاسم الكامل" className={`peer ${inputClass}`} />
+                  </div>
                 </FormControl>
-                <FormMessage className="text-[14px] text-glace-yellow" />
+                <FormMessage className="text-[13px] text-glace-yellow font-semibold" />
               </FormItem>
             )}
           />
@@ -86,9 +90,18 @@ export default function ProfilePanel() {
               <FormItem>
                 <FormLabel className={labelClass}>رقم الهاتف</FormLabel>
                 <FormControl>
-                  <Input {...field} type="tel" className={inputClass} />
+                  <div className="relative">
+                    <Phone size={18} className={fieldIconClass} />
+                    <Input
+                      {...field}
+                      type="tel"
+                      dir="ltr"
+                      placeholder="05XXXXXXXX"
+                      className={`peer text-left ${inputClass}`}
+                    />
+                  </div>
                 </FormControl>
-                <FormMessage className="text-[14px] text-glace-yellow" />
+                <FormMessage className="text-[13px] text-glace-yellow font-semibold" />
               </FormItem>
             )}
           />
@@ -97,17 +110,28 @@ export default function ProfilePanel() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className={labelClass}>البريد الإلكتروني</FormLabel>
+                <FormLabel className={labelClass}>
+                  البريد الإلكتروني (اختياري)
+                </FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" className={inputClass} />
+                  <div className="relative">
+                    <Mail size={18} className={fieldIconClass} />
+                    <Input
+                      {...field}
+                      type="email"
+                      dir="ltr"
+                      placeholder="example@email.com"
+                      className={`peer text-left ${inputClass}`}
+                    />
+                  </div>
                 </FormControl>
-                <FormMessage className="text-[14px] text-glace-yellow" />
+                <FormMessage className="text-[13px] text-glace-yellow font-semibold" />
               </FormItem>
             )}
           />
 
           {update.isError && (
-            <p className="text-[14px] text-glace-yellow">
+            <p className="text-[13px] text-glace-yellow font-semibold">
               {(update.error as { response?: { data?: { message?: string } } })
                 ?.response?.data?.message ?? "حدث خطأ، حاول مجدداً"}
             </p>
@@ -116,7 +140,7 @@ export default function ProfilePanel() {
           <Button
             type="submit"
             disabled={update.isPending}
-            className="bg-[#117291] hover:bg-[#0e6080] disabled:opacity-60 py-3 border-0 rounded-[30px] h-auto text-[18px] text-white cursor-pointer"
+            className="bg-glace-yellow hover:bg-glace-yellow/90 disabled:opacity-60 py-3 border-0 rounded-[16px] h-12 text-[16px] font-semibold text-[#1e6a7f] cursor-pointer transition-colors"
           >
             {update.isPending
               ? "جاري الحفظ..."

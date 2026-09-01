@@ -29,6 +29,7 @@ import {
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { useAddressStore } from "@/store/addressStore";
+import { useAddresses, useAddAddress, useDeleteAddress } from "@/hooks/addresses";
 import { useCheckoutDraftStore } from "@/store/checkoutDraftStore";
 import ScheduleTimePicker from "@/components/Checkout/ScheduleTimePicker";
 import AddressForm from "@/components/Checkout/AddressForm";
@@ -80,10 +81,10 @@ export default function CheckoutClientPage() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
   const user = useAuthStore((s) => s.user);
   const [orderingForSomeoneElse, setOrderingForSomeoneElse] = useState(false);
-  const addresses = useAddressStore((s) => s.addresses);
+  const { data: addresses = [] } = useAddresses();
   const selectedId = useAddressStore((s) => s.selectedId);
-  const addAddress = useAddressStore((s) => s.addAddress);
-  const removeAddress = useAddressStore((s) => s.removeAddress);
+  const addAddressMutation = useAddAddress();
+  const removeAddressMutation = useDeleteAddress();
   const selectAddress = useAddressStore((s) => s.selectAddress);
   const selectedAddress = addresses.find((a) => a.id === selectedId) ?? null;
   const setCheckoutDraft = useCheckoutDraftStore((s) => s.setDraft);
@@ -94,14 +95,17 @@ export default function CheckoutClientPage() {
 
   const isAddingNewAddress = addresses.length === 0 || showNewAddressForm;
 
-  function goToPayment(address: {
-    name: string;
-    phone: string;
-    city: string;
-    zoneId: string;
-    street: string;
-    landmark?: string;
-  }) {
+  function goToPayment(
+    address: {
+      name: string;
+      phone: string;
+      city: string;
+      zoneId: string;
+      street: string;
+      landmark?: string;
+    },
+    addressId?: string,
+  ) {
     if (deliveryBlockingItem) {
       setDeliveryBlockedOpen(true);
       return;
@@ -121,6 +125,7 @@ export default function CheckoutClientPage() {
         landmark: address.landmark,
         note: captainNote.trim() || undefined,
       },
+      addressId,
       deliveryFee: zone?.fee ?? 0,
       pickupTime: scheduleLabel,
     });
@@ -129,7 +134,7 @@ export default function CheckoutClientPage() {
 
   function onConfirmSavedAddress() {
     if (!selectedAddress) return;
-    goToPayment(selectedAddress);
+    goToPayment(selectedAddress, selectedAddress.id);
   }
 
   function handleCancelOrder() {
@@ -425,7 +430,7 @@ export default function CheckoutClientPage() {
                               <span
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  removeAddress(address.id);
+                                  removeAddressMutation.mutate(address.id);
                                 }}
                                 role="button"
                                 aria-label="حذف العنوان"
@@ -507,9 +512,13 @@ export default function CheckoutClientPage() {
                   submitLabel="تأكيد وانتقل للدفع"
                   hideSubmit={!isLoggedIn}
                   onSubmit={(data) => {
-                    addAddress({ ...data, label: `عنوان ${addresses.length + 1}` });
-                    setShowNewAddressForm(false);
-                    goToPayment(data);
+                    const payload = { ...data, label: `عنوان ${addresses.length + 1}` };
+                    addAddressMutation.mutate(payload, {
+                      onSuccess: (created) => {
+                        setShowNewAddressForm(false);
+                        goToPayment(data, created.id);
+                      },
+                    });
                   }}
                   beforeContact={
                     <div>

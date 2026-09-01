@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { User, Phone, ArrowRight } from "lucide-react";
+import { User, ArrowRight, MessageCircle } from "lucide-react";
 import {
   Form,
   FormField,
@@ -17,17 +17,35 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import OtpInput from "@/components/Auth/OtpInput";
-import { inputClass, labelClass, fieldIconClass } from "@/components/Auth/authFieldStyles";
+import {
+  inputClass,
+  labelClass,
+  fieldIconClass,
+} from "@/components/Auth/authFieldStyles";
 import { useSendOtp, useVerifyOtp } from "@/hooks/auth/useOtpAuth";
 import type { PhoneFormValues, RegisterPhoneFormValues } from "@/types";
 
 const RESEND_SECONDS = 45;
+const SUPPORT_WHATSAPP_HREF = "https://wa.me/972592226522";
+
+/** Inline SVG instead of the 🇵🇸 emoji — flag emojis render as bare "PS"
+ *  letters or a blank box on Windows/some browsers with no flag-glyph font. */
+function PalestineFlag() {
+  return (
+    <svg viewBox="0 0 30 20" className="w-4.5 h-3 rounded-xs shrink-0" aria-hidden>
+      <rect width="30" height="20" fill="#fff" />
+      <rect width="30" height="6.667" fill="#000" />
+      <rect y="13.333" width="30" height="6.667" fill="#007a3d" />
+      <polygon points="0,0 12,10 0,20" fill="#ce1126" />
+    </svg>
+  );
+}
 
 const loginSchema = z.object({
   phone: z
     .string()
     .min(1, "رقم الجوال مطلوب")
-    .regex(/^(009665|9665|\+9665|05|5)\d{8}$/, "رقم الجوال غير صالح"),
+    .regex(/^(\+972|009725|972|05)\d{8}$|^5\d{8}$/, "رقم الجوال غير صالح"),
 });
 
 const registerSchema = loginSchema.extend({
@@ -65,7 +83,8 @@ export default function PhoneOtpFlow({
 
   const phoneForm = useForm<RegisterPhoneFormValues | PhoneFormValues>({
     resolver: zodResolver(mode === "register" ? registerSchema : loginSchema),
-    defaultValues: mode === "register" ? { fullName: "", phone: "" } : { phone: "" },
+    defaultValues:
+      mode === "register" ? { fullName: "", phone: "" } : { phone: "" },
   });
 
   useEffect(() => {
@@ -91,62 +110,80 @@ export default function PhoneOtpFlow({
 
   function handleResend() {
     if (secondsLeft > 0) return;
-    sendOtp.mutate({ phone }, { onSuccess: () => setSecondsLeft(RESEND_SECONDS) });
+    sendOtp.mutate(
+      { phone },
+      { onSuccess: () => setSecondsLeft(RESEND_SECONDS) },
+    );
   }
 
   function handleVerify() {
     if (code.length !== 6) return;
-    verifyOtp.mutate({ phone, code, fullName: mode === "register" ? fullName : undefined });
+    verifyOtp.mutate({
+      phone,
+      code,
+      fullName: mode === "register" ? fullName : undefined,
+    });
   }
 
   if (step === "otp") {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <button
           type="button"
           onClick={() => setStep("phone")}
-          className="flex items-center gap-1.5 text-white/60 hover:text-white text-[13px] transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 self-start bg-white/10 hover:bg-white/15 px-3 py-1.5 border border-glace-yellow/40 rounded-full font-medium text-[13px] text-glace-yellow transition-colors cursor-pointer"
         >
-          <ArrowRight size={15} />
+          <ArrowRight size={14} />
           تعديل رقم الجوال
         </button>
 
         <div className="text-center">
-          <p className="text-white/80 text-[14px]">
-            تم إرسال رمز التحقق إلى
+          <p className="flex justify-center items-center gap-1.5 text-[13.5px] text-white">
+            <MessageCircle size={15} className="text-glace-yellow shrink-0" />
+            تم إرسال رمز التحقق إلى حسابك على واتساب
           </p>
-          <p dir="ltr" className="text-white font-bold text-[16px]">
+          <p dir="ltr" className="mt-1 font-bold text-[17px] text-white">
             {phone}
           </p>
         </div>
 
-        <OtpInput value={code} onChange={setCode} disabled={verifyOtp.isPending} />
+        <OtpInput
+          value={code}
+          onChange={setCode}
+          disabled={verifyOtp.isPending}
+        />
 
         {verifyOtp.isError && (
-          <div className="flex items-center justify-center gap-2 bg-rose-500/15 border border-rose-400/40 rounded-[14px] px-3.5 py-2.5">
-            <p className="text-rose-200 text-[13.5px] font-semibold text-center">
-              {verifyOtp.error instanceof Error ? verifyOtp.error.message : "رمز التحقق غير صحيح"}
+          <div className="flex justify-center items-center gap-2 bg-rose-500/15 px-3.5 py-2.5 border border-rose-400/40 rounded-[14px]">
+            <p className="font-semibold text-[13.5px] text-rose-200 text-center">
+              {verifyOtp.error instanceof Error
+                ? verifyOtp.error.message
+                : "رمز التحقق غير صحيح"}
             </p>
           </div>
         )}
 
-        <Button
-          type="button"
-          disabled={code.length !== 6 || verifyOtp.isPending}
-          onClick={handleVerify}
-          className="bg-glace-yellow hover:bg-yellow-300 border-0 rounded-[18px] w-full text-[#1e6a7f] text-[17px] font-bold h-auto py-3.5 mt-1 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] hover:-translate-y-0.5 transition-all cursor-pointer disabled:opacity-60 disabled:pointer-events-none disabled:translate-y-0 disabled:shadow-none"
-        >
-          {verifyOtp.isPending ? "جاري التحقق..." : "تأكيد الرمز"}
-        </Button>
+        <div className="flex flex-col gap-3">
+          <Button
+            type="button"
+            disabled={code.length !== 6 || verifyOtp.isPending}
+            onClick={handleVerify}
+            className="bg-glace-yellow hover:bg-yellow-300 disabled:opacity-60 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] disabled:shadow-none py-3.5 border-0 rounded-[18px] w-full h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 disabled:translate-y-0 cursor-pointer disabled:pointer-events-none"
+          >
+            {verifyOtp.isPending ? "جاري التحقق..." : "تأكيد الرمز"}
+          </Button>
 
-        <button
-          type="button"
-          onClick={handleResend}
-          disabled={secondsLeft > 0 || sendOtp.isPending}
-          className="text-white/70 hover:text-white disabled:hover:text-white/40 disabled:text-white/40 text-[13px] text-center transition-colors cursor-pointer disabled:cursor-not-allowed"
-        >
-          {secondsLeft > 0 ? `إعادة إرسال الرمز خلال ${secondsLeft} ثانية` : "إعادة إرسال الرمز"}
-        </button>
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={secondsLeft > 0 || sendOtp.isPending}
+            className="font-semibold text-[13px] text-white disabled:text-white/80 text-center underline-offset-2 hover:underline disabled:hover:no-underline transition-colors cursor-pointer disabled:cursor-not-allowed"
+          >
+            {secondsLeft > 0
+              ? `إعادة إرسال الرمز خلال ${secondsLeft} ثانية`
+              : "إعادة إرسال الرمز"}
+          </button>
+        </div>
       </div>
     );
   }
@@ -176,7 +213,7 @@ export default function PhoneOtpFlow({
                     />
                   </div>
                 </FormControl>
-                <FormMessage className="text-rose-300 text-[13px] font-semibold" />
+                <FormMessage className="font-semibold text-[13px] text-rose-300" />
               </FormItem>
             )}
           />
@@ -190,7 +227,9 @@ export default function PhoneOtpFlow({
               <FormLabel className={labelClass}>رقم الجوال</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Phone size={18} className={fieldIconClass} />
+                  <span className={`${fieldIconClass} flex items-center gap-1.5`}>
+                    <PalestineFlag />
+                  </span>
                   <Input
                     {...field}
                     type="tel"
@@ -200,33 +239,54 @@ export default function PhoneOtpFlow({
                   />
                 </div>
               </FormControl>
-              <FormMessage className="text-rose-300 text-[13px] font-semibold" />
+              <FormMessage className="font-semibold text-[13px] text-rose-300" />
             </FormItem>
           )}
         />
 
         {sendOtp.isError && (
-          <div className="flex items-center justify-center gap-2 bg-rose-500/15 border border-rose-400/40 rounded-[14px] px-3.5 py-2.5">
-            <p className="text-rose-200 text-[13.5px] font-semibold text-center">
+          <div className="flex justify-center items-center gap-2 bg-rose-500/15 px-3.5 py-2.5 border border-rose-400/40 rounded-[14px]">
+            <p className="font-semibold text-[13.5px] text-rose-200 text-center">
               تعذر إرسال رمز التحقق، حاول مجدداً
             </p>
           </div>
         )}
 
+        <p className="flex justify-center items-center gap-1.5 text-[12.5px] text-white/90 text-center">
+          <MessageCircle size={13} />
+          سيتم إرسال رمز التحقق عبر واتساب
+        </p>
+
         <Button
           type="submit"
           disabled={sendOtp.isPending}
-          className="bg-glace-yellow hover:bg-yellow-300 border-0 rounded-[18px] w-full text-[#1e6a7f] text-[17px] font-bold h-auto py-3.5 mt-1 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] hover:-translate-y-0.5 transition-all cursor-pointer disabled:opacity-60 disabled:pointer-events-none disabled:translate-y-0 disabled:shadow-none"
+          className="bg-glace-yellow hover:bg-yellow-300 disabled:opacity-60 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] disabled:shadow-none mt-1 py-3.5 border-0 rounded-[18px] w-full h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 disabled:translate-y-0 cursor-pointer disabled:pointer-events-none"
         >
           {sendOtp.isPending ? "جاري الإرسال..." : "إرسال رمز التحقق"}
         </Button>
 
-        <span className="block text-center text-white/70 text-[14px]">
+        <span className="block text-[14px] text-white text-center">
           {switchLinkText}{" "}
-          <Link href={switchLinkHref} className="text-glace-yellow font-semibold">
+          <Link
+            href={switchLinkHref}
+            className="font-semibold text-glace-yellow"
+          >
             {switchLinkLabel}
           </Link>
         </span>
+
+        <a
+          href={SUPPORT_WHATSAPP_HREF}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-1.5 text-[13px] text-white/90 hover:text-white transition-colors"
+        >
+          تواجه مشكلة في التسجيل؟{" "}
+          <span className="inline-flex items-center gap-1 font-semibold text-glace-yellow">
+            <MessageCircle size={14} />
+            تواصل مع الدعم عبر واتساب
+          </span>
+        </a>
       </form>
     </Form>
   );

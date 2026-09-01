@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import {
   Wallet,
@@ -10,13 +10,21 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
+import type { TopUpMethod, TopUpRequestStatus } from "@/store/walletStore";
 import {
-  useWalletStore,
-  type TopUpMethod,
-  type TopUpRequestStatus,
-} from "@/store/walletStore";
-import { findMerchantPaymentAccount } from "@/lib/merchantPaymentAccounts";
+  useWallet,
+  useWalletTransactions,
+  useTopUpRequests,
+  useSubmitTopUpRequest,
+  useSendJawwalTopUpCode,
+  useConfirmJawwalTopUp,
+  type ReceiptTopUpMethod,
+} from "@/hooks/wallet";
+import { usePaymentAccounts } from "@/hooks/payments/usePaymentAccounts";
+import type { TransferPaymentAccount } from "@/lib/merchantPaymentAccounts";
 import ReceiptUploadForm from "@/components/Payment/ReceiptUploadForm";
 import DashboardCard from "../shared/DashboardCard";
 import EmptyState from "../shared/EmptyState";
@@ -26,7 +34,12 @@ const TOP_UP_METHODS: { id: TopUpMethod; label: string; logo: string; bg?: strin
   { id: "jawwal", label: "جوال باي (آلي)", logo: "/images/JAWWAL_PAY.webp" },
   { id: "paypal", label: "بال باي", logo: "/images/PalPay.jpg" },
   { id: "bop", label: "بنك فلسطين", logo: "/images/BOP.webp" },
+  { id: "visa", label: "فيزا", logo: "/images/VISA.webp", bg: "bg-white" },
 ];
+
+/** Visa has no online transfer/receipt flow — it can only be charged on the
+ *  in-store card terminal, same restriction as PaymentClientPage. */
+const IN_STORE_ONLY_TOP_UP_METHODS: TopUpMethod[] = ["visa"];
 
 const TOP_UP_REQUEST_STATUS_COLORS: Record<TopUpRequestStatus, string> = {
   "قيد المراجعة": "bg-yellow-500/30 text-yellow-200",
@@ -38,6 +51,7 @@ const TOP_UP_METHOD_LABELS: Record<TopUpMethod, string> = {
   paypal: "بال باي",
   jawwal: "جوال باي (آلي)",
   "jawwal-manual": "جوال باي (يدوي)",
+  visa: "فيزا",
 };
 
 const TRANSACTION_METHOD_LABELS: Record<TopUpMethod | "cash" | "wallet", string> = {
@@ -61,25 +75,24 @@ function sanitizeAmount(value: string): string {
 type Step = "method" | "details";
 
 export default function WalletPanel() {
-  const balance = useWalletStore((s) => s.balance);
-  const transactions = useWalletStore((s) => s.transactions);
-  const topUpRequests = useWalletStore((s) => s.topUpRequests);
-  const submitTopUpRequest = useWalletStore((s) => s.submitTopUpRequest);
-  const approveTopUpRequest = useWalletStore((s) => s.approveTopUpRequest);
-  const seedMockDataForTesting = useWalletStore((s) => s.seedMockDataForTesting);
-
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "production") {
-      seedMockDataForTesting();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { data: wallet } = useWallet();
+  const balance = wallet?.balance ?? 0;
+  const [txPage, setTxPage] = useState(1);
+  const { data: txData, isFetching: txFetching } = useWalletTransactions({
+    page: txPage,
+  });
+  const transactions = txData?.items ?? [];
+  const { data: topUpRequests = [] } = useTopUpRequests();
+  const submitTopUpRequestMutation = useSubmitTopUpRequest();
+  const sendJawwalCodeMutation = useSendJawwalTopUpCode();
+  const confirmJawwalMutation = useConfirmJawwalTopUp();
 
   const [step, setStep] = useState<Step>("method");
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
+  const [jawwalError, setJawwalError] = useState<string | null>(null);
   const [expandedRequestId, setExpandedRequestId] = useState<string | null>(
     null
   );
@@ -89,6 +102,7 @@ export default function WalletPanel() {
   const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(
     null
   );
+  const [completedTopUp, setCompletedTopUp] = useState(false);
 
   const amountValue = parseFloat(amount) || 0;
   const amountValid = amountValue >= 1;
@@ -105,28 +119,56 @@ export default function WalletPanel() {
   }
 
   function handleSendCode() {
-    if (!phone.trim()) return;
-    setCodeSent(true);
+    if (!phone.trim() || !amountValid) return;
+    setJawwalError(null);
+    sendJawwalCodeMutation.mutate(
+      { phone: phone.trim(), amount: amountValue },
+      {
+        onSuccess: () => setCodeSent(true),
+        onError: () =>
+          setJawwalError("تعذر إرسال الرمز، الرجاء المحاولة مرة أخرى"),
+      },
+    );
   }
 
   function handleJawwalAutoSubmit() {
-    if (!method || !amountValid || !phone.trim() || !code.trim()) return;
-    const id = submitTopUpRequest(amountValue, method, { phone: phone.trim() });
-    setSubmittedRequestId(id);
-    resetFlow(false);
+    if (!amountValid || !phone.trim() || !codeSent || !code.trim()) return;
+    setJawwalError(null);
+    confirmJawwalMutation.mutate(
+      { phone: phone.trim(), amount: amountValue, code: code.trim() },
+      {
+        onSuccess: (request) => {
+          setSubmittedRequestId(request.id);
+          setCompletedTopUp(true);
+          resetFlow(false);
+        },
+        onError: () => setJawwalError("الرمز غير صحيح أو منتهي الصلاحية"),
+      },
+    );
   }
 
-  function handleReceiptSubmit(
-    receiptImage: string | undefined,
+  async function handleReceiptSubmit(
+    receiptImage: File | undefined,
     receiptNote: string | undefined
   ) {
-    if (!method) return;
-    const id = submitTopUpRequest(amountValue, method, {
-      receiptImage,
-      receiptNote,
-    });
-    setSubmittedRequestId(id);
-    resetFlow(false);
+    if (!method || method === "jawwal" || method === "visa") return;
+    const receiptImageDataUrl = receiptImage
+      ? await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(receiptImage);
+        })
+      : undefined;
+    submitTopUpRequestMutation.mutate(
+      { method: method as ReceiptTopUpMethod, receiptImage: receiptImageDataUrl, receiptNote },
+      {
+        onSuccess: (request) => {
+          setSubmittedRequestId(request.id);
+          setCompletedTopUp(false);
+          resetFlow(false);
+        },
+      },
+    );
   }
 
   function resetFlow(clearSubmitted = true) {
@@ -135,12 +177,19 @@ export default function WalletPanel() {
     setPhone("");
     setCodeSent(false);
     setCode("");
+    setJawwalError(null);
     setMethod(null);
     if (clearSubmitted) setSubmittedRequestId(null);
   }
 
+  const { data: paymentAccounts } = usePaymentAccounts();
   const account =
-    method && method !== "jawwal" ? findMerchantPaymentAccount(method) : undefined;
+    method && method !== "jawwal" && !IN_STORE_ONLY_TOP_UP_METHODS.includes(method)
+      ? paymentAccounts?.find(
+          (a): a is TransferPaymentAccount =>
+            a.method === method && !a.inStoreOnly,
+        )
+      : undefined;
 
   return (
     <div className="flex lg:flex-row flex-col gap-6">
@@ -162,10 +211,16 @@ export default function WalletPanel() {
         <DashboardCard title="شحن الرصيد" icon={Wallet}>
           {submittedRequestId ? (
             <div className="flex flex-col items-center gap-3 text-center">
-              <div className="bg-yellow-500/30 px-4 py-3 rounded-[16px] text-yellow-200 text-[14px]">
-                تم استلام طلب الشحن وهو قيد المراجعة، سيُضاف المبلغ لرصيدك
-                بعد التحقق من الإشعار.
-              </div>
+              {completedTopUp ? (
+                <div className="bg-green-500/30 px-4 py-3 rounded-[16px] text-green-200 text-[14px]">
+                  تم شحن رصيدك بنجاح.
+                </div>
+              ) : (
+                <div className="bg-yellow-500/30 px-4 py-3 rounded-[16px] text-yellow-200 text-[14px]">
+                  تم استلام طلب الشحن وهو قيد المراجعة، سيُضاف المبلغ لرصيدك
+                  بعد التحقق من الإشعار.
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => resetFlow()}
@@ -240,9 +295,10 @@ export default function WalletPanel() {
                     type="text"
                     inputMode="decimal"
                     value={amount}
+                    disabled={codeSent}
                     onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
                     placeholder="أدخل المبلغ"
-                    className="bg-white/10 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] px-3.5 py-2.5 w-full text-white text-[15px] placeholder:text-white/40 outline-none transition-colors"
+                    className="bg-white/10 disabled:opacity-60 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] px-3.5 py-2.5 w-full text-white text-[15px] placeholder:text-white/40 outline-none transition-colors"
                   />
                   {amount !== "" && !amountValid && (
                     <p className="mt-1.5 text-[13px] text-red-300">
@@ -255,15 +311,18 @@ export default function WalletPanel() {
                   <button
                     type="button"
                     onClick={handleSendCode}
-                    disabled={!phone.trim()}
+                    disabled={!phone.trim() || !amountValid || sendJawwalCodeMutation.isPending}
                     className="bg-glace-yellow hover:bg-glace-yellow hover:brightness-105 disabled:opacity-50 py-3 rounded-[16px] font-bold text-[#1e6a7f] text-[15px] transition disabled:cursor-not-allowed cursor-pointer"
                   >
-                    إرسال رمز التأكيد
+                    {sendJawwalCodeMutation.isPending
+                      ? "جارٍ الإرسال..."
+                      : "إرسال رمز التأكيد"}
                   </button>
                 ) : (
                   <>
                     <p className="text-[13px] text-glace-yellow">
-                      تم إرسال رمز التأكيد إلى {phone}
+                      أرسل جوال باي رمزاً لتأكيد دفع {amount} ₪ إلى {phone} —
+                      أدخله بالأسفل
                     </p>
                     <div>
                       <label className="block mb-2 text-[14px] text-white/80">
@@ -278,18 +337,59 @@ export default function WalletPanel() {
                         className="bg-white/10 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] px-3.5 py-2.5 w-full text-white text-[15px] placeholder:text-white/40 outline-none transition-colors"
                       />
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCodeSent(false);
+                        setCode("");
+                        setJawwalError(null);
+                      }}
+                      className="text-[13px] text-white/60 hover:text-white/80 underline cursor-pointer self-start"
+                    >
+                      لم يصلك الرمز؟ إرسال مرة أخرى
+                    </button>
                   </>
+                )}
+
+                {jawwalError && (
+                  <p className="text-[13px] text-red-300 text-center">
+                    {jawwalError}
+                  </p>
                 )}
 
                 <button
                   type="button"
                   onClick={handleJawwalAutoSubmit}
-                  disabled={!amountValid || !phone.trim() || !codeSent || !code.trim()}
+                  disabled={
+                    !amountValid ||
+                    !phone.trim() ||
+                    !codeSent ||
+                    !code.trim() ||
+                    confirmJawwalMutation.isPending
+                  }
                   className="bg-[#117291] hover:bg-[#0e6080] disabled:opacity-50 py-3 rounded-[16px] font-bold text-[15px] text-white transition disabled:cursor-not-allowed cursor-pointer"
                 >
-                  تأكيد الشحن
+                  {confirmJawwalMutation.isPending ? "جارٍ التأكيد..." : "تأكيد الشحن"}
                 </button>
               </div>
+            </>
+          ) : method && IN_STORE_ONLY_TOP_UP_METHODS.includes(method) ? (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-[14px] text-white/70">
+                  {TOP_UP_METHOD_LABELS[method]}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setStep("method")}
+                  className="text-[13px] text-white/60 hover:text-white/80 underline cursor-pointer"
+                >
+                  تغيير الطريقة
+                </button>
+              </div>
+              <p className="bg-white/10 px-4 py-3 border border-white/25 rounded-[20px] text-[14px] text-white/80">
+                الدفع بالفيزا يتم على ماكينة الدفع داخل المحل
+              </p>
             </>
           ) : (
             account && (
@@ -349,14 +449,14 @@ export default function WalletPanel() {
                     <span className="font-bold">{account.holderName}</span>
                   </div>
                   <div className="flex justify-between items-center text-[14px]">
-                    <span className="text-white/70">{account.primaryLabel}</span>
+                    <span className="text-white/70">{account.accountLabel}</span>
                     <div className="flex items-center gap-2">
                       <span className="font-bold" dir="ltr">
-                        {account.primaryValue}
+                        {account.accountValue}
                       </span>
                       <button
                         type="button"
-                        onClick={() => handleCopy(account.primaryValue)}
+                        onClick={() => handleCopy(account.accountValue)}
                         aria-label="نسخ"
                         className="flex justify-center items-center hover:bg-white/10 rounded-full size-7 text-white/70 hover:text-white transition-colors cursor-pointer"
                       >
@@ -368,16 +468,16 @@ export default function WalletPanel() {
                       </button>
                     </div>
                   </div>
-                  {account.secondaryLabel && account.secondaryValue && (
+                  {account.iban && (
                     <div className="flex justify-between items-center text-[14px]">
-                      <span className="text-white/70">{account.secondaryLabel}</span>
+                      <span className="text-white/70">رقم الآيبان (IBAN)</span>
                       <div className="flex items-center gap-2">
                         <span className="font-bold" dir="ltr">
-                          {account.secondaryValue}
+                          {account.iban}
                         </span>
                         <button
                           type="button"
-                          onClick={() => handleCopy(account.secondaryValue!)}
+                          onClick={() => handleCopy(account.iban!)}
                           aria-label="نسخ"
                           className="flex justify-center items-center hover:bg-white/10 rounded-full size-7 text-white/70 hover:text-white transition-colors cursor-pointer"
                         >
@@ -392,36 +492,14 @@ export default function WalletPanel() {
                   )}
                 </div>
 
-                <div className="mb-4">
-                  <label className="block mb-2 text-[14px] text-white/80">
-                    المبلغ المحوَّل
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={amount}
-                    onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
-                    placeholder="أدخل المبلغ"
-                    className="bg-white/10 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] px-3.5 py-2.5 w-full text-white text-[15px] placeholder:text-white/40 outline-none transition-colors"
-                  />
-                  {amount !== "" && !amountValid && (
-                    <p className="mt-1.5 text-[13px] text-red-300">
-                      المبلغ يجب ألا يقل عن 1 ₪
-                    </p>
-                  )}
-                </div>
-
-                {amountValid && (
-                  <>
-                    <p className="mb-3 text-[14px] text-white/80">
-                      ارفع صورة وصل التحويل
-                    </p>
-                    <ReceiptUploadForm
-                      onSubmit={handleReceiptSubmit}
-                      submitLabel="تأكيد الشحن"
-                    />
-                  </>
-                )}
+                <p className="mb-3 text-[14px] text-white/80">
+                  ارفع صورة وصل التحويل — المبلغ يُقرأ من الإشعار نفسه بعد
+                  المراجعة
+                </p>
+                <ReceiptUploadForm
+                  onSubmit={handleReceiptSubmit}
+                  submitLabel="تأكيد الشحن"
+                />
               </>
             )
           )}
@@ -510,15 +588,6 @@ export default function WalletPanel() {
                             />
                           </div>
                         )}
-                        {req.status === "قيد المراجعة" && (
-                          <button
-                            type="button"
-                            onClick={() => approveTopUpRequest(req.id)}
-                            className="bg-green-500/20 hover:bg-green-500/30 py-2.5 rounded-[14px] font-bold text-[13px] text-green-200 transition cursor-pointer"
-                          >
-                            موافقة (اختبار) — يضيف المبلغ لسجل المعاملات
-                          </button>
-                        )}
                       </div>
                     )}
                   </div>
@@ -533,7 +602,7 @@ export default function WalletPanel() {
             <EmptyState icon={Wallet} message="لا يوجد معاملات بعد" />
           ) : (
             <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto">
-              {[...transactions].reverse().map((tx) => {
+              {transactions.map((tx) => {
                 const isOpen = expandedTxId === tx.id;
                 const hasDetails = tx.method || tx.receiptImage;
                 const Row = (
@@ -609,6 +678,34 @@ export default function WalletPanel() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {txData && txData.totalPages > 1 && (
+            <div className="flex justify-between items-center gap-3 mt-4 pt-4 border-white/15 border-t">
+              <button
+                type="button"
+                onClick={() => setTxPage((p) => Math.max(1, p - 1))}
+                disabled={txPage <= 1 || txFetching}
+                className="flex items-center gap-1 disabled:opacity-40 hover:bg-white/10 px-3 py-2 rounded-[12px] text-[13px] text-white transition-colors disabled:cursor-not-allowed cursor-pointer"
+              >
+                <ChevronRight size={16} />
+                السابق
+              </button>
+              <span className="text-[13px] text-white/70">
+                صفحة {txData.page} من {txData.totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setTxPage((p) => Math.min(txData.totalPages, p + 1))
+                }
+                disabled={txPage >= txData.totalPages || txFetching}
+                className="flex items-center gap-1 disabled:opacity-40 hover:bg-white/10 px-3 py-2 rounded-[12px] text-[13px] text-white transition-colors disabled:cursor-not-allowed cursor-pointer"
+              >
+                التالي
+                <ChevronLeft size={16} />
+              </button>
             </div>
           )}
         </DashboardCard>

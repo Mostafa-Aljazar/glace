@@ -5,11 +5,15 @@ interface CheckoutDraftState {
   hasDraft: boolean;
   deliveryMethod: DeliveryMethod;
   address?: DeliveryAddress;
+  /** Saved address id the snapshot in `address` came from — sent to the
+   *  real `POST /orders` as `addressId` (delivery orders only). */
+  addressId?: string;
   deliveryFee: number;
   pickupTime?: string;
   setDraft: (draft: {
     deliveryMethod: DeliveryMethod;
     address?: DeliveryAddress;
+    addressId?: string;
     deliveryFee: number;
     pickupTime?: string;
   }) => void;
@@ -25,6 +29,7 @@ export const useCheckoutDraftStore = create<CheckoutDraftState>()((set) => ({
   hasDraft: false,
   deliveryMethod: "delivery",
   address: undefined,
+  addressId: undefined,
   deliveryFee: 0,
   pickupTime: undefined,
   setDraft: (draft) => set({ ...draft, hasDraft: true }),
@@ -32,6 +37,7 @@ export const useCheckoutDraftStore = create<CheckoutDraftState>()((set) => ({
     set({
       hasDraft: false,
       address: undefined,
+      addressId: undefined,
       deliveryFee: 0,
       pickupTime: undefined,
     }),

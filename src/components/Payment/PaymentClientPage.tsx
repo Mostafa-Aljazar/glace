@@ -26,15 +26,17 @@ import {
 } from "@/components/ui/dialog";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
-import { useWalletStore } from "@/store/walletStore";
 import {
-  useOrderStore,
   RECEIPT_METHODS,
   PAYMENT_METHOD_LABELS,
 } from "@/store/orderStore";
 import type { PaymentMethod } from "@/store/orderStore";
 import { useCheckoutDraftStore } from "@/store/checkoutDraftStore";
-import { findMerchantPaymentAccount } from "@/lib/merchantPaymentAccounts";
+import { usePaymentAccounts } from "@/hooks/payments/usePaymentAccounts";
+import type { TransferPaymentAccount } from "@/lib/merchantPaymentAccounts";
+import { useApplyCoupon } from "@/hooks/cart/useApplyCoupon";
+import { usePlaceOrder, useSendJawwalOrderCode } from "@/hooks/orders";
+import { useWallet, useDeductWallet } from "@/hooks/wallet";
 import ReceiptUploadForm from "@/components/Payment/ReceiptUploadForm";
 
 /** The four bank/wallet methods shown as logo cards, matching the reference
@@ -91,7 +93,7 @@ function sanitizeAmount(value: string): string {
 export default function PaymentClientPage() {
   const hasDraft = useCheckoutDraftStore((s) => s.hasDraft);
   const deliveryMethod = useCheckoutDraftStore((s) => s.deliveryMethod);
-  const address = useCheckoutDraftStore((s) => s.address);
+  const addressId = useCheckoutDraftStore((s) => s.addressId);
   const deliveryFee = useCheckoutDraftStore((s) => s.deliveryFee);
   const pickupTime = useCheckoutDraftStore((s) => s.pickupTime);
   const clearDraft = useCheckoutDraftStore((s) => s.clearDraft);
@@ -110,12 +112,19 @@ export default function PaymentClientPage() {
   const [jawwalPhone, setJawwalPhone] = useState(user?.phone ?? "");
   const [jawwalCodeSent, setJawwalCodeSent] = useState(false);
   const [jawwalCode, setJawwalCode] = useState("");
+  const [jawwalError, setJawwalError] = useState<string | null>(null);
+  const sendJawwalOrderCodeMutation = useSendJawwalOrderCode();
   const [receiptStep, setReceiptStep] = useState<"detail" | "upload">(
     "detail"
   );
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [cashPaid, setCashPaid] = useState("");
   const [placedOrderId, setPlacedOrderId] = useState("");
+  /** True once the wallet deduction for this order has succeeded — guards
+   *  against re-deducting if the follow-up `POST /orders` then fails, since
+   *  the balance is already gone and retrying `handleConfirm` would deduct
+   *  again with no order to show for it. */
+  const [walletDeducted, setWalletDeducted] = useState(false);
 
   useEffect(() => {
     if (!inStoreOnlyAvailable && IN_STORE_ONLY_METHODS.includes(method)) {
@@ -132,17 +141,22 @@ export default function PaymentClientPage() {
   const total = useCartStore((s) => s.total);
   const discount = useCartStore((s) => s.discount);
   const coupon = useCartStore((s) => s.coupon);
-  const applyCoupon = useCartStore((s) => s.applyCoupon);
+  const applyCouponMutation = useApplyCoupon();
   const clearCart = useCartStore((s) => s.clearCart);
-  const walletBalance = useWalletStore((s) => s.balance);
-  const walletDeduct = useWalletStore((s) => s.deduct);
-  const walletTopUp = useWalletStore((s) => s.topUp);
-  const placeOrder = useOrderStore((s) => s.placeOrder);
+  const { data: walletData } = useWallet();
+  const walletBalance = walletData?.balance ?? 0;
+  const deductWalletMutation = useDeductWallet();
+  const placeOrderMutation = usePlaceOrder();
+  const { data: paymentAccounts } = usePaymentAccounts();
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   const [couponInput, setCouponInput] = useState(coupon);
+  const [lastCheckedCoupon, setLastCheckedCoupon] = useState<string | null>(null);
   const couponApplied = discount > 0;
   const couponInvalid =
-    couponInput.trim().length > 0 && !couponApplied && couponInput !== coupon;
+    !couponApplied &&
+    lastCheckedCoupon !== null &&
+    couponInput.trim() === lastCheckedCoupon;
 
   const orderTotal = total() + deliveryFee;
   const cashChange = cashPaid
@@ -150,7 +164,18 @@ export default function PaymentClientPage() {
     : 0;
 
   function handleApplyCoupon() {
-    applyCoupon(couponInput.trim());
+    const code = couponInput.trim();
+    if (!code) return;
+    applyCouponMutation.mutate(
+      { code, subtotal: subtotal() },
+      { onSettled: () => setLastCheckedCoupon(code) },
+    );
+  }
+
+  function handleRemoveCoupon() {
+    useCartStore.getState().setCoupon("", 0);
+    setCouponInput("");
+    setLastCheckedCoupon(null);
   }
 
   function handleCopy(field: string, value: string) {
@@ -164,7 +189,15 @@ export default function PaymentClientPage() {
 
   function handleSendJawwalCode() {
     if (!jawwalPhone.trim()) return;
-    setJawwalCodeSent(true);
+    setJawwalError(null);
+    sendJawwalOrderCodeMutation.mutate(
+      { phone: jawwalPhone.trim(), amount: orderTotal },
+      {
+        onSuccess: () => setJawwalCodeSent(true),
+        onError: () =>
+          setJawwalError("تعذر إرسال الرمز، الرجاء المحاولة مرة أخرى"),
+      },
+    );
   }
 
   const cashAmountInvalid =
@@ -173,42 +206,70 @@ export default function PaymentClientPage() {
     method === "jawwal" && (!jawwalCodeSent || !jawwalCode.trim());
 
   function placeConfirmedOrder(
-    receiptImage?: string,
+    receiptImage?: File,
     receiptNote?: string
   ) {
-    const orderId = placeOrder({
-      items,
-      subtotal: subtotal(),
-      discount,
-      total: orderTotal,
-      paymentMethod: method,
-      deliveryMethod,
-      address,
-      pickupTime,
-      receiptImage,
-      receiptNote,
-    });
-    clearCart();
-    clearDraft();
-    setPlacedOrderId(orderId);
-    setSuccessOpen(true);
+    setOrderError(null);
+    placeOrderMutation.mutate(
+      {
+        items,
+        couponCode: coupon || undefined,
+        paymentMethod: method,
+        deliveryMethod,
+        addressId,
+        pickupTime,
+        receiptImage,
+        receiptNote,
+        jawwalPhone: method === "jawwal" ? jawwalPhone.trim() : undefined,
+        jawwalCode: method === "jawwal" ? jawwalCode.trim() : undefined,
+      },
+      {
+        onSuccess: (order) => {
+          setWalletDeducted(false);
+          clearCart();
+          clearDraft();
+          setPlacedOrderId(order.id);
+          setSuccessOpen(true);
+        },
+        onError: () => {
+          setOrderError(
+            walletDeducted
+              ? "تم خصم المبلغ من محفظتك لكن تعذر إنشاء الطلب — تواصل مع الدعم لإتمام الطلب أو استرجاع المبلغ، لا تعيد المحاولة"
+              : method === "jawwal"
+                ? "الرمز غير صحيح أو منتهي الصلاحية"
+                : "تعذر إتمام الطلب، الرجاء المحاولة مرة أخرى",
+          );
+        },
+      },
+    );
   }
 
   function handleReceiptSubmit(
-    receiptImage: string | undefined,
+    receiptImage: File | undefined,
     receiptNote: string | undefined
   ) {
     placeConfirmedOrder(receiptImage, receiptNote);
   }
 
   function handleConfirm() {
+    if (walletDeducted) return;
     if (method === "wallet" && walletBalance < orderTotal) return;
     if (cashAmountInvalid || jawwalAmountInvalid) return;
 
+    setOrderError(null);
+
     if (method === "wallet") {
-      walletDeduct(orderTotal, "دفع طلب");
-    } else if (method === "cash" && cashChange > 0) {
-      walletTopUp(cashChange, "باقي كاش", undefined, "cash");
+      deductWalletMutation.mutate(
+        { amount: orderTotal, label: "دفع طلب" },
+        {
+          onSuccess: () => {
+            setWalletDeducted(true);
+            placeConfirmedOrder();
+          },
+          onError: () => setOrderError("الرصيد غير كافٍ"),
+        },
+      );
+      return;
     }
 
     placeConfirmedOrder();
@@ -224,13 +285,13 @@ export default function PaymentClientPage() {
       <div className="z-10 relative mx-auto px-4 sm:px-6 lg:px-8 pt-20 lg:pt-28 pb-12 max-w-7xl">
         <div className="bg-white/10 shadow-[0_18px_50px_rgba(10,65,82,0.18)] backdrop-blur-md px-4 sm:px-6 py-4 sm:py-6 border border-white/30 rounded-[32px]">
           <div className="flex justify-between items-center gap-4 mb-4 text-white/95">
-            <span className="font-medium text-[18px] sm:text-[22px]">الإجمالي</span>
+            <span className="font-medium text-[18px] sm:text-[22px]">ملخص الطلب</span>
             <div className="flex-1 bg-white/25 h-px" />
           </div>
 
           <div className="bg-[#dff7ff]/10 mb-4 p-3 sm:p-4 border border-white/25 rounded-[22px]">
             <div className="flex justify-between items-center gap-3">
-              <span className="text-[14px] text-white/80 sm:text-[15px] shrink-0">
+              <span className="text-[14px] text-white sm:text-[15px] shrink-0">
                 كود الخصم
               </span>
 
@@ -244,45 +305,55 @@ export default function PaymentClientPage() {
                 className="flex-1 bg-white/8 disabled:opacity-60 px-3.5 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] outline-none h-11 text-[15px] text-white placeholder:text-white/45 text-right transition"
               />
 
-              <button
-                type="button"
-                onClick={handleApplyCoupon}
-                disabled={couponApplied || !couponInput.trim()}
-                className="bg-[#c8f5a8] disabled:opacity-50 shadow-sm hover:brightness-105 px-4 py-2.5 rounded-[12px] font-bold text-[#1d6c7a] text-[14px] transition disabled:cursor-not-allowed shrink-0"
-              >
-                تطبيق
-              </button>
+              {couponApplied ? (
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="bg-red-500 hover:bg-red-600 shadow-sm px-4 py-2.5 rounded-[12px] font-bold text-white text-[14px] transition shrink-0 cursor-pointer"
+                >
+                  إزالة
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={!couponInput.trim()}
+                  className="bg-glace-yellow disabled:opacity-50 shadow-sm hover:brightness-105 px-4 py-2.5 rounded-[12px] font-bold text-[#1e6a7f] text-[14px] transition disabled:cursor-not-allowed shrink-0"
+                >
+                  تطبيق
+                </button>
+              )}
             </div>
 
             {couponApplied && (
-              <p className="flex justify-end items-center gap-1.5 mt-3 text-[13px] text-green-300">
+              <p className="flex justify-end items-center gap-1.5 mt-3 text-[13px] text-glace-yellow font-medium">
                 <CheckCircle size={14} className="shrink-0" />
                 تم تطبيق خصم {discount.toFixed(2)} ₪
               </p>
             )}
             {couponInvalid && !couponApplied && (
-              <p className="flex justify-end items-center gap-1.5 mt-3 text-[13px] text-red-300">
+              <p className="flex justify-end items-center gap-1.5 mt-3 text-[13px] text-red-300 font-medium">
                 <XCircle size={14} className="shrink-0" />
                 كود غير صالح
               </p>
             )}
           </div>
 
-          <div className="space-y-3 text-[16px] text-white/90">
+          <div className="space-y-3 text-[16px] text-white">
             <div className="flex justify-between items-center pb-3 border-white/20 border-b">
-              <span className="text-white/80">المجموع الجزئي</span>
+              <span className="text-white">المجموع الجزئي</span>
               <span>{subtotal().toFixed(2)} ₪</span>
             </div>
 
             {deliveryFee > 0 && (
               <div className="flex justify-between items-center pb-3 border-white/20 border-b">
-                <span className="text-white/80">رسوم التوصيل</span>
+                <span className="text-white">رسوم التوصيل</span>
                 <span>{deliveryFee.toFixed(2)} ₪</span>
               </div>
             )}
 
             {discount > 0 && (
-              <div className="flex justify-between items-center pb-3 border-white/20 border-b text-green-300">
+              <div className="flex justify-between items-center text-glace-yellow font-medium">
                 <span>خصم</span>
                 <span>- {discount.toFixed(2)} ₪</span>
               </div>
@@ -449,10 +520,12 @@ export default function PaymentClientPage() {
                 </label>
                 <Input
                   value={jawwalPhone}
+                  disabled={jawwalCodeSent}
                   onChange={(e) => {
                     setJawwalPhone(e.target.value);
                     setJawwalCodeSent(false);
                     setJawwalCode("");
+                    setJawwalError(null);
                   }}
                   placeholder="05XXXXXXXX"
                   className={inputClass}
@@ -470,10 +543,12 @@ export default function PaymentClientPage() {
                 <button
                   type="button"
                   onClick={handleSendJawwalCode}
-                  disabled={!jawwalPhone.trim()}
+                  disabled={!jawwalPhone.trim() || sendJawwalOrderCodeMutation.isPending}
                   className="bg-white/12 hover:bg-white/18 disabled:opacity-50 py-2.5 border border-white/25 rounded-[14px] font-bold text-white text-[14px] transition cursor-pointer disabled:cursor-not-allowed"
                 >
-                  إرسال رمز التأكيد
+                  {sendJawwalOrderCodeMutation.isPending
+                    ? "جارٍ الإرسال..."
+                    : "إرسال رمز التأكيد"}
                 </button>
               ) : (
                 <>
@@ -493,14 +568,34 @@ export default function PaymentClientPage() {
                       className={inputClass}
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setJawwalCodeSent(false);
+                      setJawwalCode("");
+                      setJawwalError(null);
+                    }}
+                    className="self-start text-[13px] text-white/60 hover:text-white/80 underline cursor-pointer"
+                  >
+                    لم يصلك الرمز؟ إرسال مرة أخرى
+                  </button>
                 </>
+              )}
+
+              {jawwalError && (
+                <p className="text-[13px] text-red-300 text-center">
+                  {jawwalError}
+                </p>
               )}
             </div>
           )}
 
           {RECEIPT_METHODS.includes(method) &&
             (() => {
-              const account = findMerchantPaymentAccount(method);
+              const account = paymentAccounts?.find(
+                (a): a is TransferPaymentAccount =>
+                  a.method === method && !a.inStoreOnly,
+              );
               if (!account) return null;
 
               if (receiptStep === "upload") {
@@ -569,21 +664,21 @@ export default function PaymentClientPage() {
                     </div>
                     <div className="flex justify-between items-center text-[14px]">
                       <span className="text-white/70">
-                        {account.primaryLabel}
+                        {account.accountLabel}
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="font-bold" dir="ltr">
-                          {account.primaryValue}
+                          {account.accountValue}
                         </span>
                         <button
                           type="button"
                           onClick={() =>
-                            handleCopy("primary", account.primaryValue)
+                            handleCopy("account", account.accountValue)
                           }
                           aria-label="نسخ"
                           className="flex justify-center items-center hover:bg-white/10 rounded-full size-7 text-white/70 hover:text-white transition-colors cursor-pointer"
                         >
-                          {copiedField === "primary" ? (
+                          {copiedField === "account" ? (
                             <Check size={14} className="text-green-300" />
                           ) : (
                             <Copy size={14} />
@@ -591,24 +686,24 @@ export default function PaymentClientPage() {
                         </button>
                       </div>
                     </div>
-                    {account.secondaryLabel && account.secondaryValue && (
+                    {account.iban && (
                       <div className="flex justify-between items-center text-[14px]">
                         <span className="text-white/70">
-                          {account.secondaryLabel}
+                          رقم الآيبان (IBAN)
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="font-bold" dir="ltr">
-                            {account.secondaryValue}
+                            {account.iban}
                           </span>
                           <button
                             type="button"
                             onClick={() =>
-                              handleCopy("secondary", account.secondaryValue!)
+                              handleCopy("iban", account.iban!)
                             }
                             aria-label="نسخ"
                             className="flex justify-center items-center hover:bg-white/10 rounded-full size-7 text-white/70 hover:text-white transition-colors cursor-pointer"
                           >
-                            {copiedField === "secondary" ? (
+                            {copiedField === "iban" ? (
                               <Check size={14} className="text-green-300" />
                             ) : (
                               <Copy size={14} />
@@ -690,14 +785,23 @@ export default function PaymentClientPage() {
             </div>
           )}
 
+          {orderError && (
+            <p className="mb-3 text-[13px] text-red-300 text-center">
+              {orderError}
+            </p>
+          )}
+
           {!RECEIPT_METHODS.includes(method) && (
             <Button
               type="button"
               onClick={handleConfirm}
               disabled={
+                walletDeducted ||
                 (method === "wallet" && walletBalance < orderTotal) ||
                 cashAmountInvalid ||
-                jawwalAmountInvalid
+                jawwalAmountInvalid ||
+                placeOrderMutation.isPending ||
+                deductWalletMutation.isPending
               }
               className="bg-glace-yellow hover:brightness-105 disabled:opacity-50 py-3.5 border-0 rounded-[30px] w-full h-auto font-bold text-[#1e6a7f] text-[18px] cursor-pointer disabled:cursor-not-allowed"
             >

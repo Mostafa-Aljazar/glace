@@ -1,3 +1,6 @@
+import { guestApi } from "@/lib/axios";
+import { withQueryFallback } from "@/lib/apiWithFallback";
+
 /** One named delivery zone — a neighborhood/area with its boundary streets
  *  spelled out so customers can self-identify without needing GPS. */
 export interface DeliveryZone {
@@ -10,7 +13,7 @@ export interface DeliveryZone {
   fee: number;
 }
 
-/** Hardcoded for now — shaped so a future `GET /delivery-zones` response can
+/** Hardcoded for now — shaped so a future `GET /addresses/delivery-zones` response can
  *  drop in directly (same fields), matching the `useMenuAddons`-style
  *  swap already used elsewhere in this codebase. */
 const DELIVERY_ZONES: DeliveryZone[] = [
@@ -48,10 +51,13 @@ const DELIVERY_ZONES: DeliveryZone[] = [
   { id: "aldarj-yafa", name: "الدرج وشارع يافا", fee: 20 },
 ];
 
-/** Placeholder for a future backend call — kept async so callers don't need
- *  to change when this becomes `fetch("/api/delivery-zones")`. */
+/** Tries the real `GET /addresses/delivery-zones` first; falls back to the
+ *  hardcoded list above while the backend endpoint doesn't exist yet. */
 export async function fetchDeliveryZones(): Promise<DeliveryZone[]> {
-  return DELIVERY_ZONES;
+  return withQueryFallback(
+    () => guestApi.get<DeliveryZone[]>("/addresses/delivery-zones").then((r) => r.data),
+    () => DELIVERY_ZONES,
+  );
 }
 
 export function findDeliveryZone(id: string | undefined): DeliveryZone | undefined {

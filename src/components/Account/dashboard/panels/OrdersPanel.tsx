@@ -2,22 +2,25 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   ShoppingBag,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
+  ChevronLeft,
   Package,
   MapPinned,
   RotateCcw,
+  TriangleAlert,
 } from "lucide-react";
 import {
-  useOrderStore,
   ORDER_STATUS_COLORS,
   PAYMENT_METHOD_LABELS,
   type Order,
-  type OrderStatus,
 } from "@/store/orderStore";
+import { useOrders } from "@/hooks/orders";
 import { getLineItemTotal, useCartStore } from "@/store/cartStore";
 import { getStatusSteps } from "@/lib/orderStatusSteps";
 import { cn } from "@/lib/utils";
@@ -61,7 +64,10 @@ function customerName(order: Order): string | undefined {
 }
 
 export default function OrdersPanel() {
-  const orders = useOrderStore((s) => s.orders);
+  const router = useRouter();
+  const [page, setPage] = useState(1);
+  const { data, isError, isLoading, isFetching, refetch } = useOrders({ page });
+  const orders = data?.items ?? [];
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [tab, setTab] = useState<FilterTab>("all");
   const addItem = useCartStore((s) => s.addItem);
@@ -83,6 +89,29 @@ export default function OrdersPanel() {
         quantity: item.quantity,
       });
     });
+    router.push("/checkout");
+  }
+
+  if (isLoading) {
+    return (
+      <DashboardCard title="طلباتي" icon={ShoppingBag}>
+        <div className="flex justify-center py-12">
+          <div className="border-4 border-white/25 border-t-glace-yellow rounded-full size-10 animate-spin" />
+        </div>
+      </DashboardCard>
+    );
+  }
+
+  if (isError) {
+    return (
+      <DashboardCard title="طلباتي" icon={ShoppingBag}>
+        <EmptyState
+          icon={TriangleAlert}
+          message="تعذر تحميل الطلبات، الرجاء المحاولة مرة أخرى"
+          action={{ label: "إعادة المحاولة", onClick: () => refetch() }}
+        />
+      </DashboardCard>
+    );
   }
 
   if (sorted.length === 0) {
@@ -101,7 +130,13 @@ export default function OrdersPanel() {
 
   return (
     <DashboardCard title="طلباتي" icon={ShoppingBag}>
-      {/* Filter tabs, each with a live count */}
+      {/* Filter tabs, each with a live count — counts only reflect the
+       *  currently loaded page, not every order across all pages */}
+      {data && data.totalPages > 1 && (
+        <p className="mb-2 text-[12px] text-white/45">
+          العدّاد يعرض طلبات هذه الصفحة فقط ({data.page} من {data.totalPages})
+        </p>
+      )}
       <div className="flex gap-2 mb-5 pb-1 overflow-x-auto no-scrollbar">
         {TABS.map(({ key, label, subtext }) => {
           const count = sorted.filter((o) => matchesTab(o, key)).length;
@@ -146,10 +181,6 @@ export default function OrdersPanel() {
         <div className="flex flex-col gap-3">
           {filtered.map((order) => {
             const isOpen = expandedId === order.id;
-            const currentStep = getStatusSteps(order.deliveryMethod).findIndex(
-              (s: { key: OrderStatus }) => s.key === order.status,
-            );
-
             const name = customerName(order);
 
             return (
@@ -336,6 +367,32 @@ export default function OrdersPanel() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {data && data.totalPages > 1 && (
+        <div className="flex justify-between items-center gap-3 mt-4 pt-4 border-white/15 border-t">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1 || isFetching}
+            className="flex items-center gap-1 disabled:opacity-40 hover:bg-white/10 px-3 py-2 rounded-[12px] text-[13px] text-white transition-colors disabled:cursor-not-allowed cursor-pointer"
+          >
+            <ChevronRight size={16} />
+            السابق
+          </button>
+          <span className="text-[13px] text-white/70">
+            صفحة {data.page} من {data.totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
+            disabled={page >= data.totalPages || isFetching}
+            className="flex items-center gap-1 disabled:opacity-40 hover:bg-white/10 px-3 py-2 rounded-[12px] text-[13px] text-white transition-colors disabled:cursor-not-allowed cursor-pointer"
+          >
+            التالي
+            <ChevronLeft size={16} />
+          </button>
         </div>
       )}
     </DashboardCard>

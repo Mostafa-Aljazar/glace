@@ -24,9 +24,10 @@ import {
 import { logo } from "@/assets/images";
 import { useCartStore } from "@/store/cartStore";
 import { useWalletStore } from "@/store/walletStore";
-import { useFavoritesStore } from "@/store/favoritesStore";
 import { useAuthStore } from "@/store/authStore";
 import { useLogout } from "@/hooks/auth/useLogout";
+import { useWallet } from "@/hooks/wallet";
+import { useFavoritesStore } from "@/store/favoritesStore";
 import {
   ORDER_OPEN_MENU,
   ORDER_PROTECTED_LINK_CLICK,
@@ -56,11 +57,17 @@ export default function LogoNav() {
   const showBack = pathname !== "/";
 
   const cartCount = useCartStore((s) => s.items.length);
-  const favoriteCount = useFavoritesStore((s) => s.ids.length);
-  const walletBalance = useWalletStore((s) => s.balance);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
+  const favoriteCount = useFavoritesStore((s) => s.ids.length);
+  // Wallet is per-account — hide its balance while logged out so a guest
+  // never sees a badge for data that belongs to no session.
+  const walletBalance = useWalletStore((s) => (isLoggedIn ? s.balance : 0));
   const logout = useLogout();
   const isMenuPage = pathname === "/menu";
+  // Keeps the wallet balance badge live from the real API without a
+  // dedicated fetch here — react-query dedupes this against WalletPanel's
+  // own useWallet() call by queryKey.
+  useWallet();
 
   useEffect(() => {
     const handleProtectedLink = () => setDrawerOpen(false);

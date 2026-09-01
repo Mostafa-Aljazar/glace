@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export type AddressType = "home" | "work" | "other";
 
@@ -24,60 +23,14 @@ export interface SavedAddress {
 }
 
 interface AddressState {
-  addresses: SavedAddress[];
+  /** Which saved address is selected for checkout — pure UI state, not
+   *  persisted; the addresses themselves live on the server, see
+   *  `src/hooks/addresses/*`. */
   selectedId: string | null;
-  addAddress: (address: Omit<SavedAddress, "id" | "isDefault">) => string;
-  updateAddress: (
-    id: string,
-    address: Omit<SavedAddress, "id" | "isDefault">,
-  ) => void;
-  removeAddress: (id: string) => void;
   selectAddress: (id: string) => void;
-  /** Marks one address as the default, clearing the flag on every other one. */
-  setDefaultAddress: (id: string) => void;
 }
 
-/** Temporary localStorage-backed simulation until the backend exposes a
- *  saved-addresses endpoint — same "fake it in the store, swap the source
- *  later" pattern used for the delivery-zone catalog in deliveryZones.ts. */
-export const useAddressStore = create<AddressState>()(
-  persist(
-    (set, get) => ({
-      addresses: [],
-      selectedId: null,
-      addAddress: (address) => {
-        const id = crypto.randomUUID();
-        const isFirst = get().addresses.length === 0;
-        set({
-          addresses: [...get().addresses, { ...address, id, isDefault: isFirst }],
-          selectedId: id,
-        });
-        return id;
-      },
-      updateAddress: (id, address) => {
-        set({
-          addresses: get().addresses.map((a) =>
-            a.id === id ? { ...a, ...address } : a,
-          ),
-        });
-      },
-      removeAddress: (id) => {
-        const wasDefault = get().addresses.find((a) => a.id === id)?.isDefault;
-        const addresses = get().addresses.filter((a) => a.id !== id);
-        if (wasDefault && addresses[0]) addresses[0].isDefault = true;
-        const selectedId =
-          get().selectedId === id ? (addresses[0]?.id ?? null) : get().selectedId;
-        set({ addresses, selectedId });
-      },
-      selectAddress: (id) => set({ selectedId: id }),
-      setDefaultAddress: (id) =>
-        set({
-          addresses: get().addresses.map((a) => ({
-            ...a,
-            isDefault: a.id === id,
-          })),
-        }),
-    }),
-    { name: "glace-addresses" }
-  )
-);
+export const useAddressStore = create<AddressState>()((set) => ({
+  selectedId: null,
+  selectAddress: (id) => set({ selectedId: id }),
+}));

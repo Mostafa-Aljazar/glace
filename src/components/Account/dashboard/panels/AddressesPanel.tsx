@@ -2,32 +2,42 @@
 
 import { useState } from "react";
 import { MapPin, MapPinOff, Plus, Pencil, Trash2 } from "lucide-react";
-import { useAddressStore, type SavedAddress } from "@/store/addressStore";
+import type { SavedAddress } from "@/store/addressStore";
 import { useAuthStore } from "@/store/authStore";
 import { findDeliveryZone } from "@/lib/deliveryZones";
+import {
+  useAddresses,
+  useAddAddress,
+  useUpdateAddress,
+  useDeleteAddress,
+  useSetDefaultAddress,
+} from "@/hooks/addresses";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DashboardCard from "../shared/DashboardCard";
 import EmptyState from "../shared/EmptyState";
 import AddressForm from "@/components/Checkout/AddressForm";
 
 export default function AddressesPanel() {
-  const addresses = useAddressStore((s) => s.addresses);
-  const removeAddress = useAddressStore((s) => s.removeAddress);
-  const addAddress = useAddressStore((s) => s.addAddress);
-  const updateAddress = useAddressStore((s) => s.updateAddress);
-  const setDefaultAddress = useAddressStore((s) => s.setDefaultAddress);
+  const { data: addresses = [] } = useAddresses();
+  const removeAddressMutation = useDeleteAddress();
+  const addAddressMutation = useAddAddress();
+  const setDefaultAddressMutation = useSetDefaultAddress();
   const user = useAuthStore((s) => s.user);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const updateAddressMutation = useUpdateAddress(editingId ?? "");
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<SavedAddress | null>(null);
 
   function openAdd() {
     setEditing(null);
+    setEditingId(null);
     setFormOpen(true);
   }
 
   function openEdit(address: SavedAddress) {
     setEditing(address);
+    setEditingId(address.id);
     setFormOpen(true);
   }
 
@@ -91,7 +101,7 @@ export default function AddressesPanel() {
                 <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-white/10">
                   <button
                     type="button"
-                    onClick={() => removeAddress(address.id)}
+                    onClick={() => removeAddressMutation.mutate(address.id)}
                     className="flex items-center gap-1.5 text-rose-300 hover:text-rose-200 text-[13px] font-bold transition-colors cursor-pointer"
                   >
                     <Trash2 size={14} />
@@ -101,7 +111,7 @@ export default function AddressesPanel() {
                     {!address.isDefault && (
                       <button
                         type="button"
-                        onClick={() => setDefaultAddress(address.id)}
+                        onClick={() => setDefaultAddressMutation.mutate(address.id)}
                         className="text-white/60 hover:text-white text-[13px] font-bold transition-colors cursor-pointer"
                       >
                         اجعله افتراضي
@@ -125,7 +135,7 @@ export default function AddressesPanel() {
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent
-          className="bg-[#1b7496] border border-white/15 rounded-[28px] max-w-lg max-h-[85vh] overflow-y-auto p-6 text-white"
+          className="bg-[#1b7496] border border-white/15 rounded-[28px] max-w-lg md:max-w-xl lg:max-w-2xl max-h-[85vh] overflow-y-auto p-6 text-white"
           overlayClassName="bg-black/45"
         >
           <DialogHeader>
@@ -141,9 +151,9 @@ export default function AddressesPanel() {
               submitLabel={editing ? "حفظ التغييرات" : "إضافة العنوان"}
               onSubmit={(data) => {
                 if (editing) {
-                  updateAddress(editing.id, data);
+                  updateAddressMutation.mutate(data);
                 } else {
-                  addAddress(data);
+                  addAddressMutation.mutate(data);
                 }
                 setFormOpen(false);
               }}

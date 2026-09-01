@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import LoadingPage from "@/components/Common/LoadingPage";
@@ -110,13 +111,17 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://unpkg.com/boxicons@latest/css/boxicons.min.css"
         />
-        <script
+        <Script
+          id="organization-jsonld"
           type="application/ld+json"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(organizationJsonLd),
           }}
         />
-        <script
+        <Script
+          id="splash-seen-check"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `try{if(sessionStorage.getItem("glace-splash-seen")==="1")document.documentElement.dataset.splashSeen="1"}catch(e){}`,
           }}

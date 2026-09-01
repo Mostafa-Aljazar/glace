@@ -1,5 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
+import { userApi } from "@/lib/axios";
+import { withMutationFallback } from "@/lib/apiWithFallback";
 import { useAuthStore } from "@/store/authStore";
 import type { AuthUser } from "@/store/authStore";
 
@@ -18,13 +20,13 @@ interface VerifyOtpResponse {
   user: AuthUser;
 }
 
-/** Backend auth isn't live yet — fake sending/verifying an OTP locally
- *  instead of calling `/auth/otp/send` and `/auth/otp/verify`. Swap back to
- *  the userApi.post calls once the backend endpoints are ready. */
+/** Fallback when `/auth/otp/send` isn't live yet — fakes the SMS delay. */
 function fakeSendOtp(_data: SendOtpPayload): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 500));
 }
 
+/** Fallback when `/auth/otp/verify` isn't live yet — accepts the fixed demo
+ *  code "123456" so the rest of the app can still be exercised end to end. */
 function fakeVerifyOtp(data: VerifyOtpPayload): Promise<VerifyOtpResponse> {
   return new Promise((resolve, reject) =>
     setTimeout(() => {
@@ -47,7 +49,11 @@ function fakeVerifyOtp(data: VerifyOtpPayload): Promise<VerifyOtpResponse> {
 
 export function useSendOtp() {
   return useMutation({
-    mutationFn: fakeSendOtp,
+    mutationFn: (data: SendOtpPayload) =>
+      withMutationFallback(
+        () => userApi.post("/auth/otp/send", data).then(() => undefined),
+        () => fakeSendOtp(data),
+      ),
   });
 }
 
@@ -57,7 +63,14 @@ export function useVerifyOtp() {
   const searchParams = useSearchParams();
 
   return useMutation({
-    mutationFn: fakeVerifyOtp,
+    mutationFn: (data: VerifyOtpPayload) =>
+      withMutationFallback(
+        () =>
+          userApi
+            .post<VerifyOtpResponse>("/auth/otp/verify", data)
+            .then((r) => r.data),
+        () => fakeVerifyOtp(data),
+      ),
     onSuccess: ({ token, user }) => {
       setAuth(token, user);
       const redirect = searchParams.get("redirect");

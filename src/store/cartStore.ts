@@ -235,19 +235,15 @@ interface CartState {
   setItemFlatAddons: (id: string, selections: CartSelection[], addonTotal: number) => void;
   setOrderNote: (note: string) => void;
   setCartAddons: (addons: string[], addonTotal: number) => void;
-  applyCoupon: (code: string) => void;
+  /** Sets the applied coupon and its resolved discount amount — called by
+   *  `useApplyCoupon()` after `POST /cart/apply-coupon` (or its fallback)
+   *  resolves, rather than computed here. */
+  setCoupon: (code: string, discount: number) => void;
   clearCart: () => void;
   itemsSubtotal: () => number;
   subtotal: () => number;
   total: () => number;
 }
-
-const VALID_COUPONS: Record<string, number> = {
-  GLACE10: 10,
-  GLACE20: 20,
-  WELCOME5: 5,
-  "1234": 15,
-};
 
 const CART_ADDON_NAMES = new Set(ADDONS.map((a) => a.name));
 
@@ -606,15 +602,7 @@ export const useCartStore = create<CartState>()(
           cartAddonTotal: Math.max(0, addonTotal),
         }),
 
-      applyCoupon: (code) => {
-        const trimmed = code.trim();
-        if (!trimmed) {
-          set({ coupon: "", discount: 0 });
-          return;
-        }
-        const discount = VALID_COUPONS[trimmed.toUpperCase()] ?? 0;
-        set({ coupon: trimmed, discount });
-      },
+      setCoupon: (code, discount) => set({ coupon: code, discount }),
 
       clearCart: () =>
         set({

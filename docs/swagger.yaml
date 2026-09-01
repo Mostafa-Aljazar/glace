@@ -5,7 +5,21 @@ info:
     API specification for the Glace storefront (Next.js) and Filament admin.
 
     **Source of truth for open backend work:** `docs/backend-handoff/`
-    (`01` … `07` + README). This file encodes the agreed contract.
+    (`01` … `14` + README). This file encodes the agreed contract.
+
+    ### Net-new: Auth/Account/Addresses/Cart/Orders/Payments/Wallet (handoff 08-14)
+    Everything under the `Auth`, `Account`, `Addresses`, `Cart`, `Orders`,
+    `Payments`, and `Wallet` tags below is **not implemented on any backend
+    yet** — the frontend currently runs entirely on local state (zustand +
+    localStorage) for these systems. This is net-new endpoint work, not a
+    fix to an existing integration. See `docs/backend-handoff/08` … `14` for
+    full context per system, and `docs/frontend-integration-plan.md` for the
+    frontend-side migration plan once these are live.
+
+    Auth has fully moved to **phone/OTP** — there is no password anywhere in
+    the current frontend. Any password-based schema in an older version of
+    this file is stale and superseded by `AuthOtpSendRequest` /
+    `AuthOtpVerifyRequest` below.
 
     ### Media URLs (handoff 01 · 03 · 04)
     Every image field (`format: uri`) MUST be an **absolute** URL from
@@ -50,6 +64,48 @@ tags:
     description: Events and promotions
   - name: Contact
     description: Contact and support forms
+  - name: Auth
+    description: |
+      Phone/OTP authentication (handoff 08). Not implemented yet — see
+      `docs/backend-handoff/08-auth-otp.md`.
+  - name: Account
+    description: |
+      Profile read/update (handoff 09). Not implemented yet — see
+      `docs/backend-handoff/09-account-profile.md`. Logout is client-side
+      only (no endpoint) — see the handoff doc.
+  - name: Addresses
+    description: |
+      Saved delivery addresses CRUD (handoff 10). Not implemented yet — see
+      `docs/backend-handoff/10-addresses.md`.
+  - name: Cart
+    description: |
+      Coupon validation (handoff 11). Not implemented yet — see
+      `docs/backend-handoff/11-cart-coupons.md`. The cart itself stays
+      client-side (zustand) until checkout.
+  - name: Orders
+    description: |
+      Order creation, tracking, and delivery zones (handoff 12). Not
+      implemented yet — see `docs/backend-handoff/12-orders.md`.
+  - name: Payments
+    description: |
+      Merchant payment accounts for manual bank transfer (handoff 13). Not
+      implemented yet — see `docs/backend-handoff/13-payments.md`.
+  - name: Wallet
+    description: |
+      Wallet balance, top-up requests, and deduction (handoff 14). Not
+      implemented yet — see `docs/backend-handoff/14-wallet.md`.
+  - name: Help
+    description: |
+      FAQ list for the help page (handoff 15). Not implemented yet — see
+      `docs/backend-handoff/15-help-faqs.md`.
+  - name: Terms
+    description: |
+      Terms-and-conditions HTML content (handoff 16). Not implemented yet —
+      see `docs/backend-handoff/16-terms-content.md`.
+  - name: Privacy
+    description: |
+      Privacy-policy HTML content (handoff 17). Not implemented yet — see
+      `docs/backend-handoff/17-privacy-content.md`.
 
 paths:
   /home:
@@ -531,6 +587,982 @@ paths:
         "500":
           $ref: "#/components/responses/ServerError"
 
+  # --- Auth (handoff 08) — NOT IMPLEMENTED YET ---
+  /auth/otp/send:
+    post:
+      tags: [Auth]
+      summary: Send OTP code to a phone number
+      description: |
+        **Not implemented yet (handoff 08).** Sends a one-time code via SMS.
+        Register vs. login is not distinguished here — verify decides.
+      operationId: sendOtp
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthOtpSendRequest"
+      responses:
+        "200":
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          description: Rate limited — too many OTP requests for this phone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /auth/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Verify OTP code and authenticate
+      description: |
+        **Not implemented yet (handoff 08).** `fullName` is required only on
+        first-time registration; omit for an existing user's login.
+      operationId: verifyOtp
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthOtpVerifyRequest"
+      responses:
+        "200":
+          description: Authenticated (`AuthOtpResponse`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthOtpResponse"
+        "422":
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          $ref: "#/components/responses/ServerError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # --- Account (handoff 09) — NOT IMPLEMENTED YET ---
+  /auth/me:
+    get:
+      tags: [Account]
+      summary: Get current authenticated user
+      description: "**Not implemented yet (handoff 09).**"
+      operationId: getMe
+      responses:
+        "200":
+          description: Current user (`AuthUser`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /auth/profile:
+    put:
+      tags: [Account]
+      summary: Update current user's profile
+      description: "**Not implemented yet (handoff 09).** `name` and `email` required; `phone` optional."
+      operationId: updateProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Updated user (`AuthUser`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # --- Addresses (handoff 10) — NOT IMPLEMENTED YET ---
+  /addresses:
+    get:
+      tags: [Addresses]
+      summary: List current user's saved addresses
+      description: "**Not implemented yet (handoff 10).**"
+      operationId: getAddresses
+      responses:
+        "200":
+          description: Saved addresses (`SavedAddress[]`)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedAddress"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags: [Addresses]
+      summary: Add a new saved address
+      description: "**Not implemented yet (handoff 10).**"
+      operationId: addAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddressRequest"
+      responses:
+        "201":
+          description: Created (`SavedAddress`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedAddress"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /addresses/{id}:
+    put:
+      tags: [Addresses]
+      summary: Update a saved address
+      description: "**Not implemented yet (handoff 10).**"
+      operationId: updateAddress
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddressRequest"
+      responses:
+        "200":
+          description: Updated (`SavedAddress`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedAddress"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      tags: [Addresses]
+      summary: Delete a saved address
+      description: "**Not implemented yet (handoff 10).**"
+      operationId: deleteAddress
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /addresses/{id}/default:
+    post:
+      tags: [Addresses]
+      summary: Set an address as default
+      description: "**Not implemented yet (handoff 10).**"
+      operationId: setDefaultAddress
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated (`SavedAddress`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedAddress"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /addresses/delivery-zones:
+    get:
+      tags: [Addresses]
+      summary: List delivery zones and fees
+      description: |
+        **Not implemented yet (handoff 10).** Replaces the frontend's
+        hardcoded 31-zone table in `src/lib/deliveryZones.ts` — same shape.
+      operationId: getDeliveryZones
+      responses:
+        "200":
+          description: Delivery zones (`DeliveryZone[]`)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeliveryZone"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # --- Cart (handoff 11) — NOT IMPLEMENTED YET ---
+  /cart/apply-coupon:
+    post:
+      tags: [Cart]
+      summary: Validate a coupon code against a subtotal
+      description: |
+        **Not implemented yet (handoff 11).** Replaces the frontend's
+        hardcoded `VALID_COUPONS` table. Server is the source of truth for
+        discount amount — recomputed again at order time (`POST /orders`).
+      operationId: applyCoupon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyCouponRequest"
+      responses:
+        "200":
+          description: Coupon result (`ApplyCouponResponse`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplyCouponResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # --- Orders (handoff 12) — NOT IMPLEMENTED YET ---
+  /orders:
+    get:
+      tags: [Orders]
+      summary: List current user's orders
+      description: "**Not implemented yet (handoff 12).** Newest first."
+      operationId: getOrders
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated orders, newest first (`OrdersResponse`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrdersResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags: [Orders]
+      summary: Create an order
+      description: |
+        **Not implemented yet (handoff 12).** **Critical:** the server MUST
+        recompute all pricing (`unitPrice`, `addonTotal`, `subtotal`,
+        `discount`, `total`) from `productId` / selection ids / quantity /
+        `couponCode` — never trust prices sent by the frontend.
+        `addressId` references a saved address (handoff 10); the server
+        resolves and snapshots it into `order.address`. A delivery order
+        containing a delivery-restricted item must be rejected with 422.
+        Multipart request — `items` is sent as a JSON-encoded string field
+        (the rest are plain form fields) since `receiptImage` is a real file.
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+      responses:
+        "201":
+          description: Created (`Order`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: |
+            Validation failed, or a delivery-restricted item was included
+            with `deliveryMethod: delivery`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /orders/jawwal/send-code:
+    post:
+      tags: [Orders]
+      summary: Start jawwal (automatic) payment for a pending order — server asks JawwalPay to text a payment code
+      description: |
+        **Not implemented yet (handoff 12).** Same JawwalPay integration as
+        `POST /wallet/topup-requests/jawwal/send-code` — the server asks
+        JawwalPay to text `phone` a code confirming payment of `amount`
+        (the order total). The returned code is then passed as
+        `jawwalPhone`/`jawwalCode` on the immediately-following
+        `POST /orders` call — the frontend never talks to JawwalPay
+        directly, and no order exists yet at this point. Rate-limit per
+        phone to avoid SMS abuse.
+      operationId: sendJawwalOrderCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, amount]
+              properties:
+                phone:
+                  type: string
+                  example: "0599123456"
+                amount:
+                  type: number
+                  example: 42.5
+      responses:
+        "200":
+          description: Code sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sent:
+                    type: boolean
+                    example: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          description: Too many code requests for this phone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Get order detail
+      description: "**Not implemented yet (handoff 12).** Used by the order tracking page."
+      operationId: getOrderById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: ORD-M3K2A1
+      responses:
+        "200":
+          description: Order detail (`Order`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /orders/{id}/cancel:
+    post:
+      tags: [Orders]
+      summary: Cancel an order
+      description: |
+        **Not implemented yet (handoff 12).** Rejected with 409 if the order
+        is already in a final status (delivered/received/cancelled/refunded).
+        Sets status to `ملغي` only — does NOT refund to the wallet
+        automatically. The paid amount stays "قيد المراجعة" (under review)
+        until staff verifies and processes it; a separate, later transition
+        to `مسترد` (refunded, likely via a staff/dashboard action, out of
+        scope for this handoff) is what actually credits the wallet. The
+        frontend's cancel dialog reflects this — "قيد المراجعة", not an
+        instant/automatic refund.
+      operationId: cancelOrder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  example: غيرت رأيي
+      responses:
+        "200":
+          description: Cancelled (`Order`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Order already in a final status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /orders/{id}/receipt:
+    post:
+      tags: [Orders]
+      summary: Upload/replace a payment receipt for an order
+      description: |
+        **Not implemented yet (handoff 12).** `RECEIPT_METHODS` orders only
+        (`jawwal-manual` / `paypal` / `bop`). Multipart file upload — server
+        returns a stored URL, never a stored base64 string.
+      operationId: uploadOrderReceipt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                receiptImage:
+                  type: string
+                  format: binary
+                receiptNote:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: Updated (`Order`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Invalid file type/size
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /orders/{id}/received:
+    post:
+      tags: [Orders]
+      summary: Customer confirms receipt of a delivery order
+      description: "**Not implemented yet (handoff 12).** Sets status to تم الاستلام and records `receivedAt`."
+      operationId: markOrderReceived
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated (`Order`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /orders/{id}/email-summary:
+    post:
+      tags: [Orders]
+      summary: Email the order summary/receipt to a given address
+      description: |
+        **Not implemented yet (handoff 12).** Optional convenience action on
+        the order-tracking page ("يوصلك ملخص الطلب على إيميلك؟") — sends the
+        order summary (items, totals, status) to `email`. Not tied to the
+        account's own email; the customer can type any address. Does not
+        require the order to be in any particular status.
+      operationId: emailOrderSummary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: customer@example.com
+      responses:
+        "200":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sent:
+                    type: boolean
+                    example: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # --- Payments (handoff 13) — NOT IMPLEMENTED YET ---
+  /payment-accounts:
+    get:
+      tags: [Payments]
+      summary: List merchant payment accounts for manual transfer
+      description: |
+        **Not implemented yet (handoff 13).** Replaces the frontend's
+        hardcoded `src/lib/merchantPaymentAccounts.ts`. Include a `visa`
+        entry with `inStoreOnly: true` and no account fields — the frontend
+        uses it only to show "pay in-store" copy, never a transfer account.
+      operationId: getPaymentAccounts
+      security: []
+      responses:
+        "200":
+          description: Payment accounts (`MerchantPaymentAccount[]`)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MerchantPaymentAccount"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # --- Wallet (handoff 14) — NOT IMPLEMENTED YET ---
+  /wallet:
+    get:
+      tags: [Wallet]
+      summary: Get wallet balance
+      description: |
+        **Not implemented yet (handoff 14).** Balance only — transaction
+        history moved to the paginated `GET /wallet/transactions` below.
+      operationId: getWallet
+      responses:
+        "200":
+          description: Wallet (`WalletResponse`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /wallet/transactions:
+    get:
+      tags: [Wallet]
+      summary: List current user's wallet transactions, paginated
+      description: "**Not implemented yet (handoff 14).** Newest first."
+      operationId: getWalletTransactions
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: perPage
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          example: 20
+      responses:
+        "200":
+          description: Paginated wallet transactions (`WalletTransactionsResponse`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletTransactionsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /wallet/topup-requests:
+    get:
+      tags: [Wallet]
+      summary: List current user's top-up requests
+      description: "**Not implemented yet (handoff 14).**"
+      operationId: getTopUpRequests
+      responses:
+        "200":
+          description: Top-up requests (`TopUpRequest[]`)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopUpRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags: [Wallet]
+      summary: Submit a receipt-based wallet top-up request
+      description: |
+        **Not implemented yet (handoff 14).** Covers `bop`/`paypal`/
+        `jawwal-manual` only — the customer transfers externally, then
+        uploads the receipt here. Stays `قيد المراجعة` until an admin
+        approves it from Filament and sets the real `amount` off the
+        receipt — there is no user-facing approval endpoint, and the
+        customer never types the amount themselves (avoids it disagreeing
+        with what the receipt actually shows).
+
+        The `jawwal` (automatic) method does **not** use this endpoint — see
+        `POST /wallet/topup-requests/jawwal/send-code` and `.../confirm`
+        below, which credit the balance immediately instead of queuing a
+        request for manual review.
+      operationId: submitTopUpRequest
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [method, receiptImage]
+              properties:
+                method:
+                  type: string
+                  enum: [bop, paypal, jawwal-manual]
+                receiptImage:
+                  type: string
+                  format: binary
+                receiptNote:
+                  type: string
+                  nullable: true
+      responses:
+        "201":
+          description: Created (`TopUpRequest`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopUpRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /wallet/topup-requests/jawwal/send-code:
+    post:
+      tags: [Wallet]
+      summary: Start a jawwal (automatic) top-up — server asks JawwalPay to text a payment code
+      description: |
+        **Not implemented yet (handoff 14).** The server calls JawwalPay's
+        API to push an SMS to `phone` asking the customer to confirm paying
+        `amount` — the code is generated and owned by JawwalPay, not by our
+        backend. The frontend never talks to JawwalPay directly. Rate-limit
+        per phone to avoid SMS abuse.
+      operationId: sendJawwalTopUpCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, amount]
+              properties:
+                phone:
+                  type: string
+                  example: "0599123456"
+                amount:
+                  type: number
+                  example: 50
+      responses:
+        "200":
+          description: Code sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sent:
+                    type: boolean
+                    example: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          description: Too many code requests for this phone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /wallet/topup-requests/jawwal/confirm:
+    post:
+      tags: [Wallet]
+      summary: Confirm a jawwal top-up with the code JawwalPay texted the customer
+      description: |
+        **Not implemented yet (handoff 14).** The server verifies `code`
+        against JawwalPay for this `phone`/`amount` pair. On success the
+        transfer already happened on JawwalPay's side, so — unlike the
+        receipt-based methods — the wallet balance is credited immediately
+        and the returned `TopUpRequest.status` is `مكتمل`, with no manual
+        review step.
+      operationId: confirmJawwalTopUp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, amount, code]
+              properties:
+                phone:
+                  type: string
+                  example: "0599123456"
+                amount:
+                  type: number
+                  example: 50
+                code:
+                  type: string
+                  example: "482913"
+      responses:
+        "201":
+          description: "Created and completed immediately (`TopUpRequest` with status مكتمل)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopUpRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Wrong or expired code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /wallet/deduct:
+    post:
+      tags: [Wallet]
+      summary: Deduct from wallet balance (payment by wallet)
+      description: |
+        **Not implemented yet (handoff 14).** Server is the sole authority
+        on sufficient balance — must reject with 409, never assume success
+        client-side.
+      operationId: deductWallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, label]
+              properties:
+                amount:
+                  type: number
+                  example: 22.5
+                label:
+                  type: string
+                  example: "دفع طلب #ORD-M3K2"
+      responses:
+        "200":
+          description: New balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: number
+                    example: 82.75
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /help/faqs:
+    get:
+      tags: [Help]
+      summary: List help-page FAQs
+      description: |
+        **Not implemented yet (handoff 15).** Static content today
+        (hardcoded array in the frontend) — moving it here lets support
+        staff edit the FAQ list from Filament without a code deploy. Order
+        of the returned array is the display order.
+      operationId: getHelpFaqs
+      responses:
+        "200":
+          description: FAQ list (`Faq[]`)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Faq"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /terms:
+    get:
+      tags: [Terms]
+      summary: Get terms-and-conditions HTML content
+      description: |
+        **Not implemented yet (handoff 16).** Static content today
+        (hardcoded sections in the frontend) — moving it here lets support
+        staff edit the terms from Filament without a code deploy.
+
+        Returns a single HTML string with all sections already formatted
+        (`<h3>` headings, `<p>` paragraphs, `<ul><li>` lists, `<a>` links).
+        The frontend renders it with `dangerouslySetInnerHTML` after running
+        it through DOMPurify — sanitize on the backend too, but never treat
+        that as a substitute for frontend sanitization.
+      operationId: getTermsContent
+      responses:
+        "200":
+          description: Raw HTML string (`text/plain` or `application/json` string body)
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "<h3>1. قبول الشروط</h3><p>...</p>"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /privacy:
+    get:
+      tags: [Privacy]
+      summary: Get privacy-policy HTML content
+      description: |
+        **Not implemented yet (handoff 17).** Static content today
+        (hardcoded sections in the frontend) — moving it here lets support
+        staff edit the privacy policy from Filament without a code deploy.
+
+        Returns a single HTML string with all sections already formatted
+        (`<h3>` headings, `<p>` paragraphs, `<ul><li>` lists, `<a>` links).
+        The frontend renders it with `dangerouslySetInnerHTML` after running
+        it through DOMPurify — sanitize on the backend too, but never treat
+        that as a substitute for frontend sanitization.
+      operationId: getPrivacyContent
+      responses:
+        "200":
+          description: Raw HTML string (`text/plain` or `application/json` string body)
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "<h3>1. المعلومات التي نجمعها</h3><p>...</p>"
+        "500":
+          $ref: "#/components/responses/ServerError"
 
 components:
   securitySchemes:
@@ -560,112 +1592,85 @@ components:
           example:
             email: ["The email field is required."]
 
-    # --- Auth ---
-    LoginRequest:
+    # --- Auth (handoff 08) — phone/OTP, no passwords anywhere ---
+    AuthOtpSendRequest:
       type: object
-      required: [email, password]
+      description: Matches `useSendOtp` — not implemented yet (handoff 08)
+      required: [phone]
       properties:
-        email:
+        phone:
           type: string
-          format: email
-          example: user@example.com
-        password:
-          type: string
-          format: password
-          example: secret123
-        rememberMe:
-          type: boolean
-          default: false
+          example: "0599123456"
 
-    LoginResponse:
+    AuthOtpVerifyRequest:
       type: object
+      description: |
+        Matches `useVerifyOtp` — not implemented yet (handoff 08). `fullName`
+        is required only on first-time registration.
+      required: [phone, code]
+      properties:
+        phone:
+          type: string
+          example: "0599123456"
+        code:
+          type: string
+          example: "123456"
+        fullName:
+          type: string
+          nullable: true
+          example: أحمد علي
+
+    AuthOtpResponse:
+      type: object
+      description: Not implemented yet (handoff 08)
+      required: [token, user]
       properties:
         token:
           type: string
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         user:
-          $ref: '#/components/schemas/User'
+          $ref: "#/components/schemas/AuthUser"
 
-    RegisterRequest:
+    # --- Account (handoff 09) ---
+    AuthUser:
       type: object
-      required: [fullName, email, phone, password, confirmPassword]
-      properties:
-        fullName:
-          type: string
-          example: Ahmed Ali
-        email:
-          type: string
-          format: email
-        phone:
-          type: string
-          example: "+9665XXXXXXXX"
-        password:
-          type: string
-          format: password
-        confirmPassword:
-          type: string
-          format: password
-
-    RestorePasswordRequest:
-      type: object
-      required: [email]
-      properties:
-        email:
-          type: string
-          format: email
-
-    NewPasswordRequest:
-      type: object
-      required: [password, confirmPassword]
-      properties:
-        password:
-          type: string
-          format: password
-        confirmPassword:
-          type: string
-          format: password
-
-    ChangePasswordRequest:
-      type: object
-      required: [currentPassword, newPassword, confirmPassword]
-      properties:
-        currentPassword:
-          type: string
-          format: password
-        newPassword:
-          type: string
-          format: password
-        confirmPassword:
-          type: string
-          format: password
-
-    # --- User ---
-    User:
-      type: object
+      description: |
+        Not implemented yet (handoff 09). `phone` is the primary identifier
+        (OTP login); `email` is optional and may be `""`/`null` when never
+        set.
+      required: [id, name, phone]
       properties:
         id:
-          type: integer
-          example: 1
-        fullName:
           type: string
-          example: Ahmed Ali
+          example: "1"
+        name:
+          type: string
+          example: أحمد علي
         email:
           type: string
           format: email
+          nullable: true
         phone:
           type: string
-          example: "+9665XXXXXXXX"
+          example: "0599123456"
 
     UpdateProfileRequest:
       type: object
+      description: |
+        Not implemented yet (handoff 09). `email` and `phone` are optional —
+        phone/OTP is the primary identifier, email is never required
+        (matches `AuthUser.email`, which may be `""`).
+      required: [name]
       properties:
-        fullName:
+        name:
           type: string
         email:
           type: string
           format: email
+          nullable: true
         phone:
           type: string
+          nullable: true
 
     # --- Contact (matches src/types/contact.types.ts) ---
     IContactRequest:
@@ -1617,6 +2622,540 @@ components:
         mapping:
           builder: "#/components/schemas/IBuilderProduct"
           flat-list: "#/components/schemas/IFlatListProduct"
+
+    # --- Addresses (handoff 10) — NOT IMPLEMENTED YET ---
+    SavedAddress:
+      type: object
+      description: Matches TypeScript `SavedAddress` (addressStore) — not implemented yet (handoff 10)
+      required: [id, type, label, name, phone, city, zoneId, street, isDefault]
+      properties:
+        id:
+          type: string
+          example: addr_123
+        type:
+          type: string
+          enum: [home, work, other]
+        label:
+          type: string
+          example: المنزل
+        name:
+          type: string
+          example: أحمد علي
+        phone:
+          type: string
+          example: "0599123456"
+        city:
+          type: string
+          example: غزة
+        zoneId:
+          type: string
+          description: References `DeliveryZone.id`
+          example: rimal
+        street:
+          type: string
+          example: شارع الجلاء
+        landmark:
+          type: string
+          nullable: true
+        location:
+          type: object
+          nullable: true
+          properties:
+            lat:
+              type: number
+            lng:
+              type: number
+        isDefault:
+          type: boolean
+
+    AddressRequest:
+      type: object
+      description: |
+        Request body for create/update — not implemented yet (handoff 10).
+        `isDefault` is never sent by the client; it's computed server-side
+        (first address a user adds becomes default automatically, see
+        `POST /addresses/{id}/default` to change it afterwards).
+      required: [type, label, name, phone, city, zoneId, street]
+      properties:
+        type:
+          type: string
+          enum: [home, work, other]
+        label:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        city:
+          type: string
+          example: غزة
+        zoneId:
+          type: string
+        street:
+          type: string
+        landmark:
+          type: string
+          nullable: true
+        location:
+          type: object
+          nullable: true
+          properties:
+            lat:
+              type: number
+            lng:
+              type: number
+
+    DeliveryZone:
+      type: object
+      description: |
+        Matches `src/lib/deliveryZones.ts` shape exactly — not implemented
+        yet (handoff 10). Returned by `GET /addresses/delivery-zones`.
+      required: [id, name, fee]
+      properties:
+        id:
+          type: string
+          example: rimal
+        name:
+          type: string
+          example: الرمال
+        description:
+          type: string
+          nullable: true
+          example: حي الرمال
+        fee:
+          type: number
+          example: 10
+
+    # --- Cart (handoff 11) — NOT IMPLEMENTED YET ---
+    ApplyCouponRequest:
+      type: object
+      description: Not implemented yet (handoff 11)
+      required: [code, subtotal]
+      properties:
+        code:
+          type: string
+          example: GLACE10
+        subtotal:
+          type: number
+          example: 33
+
+    ApplyCouponResponse:
+      type: object
+      description: Not implemented yet (handoff 11)
+      required: [valid]
+      properties:
+        valid:
+          type: boolean
+        discount:
+          type: number
+          description: Discount amount in ₪ (absolute, already resolved from the code's percentage)
+          example: 3.3
+        message:
+          type: string
+          nullable: true
+          description: Set when `valid` is false (e.g. expired/unknown code)
+
+    # --- Orders (handoff 12) — NOT IMPLEMENTED YET ---
+    CartSelection:
+      type: object
+      description: Matches TypeScript `CartSelection` (cartStore) — not implemented yet (handoff 12)
+      required: [kind, id, label, qty, unitPrice]
+      properties:
+        kind:
+          type: string
+          enum: [flavor, mix, addon]
+        id:
+          type: string
+        label:
+          type: string
+        qty:
+          type: integer
+        unitPrice:
+          type: number
+
+    CartItem:
+      type: object
+      description: Matches TypeScript `CartItem` (cartStore) — not implemented yet (handoff 12)
+      required: [productId, name, unitPrice, quantity]
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        image:
+          type: string
+          format: uri
+          nullable: true
+        size:
+          type: string
+          nullable: true
+        type:
+          type: string
+          nullable: true
+        container:
+          type: string
+          nullable: true
+        flavorFamily:
+          type: string
+          enum: [classic, special, mix]
+          nullable: true
+        selections:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartSelection"
+        addonTotal:
+          type: number
+          default: 0
+        unitPrice:
+          type: number
+        quantity:
+          type: integer
+        flatSelections:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/CartSelection"
+        flatAddonTotal:
+          type: number
+          nullable: true
+
+    CreateOrderRequest:
+      type: object
+      description: |
+        Not implemented yet (handoff 12). Client-computed price fields
+        (`subtotal`/`discount`/`total`) are NOT part of this request — the
+        server recomputes everything from `items`/`couponCode`.
+      required: [items, paymentMethod, deliveryMethod]
+      properties:
+        items:
+          type: string
+          description: JSON-encoded `CartItem[]` — a plain array field can't travel in multipart/form-data, so the frontend stringifies it.
+          example: '[{"productId":"b7f1c2a4-...","name":"بوظة كاسة","unitPrice":15,"quantity":2,"addonTotal":3,"selections":[]}]'
+        couponCode:
+          type: string
+          nullable: true
+        paymentMethod:
+          type: string
+          enum: [jawwal, jawwal-manual, paypal, cash, visa, wallet, bop]
+        deliveryMethod:
+          type: string
+          enum: [delivery, pickup, dine-in]
+        addressId:
+          type: string
+          nullable: true
+          description: Required when `deliveryMethod` is `delivery`. References `SavedAddress.id`.
+        pickupTime:
+          type: string
+          nullable: true
+          format: date-time
+        receiptImage:
+          type: string
+          format: binary
+          nullable: true
+          description: Required (or `receiptNote`) when `paymentMethod` is jawwal-manual/paypal/bop
+        receiptNote:
+          type: string
+          nullable: true
+        jawwalPhone:
+          type: string
+          nullable: true
+          description: |
+            Required when `paymentMethod` is `jawwal` (automatic) — the
+            phone JawwalPay sent the confirmation code to via
+            `POST /orders/jawwal/send-code`.
+        jawwalCode:
+          type: string
+          nullable: true
+          description: |
+            Required when `paymentMethod` is `jawwal`. The server verifies
+            this against JawwalPay for `jawwalPhone`/`total` before creating
+            the order — a wrong/expired code fails with 422 and no order is
+            created.
+
+    OrderAddressSnapshot:
+      type: object
+      description: Order-time snapshot of a SavedAddress — not implemented yet (handoff 12)
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        city:
+          type: string
+        area:
+          type: string
+          description: Zone name at order time (resolved server-side from `zoneId`)
+        street:
+          type: string
+        landmark:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+
+    OrderDriver:
+      type: object
+      description: Not implemented yet (handoff 12)
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: محمود الأحمد
+        phone:
+          type: string
+          example: "0599876543"
+        company:
+          type: string
+          example: توصيل فلسطين
+
+    Order:
+      type: object
+      description: Matches TypeScript `Order` (orderStore) — not implemented yet (handoff 12)
+      required: [id, items, subtotal, discount, total, paymentMethod, deliveryMethod, status, createdAt]
+      properties:
+        id:
+          type: string
+          example: ORD-M3K2A1
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        subtotal:
+          type: number
+        discount:
+          type: number
+        total:
+          type: number
+        paymentMethod:
+          type: string
+          enum: [jawwal, jawwal-manual, paypal, cash, visa, wallet, bop]
+        deliveryMethod:
+          type: string
+          enum: [delivery, pickup, dine-in]
+        address:
+          $ref: "#/components/schemas/OrderAddressSnapshot"
+        pickupTime:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: [قيد المراجعة, جاري التحضير, جاهز للاستلام, في الطريق, تم التسليم, تم الاستلام, ملغي, مسترد]
+        createdAt:
+          type: string
+          format: date-time
+        receiptImage:
+          type: string
+          format: uri
+          nullable: true
+        receiptNote:
+          type: string
+          nullable: true
+        cancelReason:
+          type: string
+          nullable: true
+        driver:
+          allOf:
+            - $ref: "#/components/schemas/OrderDriver"
+          nullable: true
+        driverAssignedAt:
+          type: string
+          format: date-time
+          nullable: true
+        preparationTime:
+          type: integer
+          description: Minutes (5-30), set by server/staff
+          nullable: true
+        estimatedDeliveryTime:
+          type: integer
+          description: Minutes (10-25), delivery orders only
+          nullable: true
+        receivedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    OrdersResponse:
+      type: object
+      description: Not implemented yet (handoff 12). Same page-envelope shape as `WalletTransactionsResponse`.
+      required: [items, total, page, perPage, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        total:
+          type: integer
+        page:
+          type: integer
+        perPage:
+          type: integer
+        totalPages:
+          type: integer
+
+    # --- Payments (handoff 13) — NOT IMPLEMENTED YET ---
+    MerchantPaymentAccount:
+      type: object
+      description: |
+        Matches `src/lib/merchantPaymentAccounts.ts` shape exactly — not
+        implemented yet (handoff 13). `visa` has no transfer account —
+        `inStoreOnly: true` and no `accountLabel`/`accountValue`/`holderName`,
+        since it can only be paid on the in-store card terminal.
+      required: [method]
+      properties:
+        method:
+          type: string
+          enum: [bop, jawwal, jawwal-manual, paypal, visa]
+        inStoreOnly:
+          type: boolean
+          nullable: true
+          description: True only for `visa` — no online transfer, pay in-store only.
+        qrImage:
+          type: string
+          format: uri
+          nullable: true
+        holderName:
+          type: string
+          nullable: true
+        bankName:
+          type: string
+          nullable: true
+          description: Bank-only accounts (bop)
+        accountLabel:
+          type: string
+          nullable: true
+          description: e.g. "رقم الحساب" or "رقم الجوال"
+        accountValue:
+          type: string
+          nullable: true
+        iban:
+          type: string
+          nullable: true
+
+    # --- Wallet (handoff 14) — NOT IMPLEMENTED YET ---
+    WalletTransaction:
+      type: object
+      description: Not implemented yet (handoff 14)
+      required: [id, date, amount, type, label]
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          format: date-time
+        amount:
+          type: number
+        type:
+          type: string
+          enum: [credit, debit]
+        label:
+          type: string
+        method:
+          type: string
+          enum: [bop, paypal, jawwal, jawwal-manual, visa, cash, wallet]
+          nullable: true
+        receiptImage:
+          type: string
+          format: uri
+          nullable: true
+
+    WalletResponse:
+      type: object
+      description: |
+        Not implemented yet (handoff 14). Balance only — see
+        `WalletTransactionsResponse` for the paginated transaction history.
+      required: [balance]
+      properties:
+        balance:
+          type: number
+          example: 105.25
+
+    WalletTransactionsResponse:
+      type: object
+      description: |
+        Not implemented yet (handoff 14). Same pagination shape as
+        `IEventsListResponse` — `items` newest first.
+      required: [items, total, page, perPage, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WalletTransaction"
+        total:
+          type: integer
+          example: 46
+        page:
+          type: integer
+          example: 1
+        perPage:
+          type: integer
+          example: 20
+        totalPages:
+          type: integer
+          example: 3
+
+    TopUpRequest:
+      type: object
+      description: |
+        Not implemented yet (handoff 14). `amount` is nullable while the
+        request is `قيد المراجعة` for receipt-based methods (bop, paypal,
+        jawwal-manual) — the customer never types it, the reviewer reads it
+        off the uploaded receipt and sets it on approval. Only the `jawwal`
+        automatic flow always has it set upfront (no receipt to read it from).
+      required: [id, method, status, createdAt]
+      properties:
+        id:
+          type: string
+        amount:
+          type: number
+          nullable: true
+        method:
+          type: string
+          enum: [bop, paypal, jawwal, jawwal-manual]
+        status:
+          type: string
+          enum: [قيد المراجعة, مكتمل]
+        createdAt:
+          type: string
+          format: date-time
+        receiptImage:
+          type: string
+          format: uri
+          nullable: true
+        receiptNote:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+          description: Only for the jawwal automatic method
+
+    Faq:
+      type: object
+      description: |
+        Not implemented yet (handoff 15). `answer` uses "\n\n" to separate
+        paragraphs; a paragraph starting with "- " renders as a bullet list
+        (each line one item). `link` is an optional trailing CTA, e.g. the
+        contact page.
+      required: [id, question, answer]
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        answer:
+          type: string
+        link:
+          type: object
+          nullable: true
+          required: [href, label]
+          properties:
+            href:
+              type: string
+            label:
+              type: string
 
   responses:
     Unauthorized:

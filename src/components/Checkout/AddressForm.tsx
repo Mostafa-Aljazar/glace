@@ -34,7 +34,11 @@ import type { AddressType, SavedAddress } from "@/store/addressStore";
  *  letters or a blank box on Windows/some browsers with no flag-glyph font. */
 function PalestineFlag() {
   return (
-    <svg viewBox="0 0 30 20" className="w-4.5 h-3 rounded-xs shrink-0" aria-hidden>
+    <svg
+      viewBox="0 0 30 20"
+      className="rounded-xs w-4.5 h-3 shrink-0"
+      aria-hidden
+    >
       <rect width="30" height="20" fill="#fff" />
       <rect width="30" height="6.667" fill="#000" />
       <rect y="13.333" width="30" height="6.667" fill="#007a3d" />
@@ -45,11 +49,12 @@ function PalestineFlag() {
 
 const CITY = "غزة";
 
-const TYPE_OPTIONS: { type: AddressType; label: string; icon: typeof Home }[] = [
-  { type: "home", label: "المنزل", icon: Home },
-  { type: "work", label: "العمل", icon: Briefcase },
-  { type: "other", label: "أخرى", icon: MapPin },
-];
+const TYPE_OPTIONS: { type: AddressType; label: string; icon: typeof Home }[] =
+  [
+    { type: "home", label: "المنزل", icon: Home },
+    { type: "work", label: "العمل", icon: Briefcase },
+    { type: "other", label: "أخرى", icon: MapPin },
+  ];
 
 const DEFAULT_LABEL: Record<AddressType, string> = {
   home: "المنزل",
@@ -73,6 +78,11 @@ export type AddressFormValues = z.infer<typeof schema> & { type: AddressType };
 
 export const inputClass =
   "bg-white/8 border border-white/20 text-white placeholder:text-white/40 rounded-[16px] h-12 ps-11 focus-visible:border-glace-yellow/60 focus-visible:ring-glace-yellow/20 transition-colors";
+/** Same box styling as `inputClass` but without the icon gutter — for
+ *  buttons/triggers that lay their own icon out inline via flex instead of
+ *  absolutely-positioning it (`fieldIconClass`) over a bare `<Input>`. */
+export const inputTriggerClass =
+  "bg-white/8 border border-white/20 text-white placeholder:text-white/40 rounded-[16px] h-12 px-3.5 focus-visible:border-glace-yellow/60 focus-visible:ring-glace-yellow/20 transition-colors";
 export const phoneInputClass =
   "bg-white/8 border border-white/20 text-white rounded-[16px] h-12 px-3.5 focus-within:border-glace-yellow/60 focus-within:ring-3 focus-within:ring-glace-yellow/20 transition-colors";
 export const labelClass = "text-white/70 text-[14px] font-semibold mb-1.5";
@@ -241,7 +251,7 @@ export default function AddressForm({
                   className={`ps-4 ${inputClass}`}
                 />
               </FormControl>
-              <FormMessage className="text-rose-300 text-[13px] font-semibold" />
+              <FormMessage className="font-semibold text-[13px] text-rose-300" />
             </FormItem>
           )}
         />
@@ -251,7 +261,7 @@ export default function AddressForm({
         {/* Contact */}
         <div>
           <h3 className={`mb-3 ${sectionLabelClass}`}>بيانات التواصل</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="gap-4 grid grid-cols-1 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="name"
@@ -261,10 +271,14 @@ export default function AddressForm({
                   <FormControl>
                     <div className="relative">
                       <User size={18} className={fieldIconClass} />
-                      <Input {...field} placeholder="الاسم الكامل" className={`peer ${inputClass}`} />
+                      <Input
+                        {...field}
+                        placeholder="الاسم الكامل"
+                        className={`peer ${inputClass}`}
+                      />
                     </div>
                   </FormControl>
-                  <FormMessage className="text-rose-300 text-[13px] font-semibold" />
+                  <FormMessage className="font-semibold text-[13px] text-rose-300" />
                 </FormItem>
               )}
             />
@@ -275,7 +289,9 @@ export default function AddressForm({
                 <FormItem>
                   <FormLabel className={labelClass}>رقم الهاتف</FormLabel>
                   <FormControl>
-                    <div className={`flex items-center gap-2.5 ${phoneInputClass}`}>
+                    <div
+                      className={`flex items-center gap-2.5 ${phoneInputClass}`}
+                    >
                       <span className="flex items-center pe-2.5 border-e border-white/15 shrink-0">
                         <PalestineFlag />
                       </span>
@@ -287,14 +303,16 @@ export default function AddressForm({
                         placeholder="05XXXXXXXX"
                         maxLength={10}
                         dir="ltr"
-                        className="flex-1 min-w-0 bg-transparent text-white text-[16px] tracking-wide placeholder:text-white/40 outline-none text-left"
+                        className="flex-1 bg-transparent outline-none min-w-0 text-[16px] text-white placeholder:text-white/40 text-left tracking-wide"
                         onChange={(e) => {
-                          field.onChange(e.target.value.replace(/\D/g, "").slice(0, 10));
+                          field.onChange(
+                            e.target.value.replace(/\D/g, "").slice(0, 10),
+                          );
                         }}
                       />
                     </div>
                   </FormControl>
-                  <FormMessage className="text-rose-300 text-[13px] font-semibold" />
+                  <FormMessage className="font-semibold text-[13px] text-rose-300" />
                 </FormItem>
               )}
             />
@@ -304,13 +322,15 @@ export default function AddressForm({
         {/* Location */}
         <div>
           <h3 className={`mb-3 ${sectionLabelClass}`}>الموقع</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="gap-4 grid grid-cols-1 sm:grid-cols-2">
             <FormItem>
               <FormLabel className={labelClass}>المدينة</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Building2 size={18} className={fieldIconClass} />
-                  <div className={`${inputClass} flex w-full items-center text-[16px] opacity-70`}>
+                  <div
+                    className={`${inputClass} flex w-full items-center text-[16px] opacity-70`}
+                  >
                     {CITY}
                   </div>
                 </div>
@@ -327,27 +347,29 @@ export default function AddressForm({
                     <button
                       type="button"
                       onClick={() => setZonePickerOpen(true)}
-                      className={`${inputClass} flex w-full items-center gap-2 text-[15px] text-start cursor-pointer`}
+                      className={`${inputTriggerClass} flex w-full items-center gap-2 text-[15px] text-start cursor-pointer`}
                     >
                       <MapPin size={18} className="text-white/40 shrink-0" />
-                      <span className={`flex-1 ${selectedZone ? "text-white" : "text-white/40"}`}>
+                      <span
+                        className={`flex-1 ${selectedZone ? "text-white" : "text-white/40"}`}
+                      >
                         {selectedZone?.name ?? "اختر المنطقة"}
                       </span>
                       {selectedZone &&
                         (selectedZone.fee > 0 ? (
-                          <span className="shrink-0 text-white/60 text-[13px] tabular-nums">
+                          <span className="tabular-nums text-[13px] text-white/60 shrink-0">
                             {selectedZone.fee} ₪
                           </span>
                         ) : (
-                          <span className="shrink-0 bg-glace-yellow/20 text-glace-yellow text-[12px] font-bold px-2 py-0.5 rounded-full">
+                          <span className="bg-glace-yellow/20 px-2 py-0.5 rounded-full font-bold text-[12px] text-glace-yellow shrink-0">
                             مجاني
                           </span>
                         ))}
                     </button>
                   </FormControl>
-                  <FormMessage className="text-rose-300 text-[13px] font-semibold" />
+                  <FormMessage className="font-semibold text-[13px] text-rose-300" />
                   {selectedZone?.description && (
-                    <p className="mt-1 text-white/45 text-[12.5px] leading-relaxed">
+                    <p className="mt-1 text-[12.5px] text-white/45 leading-relaxed">
                       {selectedZone.description}
                     </p>
                   )}
@@ -373,10 +395,14 @@ export default function AddressForm({
                   <FormControl>
                     <div className="relative">
                       <MapPin size={18} className={fieldIconClass} />
-                      <Input {...field} placeholder="الشارع والعنوان" className={`peer ${inputClass}`} />
+                      <Input
+                        {...field}
+                        placeholder="الشارع والعنوان"
+                        className={`peer ${inputClass}`}
+                      />
                     </div>
                   </FormControl>
-                  <FormMessage className="text-rose-300 text-[13px] font-semibold" />
+                  <FormMessage className="font-semibold text-[13px] text-rose-300" />
                 </FormItem>
               )}
             />
@@ -388,15 +414,19 @@ export default function AddressForm({
                 <FormItem className="sm:col-span-2">
                   <FormLabel className={labelClass}>
                     علامة مميزة{" "}
-                    <span className="text-white/35 font-normal">(اختياري)</span>
+                    <span className="font-normal text-white/35">(اختياري)</span>
                   </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Landmark size={18} className={fieldIconClass} />
-                      <Input {...field} placeholder="بجانب ..." className={`peer ${inputClass}`} />
+                      <Input
+                        {...field}
+                        placeholder="بجانب ..."
+                        className={`peer ${inputClass}`}
+                      />
                     </div>
                   </FormControl>
-                  <FormMessage className="text-rose-300 text-[13px] font-semibold" />
+                  <FormMessage className="font-semibold text-[13px] text-rose-300" />
                 </FormItem>
               )}
             />
@@ -406,29 +436,32 @@ export default function AddressForm({
         {/* GPS */}
         <div>
           <h3 className={`mb-1 ${sectionLabelClass}`}>الموقع على الخريطة</h3>
-          <p className="mb-3 text-white/45 text-[12.5px]">
+          <p className="mb-3 text-[12.5px] text-white/45">
             إضافة موقعك يتيح للكابتن تقدير وقت وصوله إليك بدقة.
           </p>
           <div className="flex flex-col gap-2.5">
-            <button
-              type="button"
-              onClick={handleGeolocate}
-              className="flex items-center justify-center gap-2 rounded-[16px] border border-white/20 bg-white/6 px-4 py-3 text-glace-yellow text-[14px] font-bold hover:bg-white/10 transition-colors cursor-pointer"
-            >
-              <Navigation size={16} />
-              استخدم موقعي الحالي
-            </button>
-            <button
-              type="button"
-              onClick={() => setMapPickerOpen(true)}
-              className="flex items-center justify-center gap-2 rounded-[16px] border border-white/20 bg-white/6 px-4 py-3 text-glace-yellow text-[14px] font-bold hover:bg-white/10 transition-colors cursor-pointer"
-            >
-              <MapIcon size={16} />
-              اختر من الخريطة
-            </button>
+            <div className="flex gap-2.5">
+              <button
+                type="button"
+                onClick={handleGeolocate}
+                className="flex flex-1 justify-center items-center gap-2 bg-white/6 hover:bg-white/10 px-4 py-3 border border-white/20 rounded-[16px] font-bold text-[14px] text-glace-yellow transition-colors cursor-pointer"
+              >
+                <Navigation size={16} />
+                استخدم موقعي الحالي
+              </button>
+              <button
+                type="button"
+                onClick={() => setMapPickerOpen(true)}
+                className="flex flex-1 justify-center items-center gap-2 bg-white/6 hover:bg-white/10 px-4 py-3 border border-white/20 rounded-[16px] font-bold text-[14px] text-glace-yellow transition-colors cursor-pointer"
+              >
+                <MapIcon size={16} />
+                اختر من الخريطة
+              </button>
+            </div>
             {location && (
-              <p className="text-white/45 text-[12px] text-center tabular-nums">
-                تم تحديد الموقع: {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
+              <p className="tabular-nums text-[12px] text-white/45 text-center">
+                تم تحديد الموقع: {location.lat.toFixed(5)},{" "}
+                {location.lng.toFixed(5)}
               </p>
             )}
           </div>
@@ -445,7 +478,7 @@ export default function AddressForm({
         {!hideSubmit && (
           <Button
             type="submit"
-            className="bg-glace-yellow hover:bg-yellow-300 border-0 rounded-[18px] text-[#1e6a7f] text-[17px] font-bold h-auto py-3.5 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] hover:-translate-y-0.5 transition-all cursor-pointer"
+            className="bg-glace-yellow hover:bg-yellow-300 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] py-3.5 border-0 rounded-[18px] h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 cursor-pointer"
           >
             {submitLabel}
           </Button>

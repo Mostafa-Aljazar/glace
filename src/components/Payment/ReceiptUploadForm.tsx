@@ -6,11 +6,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Props {
-  /** Existing receipt image (data URL) to preview, e.g. when re-uploading
-   *  on an order that already has one attached. */
+  /** Existing receipt image URL to preview, e.g. when re-uploading on an
+   *  order that already has one attached. */
   initialImage?: string;
   initialNote?: string;
-  onSubmit: (receiptImage: string | undefined, note: string | undefined) => void;
+  onSubmit: (receiptImage: File | undefined, note: string | undefined) => void;
   submitLabel: string;
 }
 
@@ -25,6 +25,7 @@ export default function ReceiptUploadForm({
   onSubmit,
   submitLabel,
 }: Props) {
+  const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | undefined>(initialImage);
   const [troubleUploading, setTroubleUploading] = useState(false);
   const [note, setNote] = useState(initialNote ?? "");
@@ -35,21 +36,19 @@ export default function ReceiptUploadForm({
     };
   }, [preview]);
 
-  function handleFileChange(file: File | null) {
-    if (!file) {
-      setPreview(undefined);
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
-    reader.readAsDataURL(file);
+  function handleFileChange(selected: File | null) {
+    setFile(selected);
+    setPreview((current) => {
+      if (current && current.startsWith("blob:")) URL.revokeObjectURL(current);
+      return selected ? URL.createObjectURL(selected) : undefined;
+    });
   }
 
-  const canSubmit = troubleUploading ? note.trim().length > 0 : !!preview;
+  const canSubmit = troubleUploading ? note.trim().length > 0 : !!file;
 
   function handleSubmit() {
     if (!canSubmit) return;
-    onSubmit(troubleUploading ? undefined : preview, troubleUploading ? note.trim() : undefined);
+    onSubmit(troubleUploading ? undefined : file ?? undefined, troubleUploading ? note.trim() : undefined);
   }
 
   return (
@@ -106,8 +105,8 @@ export default function ReceiptUploadForm({
             className="bg-white/10 border-white/25 focus-visible:border-glace-yellow/50 text-white placeholder:text-white/40 focus-visible:ring-glace-yellow/20"
           />
           <p className="mt-2 text-[12px] text-white/60">
-            سيصل طلبك بحالة &quot;غير مدفوع&quot; وسيتواصل معك فريق الدعم
-            لإتمام الدفع قبل تحويله للمطعم.
+            سيصل طلبك بحالة &quot;قيد المراجعة&quot; وسيتواصل معك فريق الدعم
+            للتأكد من التحويل قبل تحويل الطلب للمطعم.
           </p>
         </div>
       )}

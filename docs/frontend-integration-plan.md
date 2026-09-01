@@ -36,8 +36,9 @@
 
 ## 2. Account/Profile
 
-- `useMe.ts`/`useUpdateProfile.ts`/`useLogout.ts` مبنيين أصلاً على `/auth/me`, `/auth/profile`, `/auth/logout` — تأكد بس إنهم فعلاً شغالين ضد الباك اند الحقيقي (مش mock)، وصحح أي فرق بشكل الاستجابة.
-- مفيش تغيير متوقع بالمكونات (`ProfilePanel.tsx`) إذا شكل `AuthUser` طابق الموصوف.
+- `useMe.ts`/`useUpdateProfile.ts` مبنيين أصلاً على `/auth/me`, `/auth/profile` — تأكد بس إنهم فعلاً شغالين ضد الباك اند الحقيقي (مش mock)، وصحح أي فرق بشكل الاستجابة.
+- `useLogout.ts` **ما بيستدعي أي API** (قرار 2026-08-31، ولا يوجد endpoint خروج بالنظام) — بيمسح الـstore المحلي وينظّف react-query cache بس. لا تضيفله استدعاء شبكة.
+- مفيش تغيير متوقع بالمكونات (`ProfilePanel.tsx`) إذا شكل `AuthUser` طابق الموصوف — لاحظ `email` صار اختياري بالكامل بالفورم (مش بس "ممكن يكون فاضي").
 
 ## 3. Addresses — `src/store/addressStore.ts`
 
@@ -55,7 +56,7 @@
 - **سلة المشتريات نفسها (`cartStore.ts`) تضل zustand محلي** — السلة قبل تأكيد الطلب مفيهاش داعي تنزل عالسيرفر (نفس منطق أي متجر إلكتروني: cart = client state لحد الـcheckout). **ما تلمسها**.
 - اللي لازم يتغيّر:
   - **الكوبون** (`applyCoupon` بـ`cartStore.ts`): احذف `VALID_COUPONS` hardcoded، بدّلها باستدعاء `POST /cart/apply-coupon` (شوف `11-cart-coupons.md`) — الفرونت يرسل `code`+`subtotal`، السيرفر يرجع `valid`/`discount`. خزّن النتيجة بنفس حقول `coupon`/`discount` بالـstore متل ما هي.
-  - **مناطق التوصيل** (`src/lib/deliveryZones.ts`): استبدل الـ31 منطقة الـhardcoded باستدعاء `GET /delivery-zones` فعلي (الدالة `fetchDeliveryZones()` موجودة أصلاً كـstub، فقط فعّلها بنداء حقيقي بدل ما ترجع المصفوفة الثابتة).
+  - **مناطق التوصيل** (`src/lib/deliveryZones.ts`): استبدل الـ31 منطقة الـhardcoded باستدعاء `GET /addresses/delivery-zones` فعلي (الدالة `fetchDeliveryZones()` موجودة أصلاً كـstub، فقط فعّلها بنداء حقيقي بدل ما ترجع المصفوفة الثابتة).
   - **حسابات الدفع** (`src/lib/merchantPaymentAccounts.ts`): استبدلها بـ`GET /payment-accounts` (`13-payments.md`).
 - **لا تلمس** `src/lib/scheduling.ts` (منطق الجدولة) ولا `src/lib/deliveryRestrictions.ts` — هدول منطق فرونت بحت بدون حاجة لـAPI حسب `12-orders.md`، إلا إذا الباك اند أكّد رفض طلبات فيها صنف ممنوع توصيل (وقتها تقدر تشيل الفحص المحلي بثقة إنه السيرفر بيرفضه كمان بس خلّيه موجود كطبقة أولى للـUX السريع).
 

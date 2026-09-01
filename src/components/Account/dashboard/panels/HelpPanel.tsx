@@ -4,87 +4,35 @@ import { useState } from "react";
 import Link from "next/link";
 import { HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import DashboardCard from "../shared/DashboardCard";
+import { useHelpFaqs } from "@/hooks/help";
 
-const FAQS: { question: string; answer: React.ReactNode }[] = [
-  {
-    question: "كيف أقدّم طلب؟",
-    answer: (
-      <p>
-        تصفّح المنيو، أضف المنتجات التي تريدها إلى السلة، ثم اختر طريقة
-        الاستلام (توصيل، استلام من المحل، أو تناول الآن) وأكمل الدفع.
-      </p>
-    ),
-  },
-  {
-    question: "شو طرق الدفع المتاحة؟",
-    answer: (
-      <>
-        <p>يمكنك الدفع بإحدى الطرق التالية:</p>
-        <ul className="space-y-1.5 mt-2 list-disc list-inside">
-          <li>الكاش أو الفيزا — عند الاستلام من المحل فقط</li>
-          <li>من رصيد محفظتك في النظام</li>
-          <li>
-            التحويل عبر جوال باي، بال باي، أو بنك فلسطين — برفع صورة إشعار
-            الدفع بعد التحويل
-          </li>
-        </ul>
-      </>
-    ),
-  },
-  {
-    question: "شو معنى \"قيد المراجعة\"؟",
-    answer: (
-      <p>
-        عند تأكيد الطلب أو طلب شحن المحفظة، يبقى بحالة "قيد المراجعة" حتى
-        يتحقق فريقنا من إشعار الدفع (إن وُجد)، بعدها ينتقل الطلب للمرحلة
-        التالية تلقائياً.
-      </p>
-    ),
-  },
-  {
-    question: "كيف ألغي طلب؟",
-    answer: (
-      <p>
-        من صفحة تتبع الطلب، اضغط "إلغاء الطلب" واختر السبب. يمكنك الإلغاء
-        مجاناً طالما لم يتم استلام الطلب بعد.
-      </p>
-    ),
-  },
-  {
-    question: "كيف أشحن رصيد محفظتي؟",
-    answer: (
-      <p>
-        من صفحة "محفظتي"، اختر طريقة التحويل (جوال باي، بال باي، أو بنك
-        فلسطين)، أدخل المبلغ، وارفع صورة إشعار الدفع. يُضاف المبلغ لرصيدك
-        بعد التحقق من الإشعار.
-      </p>
-    ),
-  },
-  {
-    question: "كيف أعرف رسوم التوصيل لمنطقتي؟",
-    answer: (
-      <p>
-        رسوم التوصيل تظهر تلقائياً عند اختيار عنوانك في صفحة إتمام الطلب،
-        وتختلف حسب المنطقة.
-      </p>
-    ),
-  },
-  {
-    question: "لسة ما وصلني طلبي أو في مشكلة، شو أعمل؟",
-    answer: (
-      <p>
-        تواصل معنا مباشرةً عبر صفحة{" "}
-        <Link href="/contact" className="text-glace-yellow hover:underline">
-          تواصل معنا
-        </Link>{" "}
-        وسيتم مساعدتك في أقرب وقت.
-      </p>
-    ),
-  },
-];
+function FaqAnswer({ answer }: { answer: string }) {
+  const paragraphs = answer.split("\n\n");
+  return (
+    <>
+      {paragraphs.map((para, idx) =>
+        para.startsWith("- ") ? (
+          <ul key={idx} className="space-y-1.5 mt-2 list-disc list-inside">
+            {para
+              .split("\n")
+              .map((line) => line.replace(/^- /, ""))
+              .map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+          </ul>
+        ) : (
+          <p key={idx} className={idx > 0 ? "mt-2" : undefined}>
+            {para}
+          </p>
+        ),
+      )}
+    </>
+  );
+}
 
 export default function HelpPanel() {
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const { data: faqs = [] } = useHelpFaqs();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
     <DashboardCard title="المساعدة" icon={HelpCircle}>
@@ -92,16 +40,16 @@ export default function HelpPanel() {
         أسئلة شائعة حول استخدام تطبيق جلاسيه الأمير
       </p>
       <div className="flex flex-col gap-3">
-        {FAQS.map((faq, idx) => {
-          const isOpen = expandedIndex === idx;
+        {faqs.map((faq) => {
+          const isOpen = expandedId === faq.id;
           return (
             <div
-              key={faq.question}
+              key={faq.id}
               className="border border-white/20 rounded-[16px] overflow-hidden"
             >
               <button
                 type="button"
-                onClick={() => setExpandedIndex(isOpen ? null : idx)}
+                onClick={() => setExpandedId(isOpen ? null : faq.id)}
                 className="flex justify-between items-center gap-3 hover:bg-white/10 px-4 py-3.5 w-full text-white text-start transition-colors cursor-pointer"
               >
                 <span className="font-bold text-[15px]">{faq.question}</span>
@@ -113,7 +61,17 @@ export default function HelpPanel() {
               </button>
               {isOpen && (
                 <div className="px-4 pt-3 pb-4 border-white/10 border-t text-white/85 text-[14px] leading-relaxed">
-                  {faq.answer}
+                  <FaqAnswer answer={faq.answer} />
+                  {faq.link && (
+                    <p className="mt-2">
+                      <Link
+                        href={faq.link.href}
+                        className="text-glace-yellow hover:underline"
+                      >
+                        {faq.link.label}
+                      </Link>
+                    </p>
+                  )}
                 </div>
               )}
             </div>

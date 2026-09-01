@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import EventsBackground from "@/components/Events/EventsBackground";
 import { useMe } from "@/hooks/auth/useMe";
 import AccountHeroStrip from "./dashboard/AccountHeroStrip";
@@ -10,8 +12,18 @@ export default function MyAccountClientPage({
 }: {
   children: React.ReactNode;
 }) {
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!isLoggedIn) router.replace(`/auth/login?redirect=${pathname}`);
+  }, [isLoggedIn, router, pathname]);
+
   const { isLoading } = useMe();
   const user = useAuthStore((s) => s.user);
+
+  if (!isLoggedIn) return null;
 
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">

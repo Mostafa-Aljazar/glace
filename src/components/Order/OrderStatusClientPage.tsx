@@ -20,6 +20,7 @@ import {
   Phone,
   User,
   Clock,
+  CheckCircle2,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import { Button } from "@/components/ui/button";
@@ -32,13 +33,18 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  useOrderStore,
   ORDER_STATUS_COLORS,
   PAYMENT_METHOD_LABELS,
   RECEIPT_METHODS,
   isOrderFinal,
-  type OrderStatus,
 } from "@/store/orderStore";
+import {
+  useOrder,
+  useUpdateReceipt,
+  useCancelOrder,
+  useMarkReceived,
+  useEmailOrderSummary,
+} from "@/hooks/orders";
 import { getLineItemTotal, useCartStore } from "@/store/cartStore";
 import { getStatusSteps } from "@/lib/orderStatusSteps";
 import ReceiptUploadForm from "@/components/Payment/ReceiptUploadForm";
@@ -52,10 +58,11 @@ const CANCEL_REASONS = [
 
 export default function OrderStatusClientPage({ id }: { id: string }) {
   const router = useRouter();
-  const getOrder = useOrderStore((s) => s.getOrder);
-  const updateReceipt = useOrderStore((s) => s.updateReceipt);
-  const cancelOrder = useOrderStore((s) => s.cancelOrder);
-  const order = getOrder(id);
+  const { data: order, isLoading } = useOrder(id);
+  const updateReceiptMutation = useUpdateReceipt();
+  const cancelOrderMutation = useCancelOrder();
+  const markReceivedMutation = useMarkReceived();
+  const emailSummaryMutation = useEmailOrderSummary();
   const addItem = useCartStore((s) => s.addItem);
 
   const [reuploadOpen, setReuploadOpen] = useState(false);
@@ -63,6 +70,21 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [emailInput, setEmailInput] = useState("");
   const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [receivedError, setReceivedError] = useState<string | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
+        <EventsBackground />
+        <div className="z-90 relative flex justify-center items-center mx-auto px-4 py-20 max-w-300 min-h-screen text-white">
+          <div className="border-4 border-white/25 border-t-glace-yellow rounded-full size-12 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
@@ -110,25 +132,54 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
     );
   }
 
-  const currentStep = getStatusSteps(order.deliveryMethod).findIndex((s: { key: OrderStatus }) => s.key === order.status);
-
   function handleReuploadSubmit(
-    receiptImage: string | undefined,
+    receiptImage: File | undefined,
     receiptNote: string | undefined
   ) {
-    updateReceipt(order!.id, receiptImage, receiptNote);
-    setReuploadOpen(false);
+    setReceiptError(null);
+    updateReceiptMutation.mutate(
+      { id: order!.id, receiptImage, receiptNote },
+      {
+        onSuccess: () => setReuploadOpen(false),
+        onError: () =>
+          setReceiptError("تعذر حفظ الإيصال، الرجاء المحاولة مرة أخرى"),
+      },
+    );
   }
 
   function handleCancelConfirm() {
     if (!selectedReason) return;
-    cancelOrder(order!.id, selectedReason);
-    setCancelOpen(false);
+    setCancelError(null);
+    cancelOrderMutation.mutate(
+      { id: order!.id, reason: selectedReason },
+      {
+        onSuccess: () => setCancelOpen(false),
+        onError: () =>
+          setCancelError("تعذر إلغاء الطلب، الرجاء المحاولة مرة أخرى"),
+      },
+    );
+  }
+
+  function handleMarkReceived() {
+    setReceivedError(null);
+    markReceivedMutation.mutate(order!.id, {
+      onError: () =>
+        setReceivedError("تعذر تأكيد الاستلام، الرجاء المحاولة مرة أخرى"),
+    });
   }
 
   function handleSendEmailSummary() {
-    if (!emailInput.trim()) return;
-    setEmailSent(true);
+    const email = emailInput.trim();
+    if (!email) return;
+    setEmailError(null);
+    emailSummaryMutation.mutate(
+      { id: order!.id, email },
+      {
+        onSuccess: () => setEmailSent(true),
+        onError: () =>
+          setEmailError("تعذر إرسال الملخص، الرجاء المحاولة مرة أخرى"),
+      },
+    );
   }
 
   function handleReorder() {
@@ -283,13 +334,16 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
               <button
                 type="button"
                 onClick={handleSendEmailSummary}
-                disabled={!emailInput.trim()}
+                disabled={!emailInput.trim() || emailSummaryMutation.isPending}
                 className="flex items-center gap-1.5 bg-glace-yellow hover:brightness-105 disabled:opacity-40 px-4 py-2.5 rounded-[14px] font-bold text-[#1e6a7f] text-[14px] transition disabled:cursor-not-allowed cursor-pointer shrink-0"
               >
                 <Send size={14} />
                 إرسال
               </button>
             </div>
+          )}
+          {emailError && (
+            <p className="mt-2 text-[13px] text-red-300">{emailError}</p>
           )}
         </div>
 
@@ -474,6 +528,26 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
               </Button>
             )}
 
+            {/* Confirm receipt button — delivery orders out for delivery */}
+            {order.deliveryMethod === "delivery" && order.status === "في الطريق" && (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={handleMarkReceived}
+                  disabled={markReceivedMutation.isPending}
+                  className="flex justify-center items-center gap-2 bg-glace-yellow hover:brightness-105 disabled:opacity-50 py-3 rounded-[20px] w-full font-bold text-[#1e6a7f] text-[15px] transition disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <CheckCircle2 size={16} />
+                  تأكيد استلام الطلب
+                </button>
+                {receivedError && (
+                  <p className="mt-2 text-[13px] text-red-300 text-center">
+                    {receivedError}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Cancel button under details on lg */}
             {(order.status === "قيد المراجعة" || order.status === "جاري التحضير") && (
               <button
@@ -522,6 +596,25 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
             تواصل معنا
           </a>
 
+          {order.deliveryMethod === "delivery" && order.status === "في الطريق" && (
+            <div>
+              <button
+                type="button"
+                onClick={handleMarkReceived}
+                disabled={markReceivedMutation.isPending}
+                className="flex justify-center items-center gap-2 bg-glace-yellow hover:brightness-105 disabled:opacity-50 py-3.5 rounded-[20px] font-bold text-[#1e6a7f] text-[15px] transition-colors cursor-pointer w-full disabled:cursor-not-allowed"
+              >
+                <CheckCircle2 size={16} />
+                تأكيد استلام الطلب
+              </button>
+              {receivedError && (
+                <p className="mt-2 text-[13px] text-red-300 text-center">
+                  {receivedError}
+                </p>
+              )}
+            </div>
+          )}
+
           {(order.status === "قيد المراجعة" || order.status === "جاري التحضير") && (
             <button
               type="button"
@@ -550,6 +643,9 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
             onSubmit={handleReuploadSubmit}
             submitLabel="حفظ"
           />
+          {receiptError && (
+            <p className="text-[13px] text-red-300 text-center">{receiptError}</p>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -566,7 +662,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
           <DialogHeader>
             <DialogTitle className="text-white">إلغاء الطلب؟</DialogTitle>
             <DialogDescription className="text-white/80">
-              اختر سبب الإلغاء. المبلغ المدفوع سيتم إضافته لمحفظة النظام.
+              اختر سبب الإلغاء. المبلغ المدفوع سيصير قيد المراجعة لاسترجاعه لمحفظتك.
             </DialogDescription>
           </DialogHeader>
 
@@ -575,7 +671,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
             <p className="flex items-center gap-2">
               ✓ المبلغ المدفوع: <span className="font-bold text-green-300">{order.total.toFixed(2)} ₪</span>
             </p>
-            <p className="text-[12px] text-green-100/80 mt-1">سيتم استرجاع المبلغ تلقائياً لمحفظتك</p>
+            <p className="text-[12px] text-green-100/80 mt-1">سيتم مراجعة الطلب وإضافة المبلغ لمحفظتك</p>
           </div>
 
           <div className="gap-2.5 grid grid-cols-2 my-2">
@@ -595,6 +691,10 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
             ))}
           </div>
 
+          {cancelError && (
+            <p className="text-[13px] text-red-300 text-center">{cancelError}</p>
+          )}
+
           <div className="flex gap-3 mt-2">
             <DialogClose className="flex-1 bg-white/10 hover:bg-white/20 py-2.5 rounded-[16px] font-bold text-[15px] text-white transition cursor-pointer">
               تراجع
@@ -602,7 +702,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
             <button
               type="button"
               onClick={handleCancelConfirm}
-              disabled={!selectedReason}
+              disabled={!selectedReason || cancelOrderMutation.isPending}
               className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-40 py-2.5 rounded-[16px] font-bold text-[15px] text-white transition disabled:cursor-not-allowed cursor-pointer"
             >
               تأكيد الإلغاء

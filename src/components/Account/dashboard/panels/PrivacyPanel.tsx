@@ -1,128 +1,23 @@
 "use client";
 
-import Link from "next/link";
+import DOMPurify from "isomorphic-dompurify";
 import { Lock } from "lucide-react";
 import DashboardCard from "../shared/DashboardCard";
-
-const SECTIONS: { title: string; body: React.ReactNode }[] = [
-  {
-    title: "1. المعلومات التي نجمعها",
-    body: (
-      <>
-        <p>نقوم بجمع المعلومات التي تقدمها مباشرةً عند استخدام تطبيق جلاسيه الأمير، بما في ذلك:</p>
-        <ul className="space-y-1.5 mt-2 list-disc list-inside">
-          <li>الاسم ورقم الهاتف والبريد الإلكتروني</li>
-          <li>عنوان التوصيل (المدينة، المنطقة، الشارع، وأي ملاحظات إضافية)</li>
-          <li>بيانات الطلبات والمعاملات المالية داخل التطبيق</li>
-          <li>
-            صور إشعارات الدفع التي ترفعها عند التحويل عبر جوال باي، بال
-            باي، أو بنك فلسطين
-          </li>
-        </ul>
-      </>
-    ),
-  },
-  {
-    title: "2. كيف نستخدم معلوماتك",
-    body: (
-      <>
-        <p>نستخدم البيانات المجمّعة لأغراض التشغيل فقط:</p>
-        <ul className="space-y-1.5 mt-2 list-disc list-inside">
-          <li>معالجة طلباتك وتوصيلها للعنوان الصحيح</li>
-          <li>التحقق من إشعارات الدفع وإدارة رصيد محفظتك</li>
-          <li>التواصل معك بخصوص حالة طلبك عند الحاجة</li>
-          <li>تحسين جودة الخدمة والمنيو المقدَّم</li>
-        </ul>
-      </>
-    ),
-  },
-  {
-    title: "3. مشاركة المعلومات مع أطراف ثالثة",
-    body: (
-      <p>
-        لا نبيع أو نؤجر بياناتك الشخصية لأي طرف ثالث. قد تتم مشاركة بيانات
-        التوصيل الأساسية (الاسم، رقم الهاتف، العنوان) مع فريق التوصيل حصراً
-        لغرض تنفيذ طلبك.
-      </p>
-    ),
-  },
-  {
-    title: "4. صور إشعارات الدفع",
-    body: (
-      <p>
-        عند اختيار الدفع عبر التحويل البنكي أو المحافظ الإلكترونية، تُحفظ
-        صورة الإشعار المرفوعة مع بيانات الطلب أو طلب الشحن حتى يتم التحقق
-        منها من قِبل فريقنا، وتُستخدم فقط لمطابقة المبلغ المحوَّل مع طلبك.
-      </p>
-    ),
-  },
-  {
-    title: "5. أمان البيانات",
-    body: (
-      <p>
-        نتخذ إجراءات معقولة لحماية بياناتك من الوصول أو الاستخدام غير
-        المصرّح به. مع ذلك، لا يمكن ضمان أمان نقل البيانات عبر الإنترنت
-        بشكل مطلق.
-      </p>
-    ),
-  },
-  {
-    title: "6. الاحتفاظ بالبيانات",
-    body: (
-      <p>
-        نحتفظ ببيانات حسابك وسجل طلباتك طالما بقي حسابك نشطاً، أو حسب ما
-        يتطلبه القانون المحلي. يمكنك طلب حذف حسابك وبياناته بالتواصل معنا.
-      </p>
-    ),
-  },
-  {
-    title: "7. حقوقك",
-    body: (
-      <p>
-        يحق لك في أي وقت طلب الاطلاع على بياناتك، تعديلها، أو حذف حسابك،
-        من خلال صفحة حسابي داخل التطبيق أو بالتواصل المباشر معنا.
-      </p>
-    ),
-  },
-  {
-    title: "8. التعديلات على هذه السياسة",
-    body: (
-      <p>
-        قد نقوم بتحديث سياسة الخصوصية من وقت لآخر. استمرارك في استخدام
-        التطبيق بعد أي تعديل يُعدّ موافقةً على السياسة المحدَّثة.
-      </p>
-    ),
-  },
-  {
-    title: "9. التواصل معنا",
-    body: (
-      <p>
-        لأي استفسار بخصوص خصوصية بياناتك، يمكنك التواصل معنا عبر صفحة{" "}
-        <Link href="/contact" className="text-glace-yellow hover:underline">
-          تواصل معنا
-        </Link>{" "}
-        داخل التطبيق، أو عبر البريد الإلكتروني info@glaceelameer.com.
-      </p>
-    ),
-  },
-];
+import { usePrivacyContent } from "@/hooks/privacy";
 
 export default function PrivacyPanel() {
+  const { data: html = "" } = usePrivacyContent();
+  const safeHtml = DOMPurify.sanitize(html);
+
   return (
     <DashboardCard title="سياسة الخصوصية" icon={Lock}>
       <p className="mb-6 text-white/60 text-[13px]">
         آخر تحديث: أغسطس 2026
       </p>
-      <div className="flex flex-col gap-6 text-white/85 text-[15px] leading-relaxed">
-        {SECTIONS.map((section) => (
-          <div key={section.title}>
-            <h3 className="mb-2 font-bold text-glace-yellow text-[17px]">
-              {section.title}
-            </h3>
-            {section.body}
-          </div>
-        ))}
-      </div>
+      <div
+        className="[&_a]:text-glace-yellow [&_a]:hover:underline [&_h3]:mb-2 [&_h3]:mt-6 [&_h3]:first:mt-0 [&_h3]:font-bold [&_h3]:text-glace-yellow [&_h3]:text-[17px] [&_p]:mt-2 [&_p]:first:mt-0 [&_ul]:space-y-1.5 [&_ul]:mt-2 [&_ul]:list-disc [&_ul]:list-inside text-white/85 text-[15px] leading-relaxed"
+        dangerouslySetInnerHTML={{ __html: safeHtml }}
+      />
     </DashboardCard>
   );
 }
