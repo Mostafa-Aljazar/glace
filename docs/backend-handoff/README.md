@@ -6,7 +6,7 @@
 **داشبورد:** `…/admin`  
 **عقد:** [`swagger.yaml`](./swagger.yaml)
 
-`audit-api.mjs` الآن: **1 فشل** (`items[].image` = 0/69) · **1 تحذير جوهري** (`events[].images` دايمًا `[]`)
+آخر فحص يدوي: **1 فشل** (`items[].image` = 0/69) · **1 تحذير جوهري** (`events[].images` دايمًا `[]`)
 
 ---
 
@@ -25,7 +25,6 @@
 
 ```bash
 API=http://acw348d983gr8x01lb5myd3x.64.176.172.179.sslip.io/api
-node scripts/audit-api.mjs "$API"
 
 # 01 — لازم missing=0
 curl -s "$API/menu/products/loqaimat" | jq '.items[] | {id, price, image}'
@@ -41,6 +40,29 @@ curl -s "$API/events/3" | jq '{listImage, images}'
 ```
 
 **القبول:** audit بدون فشل · كل تذكرة فوق متعلّمة · الستورفرونت يعرض صور الأصناف/الأحجام/معرض الفعالية بدون placeholders.
+
+---
+
+## أنظمة جديدة بالكامل (لسا بدون أي باك اند) — 08 إلى 14
+
+هاي مش تصحيح لتكامل موجود — الفرونت حالياً شغال بالكامل على zustand/localStorage
+لكل الأنظمة تحت، بدون أي اتصال بسيرفر حقيقي. العقد الكامل مضاف لـ[`swagger.yaml`](../swagger.yaml)
+(tags: `Auth`, `Account`, `Addresses`, `Cart`, `Orders`, `Payments`, `Wallet`).
+
+| # | الملف | النظام |
+|---|---|---|
+| 8 | [`08-auth-otp.md`](./08-auth-otp.md) | تسجيل دخول/تسجيل بالـOTP (بدون كلمة سر) |
+| 9 | [`09-account-profile.md`](./09-account-profile.md) | البروفايل: `me` / تعديل / تسجيل خروج |
+| 10 | [`10-addresses.md`](./10-addresses.md) | عناوين التوصيل المحفوظة (CRUD) |
+| 11 | [`11-cart-coupons.md`](./11-cart-coupons.md) | التحقق من كود الخصم |
+| 12 | [`12-orders.md`](./12-orders.md) | إنشاء/تتبع الطلبات + مناطق التوصيل |
+| 13 | [`13-payments.md`](./13-payments.md) | حسابات الدفع اليدوي (تحويل بنكي/جوال باي) |
+| 14 | [`14-wallet.md`](./14-wallet.md) | رصيد المحفظة + طلبات الشحن |
+| 15 | [`15-help-faqs.md`](./15-help-faqs.md) | قائمة الأسئلة الشائعة بصفحة المساعدة |
+| 16 | [`16-terms-content.md`](./16-terms-content.md) | محتوى HTML لصفحة الشروط والأحكام |
+| 17 | [`17-privacy-content.md`](./17-privacy-content.md) | محتوى HTML لصفحة سياسة الخصوصية |
+
+خطة ربط الفرونت بهاي الـendpoints بعد ما تجهز: [`../frontend-integration-plan.md`](../frontend-integration-plan.md).
 
 ---
 
