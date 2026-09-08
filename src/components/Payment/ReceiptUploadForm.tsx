@@ -12,6 +12,9 @@ interface Props {
   initialNote?: string;
   onSubmit: (receiptImage: File | undefined, note: string | undefined) => void;
   submitLabel: string;
+  /** Extra condition (e.g. a required amount field owned by the parent)
+   *  that must also hold before the submit button enables. */
+  submitDisabled?: boolean;
 }
 
 /** Shared receipt-upload UI — used both on the initial payment confirm step
@@ -24,6 +27,7 @@ export default function ReceiptUploadForm({
   initialNote,
   onSubmit,
   submitLabel,
+  submitDisabled,
 }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | undefined>(initialImage);
@@ -44,7 +48,8 @@ export default function ReceiptUploadForm({
     });
   }
 
-  const canSubmit = troubleUploading ? note.trim().length > 0 : !!file;
+  const canSubmit =
+    (troubleUploading ? note.trim().length > 0 : !!file) && !submitDisabled;
 
   function handleSubmit() {
     if (!canSubmit) return;

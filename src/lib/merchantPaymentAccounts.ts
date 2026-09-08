@@ -85,14 +85,45 @@ export function findMerchantPaymentAccount(
   return MERCHANT_PAYMENT_ACCOUNTS.find((a) => a.method === method);
 }
 
+/** Wire shape actually returned by `GET /payment-accounts` — uses
+ *  `palpay` (not `paypal`) and `primary/secondaryLabel/Value` (not
+ *  `accountLabel/accountValue/iban`), and also includes a `cash` entry
+ *  the frontend doesn't track as a transferable method. */
+interface PaymentAccountDto {
+  method: PaymentMethod | "palpay" | "cash";
+  qrImage?: string;
+  holderName?: string;
+  bankName?: string;
+  primaryLabel?: string;
+  primaryValue?: string;
+  secondaryLabel?: string;
+  secondaryValue?: string;
+}
+
+function normalizePaymentAccount(dto: PaymentAccountDto): MerchantPaymentAccount | null {
+  if (dto.method === "cash") return null;
+  const method = dto.method === "palpay" ? "paypal" : dto.method;
+  return {
+    method,
+    qrImage: dto.qrImage,
+    holderName: dto.holderName,
+    bankName: dto.bankName,
+    accountLabel: dto.primaryLabel,
+    accountValue: dto.primaryValue,
+    iban: dto.secondaryValue,
+  };
+}
+
 /** Tries the real `GET /payment-accounts` first; falls back to the hardcoded
  *  placeholder accounts above while the backend endpoint doesn't exist yet. */
 export async function fetchPaymentAccounts(): Promise<MerchantPaymentAccount[]> {
   return withQueryFallback(
     () =>
       guestApi
-        .get<MerchantPaymentAccount[]>("/payment-accounts")
-        .then((r) => r.data),
+        .get<PaymentAccountDto[]>("/payment-accounts")
+        .then((r) => r.data
+          .map(normalizePaymentAccount)
+          .filter((a): a is MerchantPaymentAccount => a !== null)),
     () => MERCHANT_PAYMENT_ACCOUNTS,
   );
 }

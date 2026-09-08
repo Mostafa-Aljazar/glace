@@ -53,6 +53,19 @@ export interface CartItem {
   type?: string;
   /** Builder products only — e.g. Cup's "بسكوت", Family's "فلين" container. */
   container?: string;
+  /** Backend slug for `size` (menu API's `sizes[].id`, e.g. "plastic-half")
+   *  — required by `POST /orders`' `items[].sizeId`, which rejects the
+   *  display label as ambiguous across products. Builder products only. */
+  sizeId?: string;
+  /** Backend slug for `container` (menu API's `containerOptions[].id`,
+   *  e.g. "plastic") — required by `items[].containerId`. Builder products
+   *  with a container step only. */
+  containerId?: string;
+  /** Backend id for a flat-list product's chosen sub-item (menu API's
+   *  `items[].id`, e.g. a flavor's id) — required by `items[].itemId`.
+   *  Flat-list, non-mix selections only; mixes carry sub-item ids per-flavor
+   *  in `selections[].id` instead. */
+  itemId?: string;
   flavorFamily?: "classic" | "special" | "mix";
   /** Structured flavor/mix/addon picks for this line. */
   selections: CartSelection[];
@@ -291,6 +304,9 @@ function findMatchingItem(
       existing.type === item.type &&
       existing.size === item.size &&
       existing.container === item.container &&
+      existing.sizeId === item.sizeId &&
+      existing.containerId === item.containerId &&
+      existing.itemId === item.itemId &&
       existing.flavorFamily === item.flavorFamily &&
       existing.addonTotal === item.addonTotal &&
       selectionsMatch(existing.selections, item.selections),
@@ -557,7 +573,13 @@ export const useCartStore = create<CartState>()(
             i.id === id
               ? {
                   ...i,
-                  selections: [...selections],
+                  // Keep the line's flavor/mix picks — only the "addon" kind
+                  // is what this dialog edits; replacing the whole array
+                  // wiped flavors out whenever there were zero addons to save.
+                  selections: [
+                    ...i.selections.filter((s) => s.kind !== "addon"),
+                    ...selections,
+                  ],
                   addonTotal: Math.max(0, addonTotal),
                   units: undefined,
                 }
@@ -573,8 +595,12 @@ export const useCartStore = create<CartState>()(
                   ...i,
                   units: units.map((u) => ({ selections: [...u.selections] })),
                   quantity: units.length,
-                  // Per-unit additions supersede the line-level shared ones.
-                  selections: [],
+                  // Only clears the line-level "addon" picks (superseded by
+                  // per-unit ones above) — flavor/mix picks stay on the item
+                  // itself; getLineItemSummaryParts always reads them from here.
+                  selections: i.selections.filter(
+                    (s) => s.kind !== "addon",
+                  ),
                   addonTotal: 0,
                 }
               : i,

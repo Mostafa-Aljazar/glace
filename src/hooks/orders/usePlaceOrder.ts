@@ -31,13 +31,29 @@ export interface PlaceOrderInput {
   jawwalCode?: string;
 }
 
+/** Expands a builder item's flavor/mix picks into the flat, repeated-by-qty
+ *  id list (`items[].flavorIds`) `POST /orders` requires alongside the
+ *  structured `selections[]`, which the backend doesn't derive this from
+ *  itself — e.g. 8 balls of one flavor become that id repeated 8 times,
+ *  matching how `GET /orders` echoes it back. `flatSelections` is sent as
+ *  named — the backend reads that field directly (confirmed against a real
+ *  order: renaming it to `flatAddons` made the backend silently drop the
+ *  addon from pricing/storage instead of rejecting it, which is what made
+ *  the mismatch easy to miss). */
+function toWireItem(item: CartItem) {
+  const flavorIds = item.selections
+    .filter((s) => s.kind === "flavor" || s.kind === "mix")
+    .flatMap((s) => Array(s.qty).fill(s.id));
+  return flavorIds.length > 0 ? { ...item, flavorIds } : item;
+}
+
 export function usePlaceOrder() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: PlaceOrderInput) => {
       const formData = new FormData();
-      formData.append("items", JSON.stringify(input.items));
+      formData.append("items", JSON.stringify(input.items.map(toWireItem)));
       if (input.couponCode) formData.append("couponCode", input.couponCode);
       formData.append("paymentMethod", input.paymentMethod);
       formData.append("deliveryMethod", input.deliveryMethod);

@@ -1,11 +1,21 @@
 import { userApi } from "@/lib/axios";
-import type { WalletTransaction } from "@/store/walletStore";
+import { fromWireTopUpMethod, type WalletTransaction } from "@/store/walletStore";
 
 export const WALLET_TRANSACTIONS_PER_PAGE = 20;
 
 export interface WalletTransactionsParams {
   page?: number;
   perPage?: number;
+}
+
+type WalletTransactionDto = Omit<WalletTransaction, "method"> & { method?: string };
+
+interface WalletTransactionsResponseDto {
+  items: WalletTransactionDto[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
 }
 
 export interface WalletTransactionsResponse {
@@ -37,8 +47,14 @@ export async function fetchWalletTransactions(
   const perPage = params.perPage ?? WALLET_TRANSACTIONS_PER_PAGE;
 
   return userApi
-    .get<WalletTransactionsResponse>("/wallet/transactions", {
+    .get<WalletTransactionsResponseDto>("/wallet/transactions", {
       params: { page, perPage },
     })
-    .then((r) => r.data);
+    .then((r) => ({
+      ...r.data,
+      items: r.data.items.map((item) => ({
+        ...item,
+        method: fromWireTopUpMethod(item.method),
+      }) as WalletTransaction),
+    }));
 }

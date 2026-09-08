@@ -96,13 +96,13 @@ export default function WalletPanel() {
   const [expandedRequestId, setExpandedRequestId] = useState<string | null>(
     null
   );
-  const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
   const [method, setMethod] = useState<TopUpMethod | null>(null);
   const [copiedField, setCopiedField] = useState(false);
   const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(
     null
   );
   const [completedTopUp, setCompletedTopUp] = useState(false);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
 
   const amountValue = parseFloat(amount) || 0;
   const amountValid = amountValue >= 1;
@@ -147,26 +147,27 @@ export default function WalletPanel() {
     );
   }
 
-  async function handleReceiptSubmit(
+  function handleReceiptSubmit(
     receiptImage: File | undefined,
     receiptNote: string | undefined
   ) {
-    if (!method || method === "jawwal" || method === "visa") return;
-    const receiptImageDataUrl = receiptImage
-      ? await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(receiptImage);
-        })
-      : undefined;
+    if (!method || method === "jawwal" || method === "visa" || !amountValid) return;
+    setReceiptError(null);
     submitTopUpRequestMutation.mutate(
-      { method: method as ReceiptTopUpMethod, receiptImage: receiptImageDataUrl, receiptNote },
+      {
+        method: method as ReceiptTopUpMethod,
+        amount: amountValue,
+        receiptImage,
+        receiptNote,
+      },
       {
         onSuccess: (request) => {
           setSubmittedRequestId(request.id);
           setCompletedTopUp(false);
           resetFlow(false);
         },
+        onError: () =>
+          setReceiptError("تعذر إرسال طلب الشحن، الرجاء المحاولة مرة أخرى"),
       },
     );
   }
@@ -178,6 +179,7 @@ export default function WalletPanel() {
     setCodeSent(false);
     setCode("");
     setJawwalError(null);
+    setReceiptError(null);
     setMethod(null);
     if (clearSubmitted) setSubmittedRequestId(null);
   }
@@ -407,6 +409,27 @@ export default function WalletPanel() {
                   </button>
                 </div>
 
+                <div className="mb-4">
+                  <label className="block mb-2 text-[14px] text-white/80">
+                    المبلغ المدفوع <span className="text-red-300">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={amount}
+                    onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
+                    placeholder="أدخل المبلغ"
+                    className="bg-white/10 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] px-3.5 py-2.5 w-full text-white text-[15px] placeholder:text-white/40 outline-none transition-colors"
+                  />
+                  {!amountValid && (
+                    <p className="mt-1.5 text-[13px] text-red-300">
+                      {amount === ""
+                        ? "أدخل المبلغ الذي حوّلته لتفعيل زر تأكيد الشحن"
+                        : "المبلغ يجب ألا يقل عن 1 ₪"}
+                    </p>
+                  )}
+                </div>
+
                 <div className="flex flex-col items-center gap-3 mb-4">
                   <div className="bg-white p-2 rounded-[14px]">
                     <Image
@@ -493,13 +516,18 @@ export default function WalletPanel() {
                 </div>
 
                 <p className="mb-3 text-[14px] text-white/80">
-                  ارفع صورة وصل التحويل — المبلغ يُقرأ من الإشعار نفسه بعد
-                  المراجعة
+                  ارفع صورة وصل التحويل
                 </p>
                 <ReceiptUploadForm
                   onSubmit={handleReceiptSubmit}
                   submitLabel="تأكيد الشحن"
+                  submitDisabled={!amountValid}
                 />
+                {receiptError && (
+                  <p className="mt-3 text-[13px] text-red-300 text-center">
+                    {receiptError}
+                  </p>
+                )}
               </>
             )
           )}
@@ -602,82 +630,56 @@ export default function WalletPanel() {
             <EmptyState icon={Wallet} message="لا يوجد معاملات بعد" />
           ) : (
             <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto">
-              {transactions.map((tx) => {
-                const isOpen = expandedTxId === tx.id;
-                const hasDetails = tx.method || tx.receiptImage;
-                const Row = (
-                  <div className="flex justify-between items-center gap-3 w-full">
-                    <div className="flex items-center gap-3">
+              {transactions.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="flex flex-col gap-3 border border-white/20 rounded-[16px] px-4 py-3"
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="flex flex-1 items-center gap-3 min-w-0">
                       <div className={`flex justify-center items-center rounded-full size-9 shrink-0 ${tx.type === "credit" ? "bg-green-500/30" : "bg-red-500/30"}`}>
                         {tx.type === "credit"
                           ? <TrendingUp size={18} className="text-green-300" />
                           : <TrendingDown size={18} className="text-red-300" />}
                       </div>
-                      <div className="text-start">
-                        <p className="text-[15px] font-bold">{tx.label}</p>
+                      <div className="min-w-0 text-start">
+                        <p className="text-[15px] font-bold truncate">{tx.label}</p>
                         <p className="text-white/60 text-[12px]">
                           {new Date(tx.date).toLocaleString("ar-PS", { dateStyle: "short", timeStyle: "short" })}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <p className={`text-[17px] font-bold ${tx.type === "credit" ? "text-green-300" : "text-red-300"}`}>
-                        {tx.type === "credit" ? "+" : "-"}{tx.amount.toFixed(2)} ₪
-                      </p>
-                      {hasDetails && (
-                        isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />
+                    <p className={`text-[17px] font-bold whitespace-nowrap shrink-0 ${tx.type === "credit" ? "text-green-300" : "text-red-300"}`}>
+                      {tx.type === "credit" ? "+" : "-"}{tx.amount.toFixed(2)} ₪
+                    </p>
+                  </div>
+
+                  {(tx.method || tx.receiptImage) && (
+                    <div className="flex flex-col gap-3 pt-3 border-white/10 border-t">
+                      {tx.method && (
+                        <div className="flex justify-between text-[14px]">
+                          <span className="text-white/70">طريقة الدفع</span>
+                          <span className="font-bold">
+                            {TRANSACTION_METHOD_LABELS[tx.method]}
+                          </span>
+                        </div>
+                      )}
+                      {tx.receiptImage && (
+                        <div>
+                          <p className="mb-1.5 text-[14px] text-white/70">
+                            صورة الإشعار
+                          </p>
+                          <img
+                            src={tx.receiptImage}
+                            alt="إشعار الدفع"
+                            className="border border-white/20 rounded-[14px] w-full max-h-72 object-contain bg-black/20"
+                          />
+                        </div>
                       )}
                     </div>
-                  </div>
-                );
-
-                if (!hasDetails) {
-                  return (
-                    <div key={tx.id} className="pb-3 border-b border-white/20">
-                      {Row}
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    key={tx.id}
-                    className="border border-white/20 rounded-[16px] overflow-hidden"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setExpandedTxId(isOpen ? null : tx.id)}
-                      className="hover:bg-white/10 px-4 py-3 w-full transition-colors cursor-pointer"
-                    >
-                      {Row}
-                    </button>
-                    {isOpen && (
-                      <div className="flex flex-col gap-3 px-4 pt-3 pb-4 border-white/10 border-t">
-                        {tx.method && (
-                          <div className="flex justify-between text-[14px]">
-                            <span className="text-white/70">طريقة الدفع</span>
-                            <span className="font-bold">
-                              {TRANSACTION_METHOD_LABELS[tx.method]}
-                            </span>
-                          </div>
-                        )}
-                        {tx.receiptImage && (
-                          <div>
-                            <p className="mb-1.5 text-[14px] text-white/70">
-                              صورة الإشعار
-                            </p>
-                            <img
-                              src={tx.receiptImage}
-                              alt="إشعار الدفع"
-                              className="border border-white/20 rounded-[14px] w-full max-h-72 object-contain bg-black/20"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                  )}
+                </div>
+              ))}
             </div>
           )}
 

@@ -94,6 +94,7 @@ export default function OrderFlatListTemplate({
         name: `${product.name} — ${item.label}`,
         image: resolveMenuImageSrc(item.image ?? product.image),
         type: item.label,
+        itemId: item.id,
         selections: [],
         addonTotal: 0,
         unitPrice: item.price,

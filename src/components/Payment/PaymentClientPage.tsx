@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
+import { getApiErrorMessage } from "@/lib/apiWithFallback";
 import {
   RECEIPT_METHODS,
   PAYMENT_METHOD_LABELS,
@@ -231,13 +232,16 @@ export default function PaymentClientPage() {
           setPlacedOrderId(order.id);
           setSuccessOpen(true);
         },
-        onError: () => {
+        onError: (error) => {
           setOrderError(
             walletDeducted
               ? "تم خصم المبلغ من محفظتك لكن تعذر إنشاء الطلب — تواصل مع الدعم لإتمام الطلب أو استرجاع المبلغ، لا تعيد المحاولة"
               : method === "jawwal"
                 ? "الرمز غير صحيح أو منتهي الصلاحية"
-                : "تعذر إتمام الطلب، الرجاء المحاولة مرة أخرى",
+                : getApiErrorMessage(
+                    error,
+                    "تعذر إتمام الطلب، الرجاء المحاولة مرة أخرى",
+                  ),
           );
         },
       },

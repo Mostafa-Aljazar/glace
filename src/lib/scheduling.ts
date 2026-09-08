@@ -36,6 +36,15 @@ export function formatTime12h(time: string) {
   return `${hour12}:${pad(m)} ${period}`;
 }
 
+/** Combines a `{ date: "yyyy-mm-dd", time: "HH:mm" }` schedule pick into a
+ *  real ISO datetime string — what the backend expects for `pickupTime`,
+ *  as opposed to the Arabic display label ("اليوم · 8:45 م") shown in the UI. */
+export function scheduleToISOString(schedule: { date: string; time: string }) {
+  const [year, month, day] = schedule.date.split("-").map(Number);
+  const [hour, minute] = schedule.time.split(":").map(Number);
+  return new Date(year, month - 1, day, hour, minute).toISOString();
+}
+
 function toDateKey(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }

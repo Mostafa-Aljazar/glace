@@ -38,6 +38,7 @@ import {
   formatTime12h,
   getScheduleDays,
   isDeliveryAvailableToday,
+  scheduleToISOString,
 } from "@/lib/scheduling";
 import { getDeliveryBlockingItem } from "@/lib/deliveryRestrictions";
 import { useMenuProducts } from "@/hooks/menu/useMenuProducts";
@@ -63,6 +64,9 @@ export default function CheckoutClientPage() {
   const scheduleLabel = schedule
     ? `${scheduleDays.find((d) => d.date === schedule.date)?.label ?? schedule.date} · ${formatTime12h(schedule.time)}`
     : undefined;
+  // The backend expects a real datetime for `pickupTime`, not the Arabic
+  // display label above (which it rejects: "must be a valid date").
+  const pickupTimeISO = schedule ? scheduleToISOString(schedule) : undefined;
   const [captainNote, setCaptainNote] = useState("");
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [deliveryUnavailableOpen, setDeliveryUnavailableOpen] = useState(false);
@@ -127,7 +131,7 @@ export default function CheckoutClientPage() {
       },
       addressId,
       deliveryFee: zone?.fee ?? 0,
-      pickupTime: scheduleLabel,
+      pickupTime: pickupTimeISO,
     });
     router.push("/payment");
   }
@@ -673,7 +677,7 @@ export default function CheckoutClientPage() {
                             deliveryMethod: "pickup",
                             address: undefined,
                             deliveryFee: 0,
-                            pickupTime: scheduleLabel,
+                            pickupTime: pickupTimeISO,
                           });
                           router.push("/payment");
                         }}

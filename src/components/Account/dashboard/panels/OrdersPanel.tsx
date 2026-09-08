@@ -71,18 +71,24 @@ export default function OrdersPanel() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [tab, setTab] = useState<FilterTab>("all");
   const addItem = useCartStore((s) => s.addItem);
+  const clearCart = useCartStore((s) => s.clearCart);
 
   const sorted = [...orders].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 
   function handleReorder(order: Order) {
+    clearCart();
     order.items.forEach((item) => {
       addItem({
         productId: item.productId,
         name: item.name,
         image: item.image,
         type: item.type,
+        container: item.container,
+        sizeId: item.selection?.sizeId ?? item.sizeId,
+        containerId: item.selection?.containerId ?? item.containerId,
+        itemId: item.selection?.itemId ?? item.itemId,
         selections: item.selections || [],
         addonTotal: item.addonTotal,
         unitPrice: item.unitPrice,

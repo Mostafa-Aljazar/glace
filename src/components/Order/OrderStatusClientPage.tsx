@@ -47,6 +47,7 @@ import {
 } from "@/hooks/orders";
 import { getLineItemTotal, useCartStore } from "@/store/cartStore";
 import { getStatusSteps } from "@/lib/orderStatusSteps";
+import { getApiErrorMessage } from "@/lib/apiWithFallback";
 import ReceiptUploadForm from "@/components/Payment/ReceiptUploadForm";
 
 const CANCEL_REASONS = [
@@ -64,6 +65,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
   const markReceivedMutation = useMarkReceived();
   const emailSummaryMutation = useEmailOrderSummary();
   const addItem = useCartStore((s) => s.addItem);
+  const clearCart = useCartStore((s) => s.clearCart);
 
   const [reuploadOpen, setReuploadOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -171,25 +173,39 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
   function handleSendEmailSummary() {
     const email = emailInput.trim();
     if (!email) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("البريد الإلكتروني غير صالح");
+      return;
+    }
     setEmailError(null);
     emailSummaryMutation.mutate(
       { id: order!.id, email },
       {
         onSuccess: () => setEmailSent(true),
-        onError: () =>
-          setEmailError("تعذر إرسال الملخص، الرجاء المحاولة مرة أخرى"),
+        onError: (error) =>
+          setEmailError(
+            getApiErrorMessage(
+              error,
+              "تعذر إرسال الملخص، الرجاء المحاولة مرة أخرى",
+            ),
+          ),
       },
     );
   }
 
   function handleReorder() {
     if (!order) return;
+    clearCart();
     order.items.forEach((item) => {
       addItem({
         productId: item.productId,
         name: item.name,
         image: item.image,
         type: item.type,
+        container: item.container,
+        sizeId: item.selection?.sizeId ?? item.sizeId,
+        containerId: item.selection?.containerId ?? item.containerId,
+        itemId: item.selection?.itemId ?? item.itemId,
         selections: item.selections || [],
         addonTotal: item.addonTotal,
         unitPrice: item.unitPrice,

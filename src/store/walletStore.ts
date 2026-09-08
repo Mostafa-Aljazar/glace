@@ -36,6 +36,17 @@ export interface TopUpRequest {
   phone?: string;
 }
 
+/** Backend's id for بال باي is `palpay`, not the frontend's `paypal` —
+ *  translate at the network boundary only, so the rest of the app can keep
+ *  using `paypal` everywhere (matches PaymentMethod elsewhere). */
+export function toWireTopUpMethod(method: TopUpMethod): string {
+  return method === "paypal" ? "palpay" : method;
+}
+
+export function fromWireTopUpMethod<T extends string | undefined>(method: T): T {
+  return (method === "palpay" ? "paypal" : method) as T;
+}
+
 interface WalletState {
   balance: number;
   /** Overwrites the balance — used by `useWallet()` to sync a real

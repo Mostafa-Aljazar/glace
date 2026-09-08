@@ -15,6 +15,23 @@ export function isRealValidationError(error: unknown): boolean {
   return !isBackendUnavailable(error);
 }
 
+/** Surfaces a reachable backend's actual 422 validation message instead of a
+ *  generic failure text, so real rejection reasons (invalid email, missing
+ *  field, etc.) are visible rather than hidden behind "try again". */
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError && error.response?.status === 422) {
+    const data = error.response.data as
+      | { message?: string; errors?: Record<string, string[]> }
+      | undefined;
+    const firstFieldError = data?.errors
+      ? Object.values(data.errors)[0]?.[0]
+      : undefined;
+    if (firstFieldError) return firstFieldError;
+    if (data?.message) return data.message;
+  }
+  return fallback;
+}
+
 /** Query-side wrapper: try the real call, fall back to local/fake data on
  *  "backend not ready" failures. Real validation errors still propagate. */
 export async function withQueryFallback<T>(

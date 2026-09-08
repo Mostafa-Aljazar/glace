@@ -73,9 +73,22 @@ export interface Driver {
   company?: string;
 }
 
+/** Backend-only detail nested on each `GET /orders` item — carries the real
+ *  slugs (`sizeId`/`containerId`/`itemId`) `POST /orders` needs, which the
+ *  top-level item only has as display labels (`type`/`container`). Absent
+ *  on orders placed before the backend added this field. */
+export interface OrderItemSelection {
+  type: "builder" | "flat" | "mix";
+  sizeId?: string;
+  containerId?: string;
+  itemId?: string;
+}
+
+export type OrderItem = CartItem & { selection?: OrderItemSelection };
+
 export interface Order {
   id: string;
-  items: CartItem[];
+  items: OrderItem[];
   subtotal: number;
   discount: number;
   total: number;

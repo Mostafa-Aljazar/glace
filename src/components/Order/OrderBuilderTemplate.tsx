@@ -440,9 +440,11 @@ export default function OrderBuilderTemplate({
       name: cartName,
       image: resolveMenuImageSrc(selectedContainer?.image ?? product.image),
       size: selectedSize.label,
+      sizeId: selectedSize.id,
       container: product.containerOptions
         ? selectedContainer?.label
         : undefined,
+      containerId: product.containerOptions ? selectedContainer?.id : undefined,
       flavorFamily: hasFlavorStep
         ? (flavorFamily as "classic" | "special" | "mix")
         : undefined,
