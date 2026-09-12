@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { userApi } from "@/lib/axios";
 import { useAuthStore } from "@/store/authStore";
 
 export function useLogout() {
@@ -9,11 +8,10 @@ export function useLogout() {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: () => userApi.post("/auth/logout").then((r) => r.data),
-    onSettled: () => {
+    mutationFn: async () => {
       clearAuth();
       queryClient.clear();
-      router.push("/login");
+      router.push("/auth/login");
     },
   });
 }

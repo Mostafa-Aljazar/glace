@@ -1,8 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import LoadingPage from "@/components/Common/LoadingPage";
 import ServiceWorkerRegister from "@/components/Common/ServiceWorkerRegister";
+import OfflineOverlay from "@/components/Common/OfflineOverlay";
+import InstallPwaButton from "@/components/Common/InstallPwaButton";
 import {
   SITE_URL,
   SITE_NAME,
@@ -18,7 +21,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
-  applicationName: SITE_NAME_EN,
+  applicationName: SITE_NAME,
   keywords: [
     "جلاسيه الأمير",
     "آيس كريم فلسطين",
@@ -63,7 +66,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: SITE_NAME_EN,
+    title: SITE_NAME,
   },
 };
 
@@ -108,11 +111,17 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://unpkg.com/boxicons@latest/css/boxicons.min.css"
         />
-        <script
+        <Script
+          id="organization-jsonld"
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
         />
-        <script
+        <Script
+          id="splash-seen-check"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `try{if(sessionStorage.getItem("glace-splash-seen")==="1")document.documentElement.dataset.splashSeen="1"}catch(e){}`,
           }}
@@ -129,6 +138,8 @@ export default function RootLayout({
           {children}
         </QueryProvider>
         <ServiceWorkerRegister />
+        <OfflineOverlay />
+        <InstallPwaButton />
       </body>
     </html>
   );

@@ -18,25 +18,26 @@ export default function AuthLayout({
 }: AuthLayoutProps) {
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
-      
+
 
       <ContactBackground />
 
       {/* .bodyLogin.container */}
-      <div className="z-90 relative flex md:flex-row flex-col justify-between items-center gap-8 mx-auto px-4 pt-22.5 lg:pt-26.5 pb-8 w-full max-w-300 min-h-[calc(100vh-340px)] text-white">
-        {/* .textBodyLogin */}
-        <div className="mt-7.5 md:mt-0 w-full md:w-1/2 text-center md:text-right">
-          <h1 className="mb-0 text-[44px] md:text-[66px] lg:text-[75px]">
-            {title}
-          </h1>
-          {subtitle && <p className="text-[26px] md:text-[40px]">{subtitle}</p>}
-        </div>
-
-        {/* .formBodyLogin / .formBodyLoginC */}
-        <div className="w-full md:w-1/2">
-          <div className="bg-white/23 backdrop-blur-[10px] mx-auto md:mx-0 md:mr-auto p-[20px_15px] sm:p-[20px_15px] md:p-[20px_35px] lg:p-[40px_50px] rounded-[25px] max-w-[550px] md:max-w-[500px] lg:max-w-[550px]">
-            {children}
+      <div className="z-90 relative flex justify-center items-center px-4 pt-22.5 lg:pt-26.5 pb-8 w-full min-h-screen">
+        {/* Sonbol-style centered single card, kept on the glace glass system */}
+        <div className="bg-white/17 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-[15px] mx-auto p-6 sm:p-8 border border-white/20 rounded-[28px] w-full max-w-110">
+          <div className="mb-6 text-center">
+            <h1 className="mb-1 font-bold text-white text-[26px] sm:text-[30px] leading-tight">
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="text-[14px] sm:text-[15px] text-white/70">
+                {subtitle}
+              </p>
+            )}
           </div>
+
+          {children}
         </div>
       </div>
     </div>

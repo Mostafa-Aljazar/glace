@@ -19,10 +19,14 @@ import {
   CalendarDays,
   MapPin,
   Phone,
+  LogOut,
 } from "lucide-react";
 import { logo } from "@/assets/images";
 import { useCartStore } from "@/store/cartStore";
 import { useWalletStore } from "@/store/walletStore";
+import { useAuthStore } from "@/store/authStore";
+import { useLogout } from "@/hooks/auth/useLogout";
+import { useWallet } from "@/hooks/wallet";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import {
   ORDER_OPEN_MENU,
@@ -53,9 +57,17 @@ export default function LogoNav() {
   const showBack = pathname !== "/";
 
   const cartCount = useCartStore((s) => s.items.length);
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
   const favoriteCount = useFavoritesStore((s) => s.ids.length);
-  const walletBalance = useWalletStore((s) => s.balance);
+  // Wallet is per-account — hide its balance while logged out so a guest
+  // never sees a badge for data that belongs to no session.
+  const walletBalance = useWalletStore((s) => (isLoggedIn ? s.balance : 0));
+  const logout = useLogout();
   const isMenuPage = pathname === "/menu";
+  // Keeps the wallet balance badge live from the real API without a
+  // dedicated fetch here — react-query dedupes this against WalletPanel's
+  // own useWallet() call by queryKey.
+  useWallet();
 
   useEffect(() => {
     const handleProtectedLink = () => setDrawerOpen(false);
@@ -189,7 +201,7 @@ export default function LogoNav() {
               <User size={18} className="text-white shrink-0" />
             </Link>
             <Link
-              href="/my-wallet"
+              href="/my-account/wallet"
               onClick={() => setDrawerOpen(false)}
               className="flex justify-between items-center gap-3 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-[16px] text-[16px] text-white transition-all"
             >
@@ -233,6 +245,20 @@ export default function LogoNav() {
                 )}
               </span>
             </Link>
+            {isLoggedIn && (
+              <button
+                type="button"
+                disabled={logout.isPending}
+                onClick={() => {
+                  setDrawerOpen(false);
+                  logout.mutate();
+                }}
+                className="flex justify-center items-center gap-2 bg-red-500/15 hover:bg-red-500/25 px-4 py-3 border border-red-400/30 rounded-[16px] text-red-300 text-[16px] font-semibold transition-all disabled:opacity-60 cursor-pointer"
+              >
+                <LogOut size={18} />
+                {logout.isPending ? "جاري الخروج..." : "تسجيل الخروج"}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -355,7 +381,7 @@ export default function LogoNav() {
 
               {/* Wallet — visible on desktop only; hidden on mobile */}
               <Link
-                href="/my-wallet"
+                href="/my-account/wallet"
                 className="hidden lg:flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2.5 py-1 border border-white/15 rounded-full text-white/80 hover:text-white transition-all"
               >
                 <Wallet size={15} />
@@ -394,7 +420,8 @@ export default function LogoNav() {
                       router.back();
                     }
                   }}
-                  className="hidden lg:flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2.5 py-1 border border-white/15 rounded-full text-white/80 hover:text-white transition-all cursor-pointer"
+                  aria-label="رجوع"
+                  className="flex items-center gap-1 bg-[#165a6c] hover:bg-[#1a6a80] p-2 lg:px-2.5 lg:py-1 border border-white/35 hover:border-white/50 rounded-full text-white shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all cursor-pointer"
                 >
                   <span className="hidden lg:inline font-medium text-[12px]">
                     رجوع

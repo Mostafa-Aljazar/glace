@@ -52,27 +52,17 @@ export interface ToppingItem {
   price: number;
 }
 
-export interface LoginFormValues {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-export interface RegisterFormValues {
-  fullName: string;
-  email: string;
+export interface PhoneFormValues {
   phone: string;
-  password: string;
-  confirmPassword: string;
 }
 
-export interface RestorePasswordFormValues {
-  email: string;
+export interface RegisterPhoneFormValues {
+  fullName: string;
+  phone: string;
 }
 
-export interface NewPasswordFormValues {
-  password: string;
-  confirmPassword: string;
+export interface OtpFormValues {
+  code: string;
 }
 
 export interface JobApplicationFormValues {

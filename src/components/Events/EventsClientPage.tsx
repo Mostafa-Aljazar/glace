@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import EventsBackground from "@/components/Events/EventsBackground";
 import EventsPagination from "./EventsPagination";
-import BackButton from "@/components/Order/BackButton";
 import {
   imgIesPP,
   imgIesC,
@@ -129,10 +128,6 @@ export default function EventsClientPage() {
       />
 
       <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-28 lg:pb-12 max-w-[1300px]">
-        <div className="mb-6">
-          <BackButton />
-        </div>
-
         <div className="flex flex-col items-center pt-4 sm:pt-6 pb-5 sm:pb-6 text-center">
           <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm mb-3 px-4 py-1 border border-white/20 rounded-full text-[13px] text-white/80">
             <Sparkles size={12} className="text-glace-yellow" />

@@ -5,34 +5,10 @@ export const metadata: Metadata = {
   title: "الدفع | جلاسيه الأمير",
 };
 
-interface Props {
-  searchParams: Promise<{
-    delivery?: string;
-    name?: string;
-    phone?: string;
-    city?: string;
-    area?: string;
-    street?: string;
-    landmark?: string;
-  }>;
-}
-
-export default async function PaymentPage({ searchParams }: Props) {
-  const params = await searchParams;
-  const isDelivery = params.delivery === "delivery";
-  const address = isDelivery ? {
-    name: params.name ?? "",
-    phone: params.phone ?? "",
-    city: params.city ?? "",
-    area: params.area ?? "",
-    street: params.street ?? "",
-    landmark: params.landmark,
-  } : undefined;
-
-  return (
-    <PaymentClientPage
-      deliveryMethod={isDelivery ? "delivery" : "pickup"}
-      address={address}
-    />
-  );
+export default function PaymentPage() {
+  // Delivery method, address, and fee travel via `useCheckoutDraftStore`
+  // (set on Checkout, read here client-side) instead of the URL — the
+  // customer's name, phone, and address shouldn't sit in a shareable link
+  // or browser history.
+  return <PaymentClientPage />;
 }

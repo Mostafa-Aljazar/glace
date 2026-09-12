@@ -189,7 +189,7 @@ All paths are under `NEXT_PUBLIC_API_URL` (default `http://localhost:8000/api`).
 
 ### Protected (auth token)
 
-`POST /auth/login` · `POST /auth/register` · `POST /auth/logout` · `GET /auth/me` · `PUT /auth/profile` · `POST /auth/password`
+`POST /auth/otp/send` · `POST /auth/otp/verify` · `GET /auth/me` · `PUT /auth/profile`
 
 ### Identity rules (menu)
 

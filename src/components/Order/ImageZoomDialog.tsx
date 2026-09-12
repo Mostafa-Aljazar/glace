@@ -1,16 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import {
-  Dialog,
-  DialogContent,
-  DialogOverlay,
-} from "@/components/ui/dialog";
+import Image, { type StaticImageData } from "next/image";
+import { X } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface ImageZoomDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  src: any;
+  src: StaticImageData | string;
   alt: string;
 }
 
@@ -22,18 +19,27 @@ export default function ImageZoomDialog({
 }: ImageZoomDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogOverlay className="z-9999 bg-black/40" />
       <DialogContent
-        className="z-9999 w-full max-w-sm p-0 border-0 bg-transparent shadow-none"
+        onClick={onClose}
+        overlayClassName="bg-black/80"
+        className="w-[calc(100%-2rem)] max-w-lg p-0 border-0 bg-transparent shadow-none"
         showCloseButton={false}
       >
-        <div className="flex items-center justify-center">
+        <div className="relative" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="إغلاق"
+            className="absolute top-3 start-3 flex items-center justify-center size-9 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors cursor-pointer z-10"
+          >
+            <X size={18} />
+          </button>
           <Image
             src={src}
             alt={alt}
-            width={320}
-            height={320}
-            className="h-80 w-80 object-contain drop-shadow-2xl"
+            width={800}
+            height={800}
+            className="w-full h-auto max-h-[80vh] object-contain rounded-2xl"
           />
         </div>
       </DialogContent>

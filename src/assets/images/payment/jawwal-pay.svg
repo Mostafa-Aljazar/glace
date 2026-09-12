@@ -1,0 +1,9 @@
+<svg width="160" height="96" viewBox="0 0 160 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="160" height="96" rx="20" fill="#1DBF73"/>
+  <rect x="10" y="10" width="140" height="76" rx="16" fill="#0D9B5C" fill-opacity="0.22"/>
+  <circle cx="52" cy="48" r="20" fill="#FFFFFF" fill-opacity="0.12"/>
+  <path d="M64 28.5H84.6C92.9 28.5 99.5 35.2 99.5 43.5V52.8C99.5 61.1 92.9 67.8 84.6 67.8H64V28.5ZM64 40.2V56.1H83.5C87.2 56.1 90.1 53.2 90.1 49.5V46.8C90.1 43.1 87.2 40.2 83.5 40.2H64Z" fill="white"/>
+  <path d="M35 30.5C36.8 30.5 38.2 32 38.2 33.8V62.2C38.2 64 36.8 65.5 35 65.5C33.2 65.5 31.7 64 31.7 62.2V33.8C31.7 32 33.2 30.5 35 30.5Z" fill="white"/>
+  <path d="M33 27.5L48.4 68.5H58.1L42.7 27.5H33Z" fill="white" fill-opacity="0.9"/>
+  <text x="116" y="55" text-anchor="middle" font-size="20" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="white">Pay</text>
+</svg>

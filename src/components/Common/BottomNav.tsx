@@ -13,7 +13,7 @@ import {
 import { useCartStore } from "@/store/cartStore";
 
 const LEFT_NAV = [
-  { label: "طلباتي", href: "/my-orders", icon: CalendarDays },
+  { label: "طلباتي", href: "/my-account/orders", icon: CalendarDays },
   { label: "المنيو", href: "/menu", icon: IceCreamCone },
 ];
 const RIGHT_NAV = [
@@ -73,6 +73,14 @@ function NavItem({
   );
 }
 
+/** Matches a nav item's own href against the current location. "حسابي"
+ *  (/my-account) must match exactly — a prefix match would also light it up
+ *  on /my-account/orders, stepping on "طلباتي". */
+function isNavItemActive(href: string, pathname: string) {
+  if (href === "/my-account") return pathname === href;
+  return pathname === href || (href !== "/" && pathname.startsWith(href));
+}
+
 export default function BottomNav() {
   const pathname = usePathname();
   const cartCount = useCartStore((s) => s.items.length);
@@ -130,10 +138,7 @@ export default function BottomNav() {
                   label={label}
                   href={href}
                   icon={icon}
-                  active={
-                    pathname === href ||
-                    (href !== "/" && pathname.startsWith(href))
-                  }
+                  active={isNavItemActive(href, pathname)}
                 />
               ))}
             </div>
@@ -149,10 +154,7 @@ export default function BottomNav() {
                   label={label}
                   href={href}
                   icon={icon}
-                  active={
-                    pathname === href ||
-                    (href !== "/" && pathname.startsWith(href))
-                  }
+                  active={isNavItemActive(href, pathname)}
                 />
               ))}
             </div>
