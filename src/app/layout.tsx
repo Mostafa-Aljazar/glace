@@ -128,7 +128,7 @@ export default function RootLayout({
         />
         <style
           dangerouslySetInnerHTML={{
-            __html: `html[data-splash-seen="1"] [data-app-splash]{display:none!important}`,
+            __html: `html[data-splash-seen="1"] [data-app-splash]{display:none!important}html{color-scheme:light!important}`,
           }}
         />
       </head>

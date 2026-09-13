@@ -2,7 +2,15 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* Force light mode always - disable dark variant */
+@custom-variant dark (&:is(.no-dark *));
+
+/* Prevent dark mode from ever being applied */
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: light;
+  }
+}
 
 @font-face {
   font-family: "Zain";
