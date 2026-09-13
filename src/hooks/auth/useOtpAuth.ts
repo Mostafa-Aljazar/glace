@@ -32,10 +32,18 @@ export function useVerifyOtp() {
   const searchParams = useSearchParams();
 
   return useMutation({
-    mutationFn: (data: VerifyOtpPayload) =>
-      userApi
-        .post<VerifyOtpResponse>("/auth/otp/verify", data)
-        .then((r) => r.data),
+    mutationFn: async (data: VerifyOtpPayload) => {
+      try {
+        const response = await userApi.post<VerifyOtpResponse>("/auth/otp/verify", data);
+        return response.data;
+      } catch (error: any) {
+        // Extract and throw error message from backend
+        if (error?.response?.data?.message) {
+          throw new Error(error.response.data.message);
+        }
+        throw error;
+      }
+    },
     onSuccess: ({ token, user }) => {
       setAuth(token, user);
       const redirect = searchParams.get("redirect");

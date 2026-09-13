@@ -108,6 +108,11 @@ export default function PhoneOtpFlow({
     );
   }
 
+  function handlePhoneEdit() {
+    setStep("phone");
+    sendOtp.reset();
+  }
+
   function handleResend() {
     if (secondsLeft > 0) return;
     sendOtp.mutate(
@@ -130,7 +135,7 @@ export default function PhoneOtpFlow({
       <div className="flex flex-col gap-5">
         <button
           type="button"
-          onClick={() => setStep("phone")}
+          onClick={handlePhoneEdit}
           className="flex items-center gap-1.5 self-start bg-white/10 hover:bg-white/15 px-3 py-1.5 border border-glace-yellow/40 rounded-full font-medium text-[13px] text-glace-yellow transition-colors cursor-pointer"
         >
           <ArrowRight size={14} />
@@ -140,7 +145,7 @@ export default function PhoneOtpFlow({
         <div className="text-center">
           <p className="flex justify-center items-center gap-1.5 text-[13.5px] text-white">
             <MessageCircle size={15} className="text-glace-yellow shrink-0" />
-            تم إرسال رمز التحقق إلى حسابك على واتساب
+            سيتم إرسال رسالة الكود إلى رقم الجوال
           </p>
           <p dir="ltr" className="mt-1 font-bold text-[17px] text-white">
             {phone}
@@ -149,17 +154,29 @@ export default function PhoneOtpFlow({
 
         <OtpInput
           value={code}
-          onChange={setCode}
+          onChange={(newCode) => {
+            setCode(newCode);
+            verifyOtp.reset();
+          }}
           disabled={verifyOtp.isPending}
         />
 
         {verifyOtp.isError && (
-          <div className="flex justify-center items-center gap-2 bg-rose-500/15 px-3.5 py-2.5 border border-rose-400/40 rounded-[14px]">
+          <div className="flex flex-col gap-3 bg-rose-500/15 px-3.5 py-2.5 border border-rose-400/40 rounded-[14px]">
             <p className="font-semibold text-[13.5px] text-rose-200 text-center">
               {verifyOtp.error instanceof Error
                 ? verifyOtp.error.message
-                : "رمز التحقق غير صحيح"}
+                : "حدث خطأ في التحقق"}
             </p>
+            {verifyOtp.error instanceof Error &&
+              verifyOtp.error.message.includes("الاسم مطلوب") && (
+                <Link
+                  href={switchLinkHref}
+                  className="text-center text-[12px] font-semibold text-glace-yellow hover:text-yellow-300 transition-colors"
+                >
+                  إنشاء حساب جديد ←
+                </Link>
+              )}
           </div>
         )}
 
@@ -244,17 +261,10 @@ export default function PhoneOtpFlow({
           )}
         />
 
-        {sendOtp.isError && (
-          <div className="flex justify-center items-center gap-2 bg-rose-500/15 px-3.5 py-2.5 border border-rose-400/40 rounded-[14px]">
-            <p className="font-semibold text-[13.5px] text-rose-200 text-center">
-              تعذر إرسال رمز التحقق، حاول مجدداً
-            </p>
-          </div>
-        )}
 
         <p className="flex justify-center items-center gap-1.5 text-[12.5px] text-white/90 text-center">
           <MessageCircle size={13} />
-          سيتم إرسال رمز التحقق عبر واتساب
+          سيتم إرسال رسالة الكود إلى رقم الجوال
         </p>
 
         <Button

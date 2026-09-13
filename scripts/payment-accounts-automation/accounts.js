@@ -1,0 +1,65 @@
+// Dummy/placeholder payment account data — for demo/testing purposes only.
+// Replace with real account details before going live.
+
+module.exports = [
+  {
+    method: 'بنك فلسطين', // BOP
+    accountHolder: 'شركة جلاسيه الأمير',
+    bankName: 'بنك فلسطين',
+    primaryLabel: 'رقم الحساب',
+    primaryValue: '123456789012',
+    secondaryLabel: 'IBAN',
+    secondaryValue: 'PS00PALS000000000123456789012',
+    enabled: true,
+  },
+  {
+    method: 'PalPay',
+    accountHolder: 'جلاسيه الأمير',
+    bankName: '',
+    primaryLabel: 'رقم الهاتف',
+    primaryValue: '0599999001',
+    secondaryLabel: '',
+    secondaryValue: '',
+    enabled: true,
+  },
+  {
+    method: 'جوال باي (يدوي)',
+    accountHolder: 'جلاسيه الأمير',
+    bankName: '',
+    primaryLabel: 'رقم الجوال',
+    primaryValue: '0599999002',
+    secondaryLabel: '',
+    secondaryValue: '',
+    enabled: true,
+  },
+  {
+    method: 'جوال باي (آلي)',
+    accountHolder: 'جلاسيه الأمير',
+    bankName: '',
+    primaryLabel: 'رقم الجوال',
+    primaryValue: '0599999003',
+    secondaryLabel: '',
+    secondaryValue: '',
+    enabled: true,
+  },
+  {
+    method: 'فيزا (داخل المحل)',
+    accountHolder: 'جلاسيه الأمير فيزا',
+    bankName: '',
+    primaryLabel: 'ملاحظة',
+    primaryValue: 'الدفع بالفيزا داخل المحل فقط',
+    secondaryLabel: '',
+    secondaryValue: '',
+    enabled: true,
+  },
+  {
+    method: 'كاش (داخل المحل)',
+    accountHolder: 'جلاسيه الأمير كاش',
+    bankName: '',
+    primaryLabel: 'ملاحظة',
+    primaryValue: 'الدفع كاش داخل المحل فقط',
+    secondaryLabel: '',
+    secondaryValue: '',
+    enabled: true,
+  },
+];

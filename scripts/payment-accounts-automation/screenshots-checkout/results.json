@@ -1,0 +1,4 @@
+{
+  "steps": [],
+  "error": "OTP send failed (backend returned an error) — see 01_otp_requested.png. Response: {\"status\":429,\"body\":{\"message\":\"الرجاء الانتظار قبل إعادة الإرسال\",\"errors\":{\"phone\":[\"الرجاء الانتظار قبل إعادة الإرسال\"]}}}"
+}
