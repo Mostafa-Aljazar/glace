@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
-import { Minus, Plus, ShoppingCart, Check, Heart } from "lucide-react";
+import { Minus, Plus, ShoppingCart, Check, Heart, Package } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import AddToCartButton from "@/components/Order/AddToCartButton";
 import AddToCartToast from "@/components/Order/AddToCartToast";
@@ -179,13 +179,14 @@ export default function OrderFlatListTemplate({
           <div className="flex items-start gap-3 bg-yellow-400/15 mb-4 px-4 py-3.5 border border-yellow-400/30 rounded-[20px]">
             <span className="text-[22px] shrink-0">⚠️</span>
             <p className="text-[13px] text-yellow-100 leading-relaxed">
-              هذا المنتج متوفر داخل المحل فقط — غير متاح للتوصيل أو الاستلام (Take Away)
+              هذا المنتج متوفر داخل المحل فقط — غير متاح للتوصيل أو الاستلام
+              (Take Away)
             </p>
           </div>
         )}
 
         <div className="bg-white/17 backdrop-blur-[15px] mb-4 rounded-[28px] overflow-hidden">
-          <div className="p-5">
+          <div className="p-5 px-2 [@media(min-width:400px)]:px-5">
             <div className="flex items-center gap-2 mb-4">
               <h2 className="font-bold text-[18px] text-white">
                 اختر المنتجات
@@ -206,7 +207,7 @@ export default function OrderFlatListTemplate({
                 return (
                   <div
                     key={item.id}
-                    className={`flex items-center gap-3 border rounded-[16px] px-4 py-4 transition-all ${
+                    className={`flex items-center gap-3 border rounded-[16px] px-2 [@media(min-width:400px)]:px-4 py-4 transition-all ${
                       isUnavailable
                         ? "opacity-50 bg-white/5 border-white/5 cursor-not-allowed"
                         : count > 0
@@ -214,8 +215,8 @@ export default function OrderFlatListTemplate({
                           : "bg-white/8 border-white/10 hover:bg-white/12"
                     }`}
                   >
-                    {item.image &&
-                      (product.hasImageZoom ? (
+                    {item.image ? (
+                      product.hasImageZoom ? (
                         <button
                           type="button"
                           onClick={() =>
@@ -240,7 +241,12 @@ export default function OrderFlatListTemplate({
                           height={60}
                           className="rounded-lg w-16 h-16 object-contain shrink-0"
                         />
-                      ))}
+                      )
+                    ) : (
+                      <div className="flex justify-center items-center bg-linear-to-br from-white/20 to-white/5 border border-white/15 rounded-lg w-16 h-16 shrink-0">
+                        <Package size={24} strokeWidth={1.6} className="text-white/50" />
+                      </div>
+                    )}
 
                     <div className="flex-1 min-w-0">
                       <p className="mb-1 font-medium text-[15px] text-white">

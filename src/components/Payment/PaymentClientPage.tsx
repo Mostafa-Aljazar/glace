@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -27,6 +27,7 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { getApiErrorMessage } from "@/lib/apiWithFallback";
+import { formatScheduledDateTime } from "@/lib/scheduling";
 import {
   RECEIPT_METHODS,
   PAYMENT_METHOD_LABELS,
@@ -138,6 +139,23 @@ export default function PaymentClientPage() {
     setReceiptStep("detail");
   }, [method]);
 
+  // Scroll the method-specific detail (cash input, receipt upload, etc.)
+  // into view whenever the customer picks a payment method — it renders
+  // below the fold and is easy to miss otherwise. Skips the initial mount
+  // so the page doesn't jump on first load.
+  const methodDetailsRef = useRef<HTMLDivElement>(null);
+  const isFirstMethodRender = useRef(true);
+  useEffect(() => {
+    if (isFirstMethodRender.current) {
+      isFirstMethodRender.current = false;
+      return;
+    }
+    methodDetailsRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [method]);
+
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal);
   const total = useCartStore((s) => s.total);
@@ -220,6 +238,7 @@ export default function PaymentClientPage() {
         deliveryMethod,
         addressId,
         pickupTime,
+        captainNote: address?.note,
         receiptImage,
         receiptNote,
         jawwalPhone: method === "jawwal" ? jawwalPhone.trim() : undefined,
@@ -283,6 +302,16 @@ export default function PaymentClientPage() {
   const inputClass =
     "bg-white/10 border-white/25 focus-visible:border-glace-yellow/50 h-11 px-3.5 text-white text-[15px] placeholder:text-white/40 rounded-[14px] focus-visible:ring-glace-yellow/20";
 
+  // Avoid rendering the payment form on a stale/empty draft (e.g. after a
+  // hard refresh of this page) while the redirect above is in flight.
+  if (!hasDraft && !successOpen) {
+    return (
+      <div className="relative flex justify-center items-center bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen">
+        <div className="border-4 border-white/25 border-t-glace-yellow rounded-full size-10 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden text-white">
       <EventsBackground />
@@ -307,6 +336,17 @@ export default function PaymentClientPage() {
               </p>
               <p className="text-[13px] text-white/60 mt-1">
                 {address.name} · {address.phone}
+              </p>
+            </div>
+          )}
+
+          {pickupTime && (deliveryMethod === "delivery" || deliveryMethod === "pickup") && (
+            <div className="bg-[#dff7ff]/10 mb-4 p-3 sm:p-4 border border-white/25 rounded-[22px]">
+              <p className="text-[14px] text-white/90 font-medium">
+                {deliveryMethod === "delivery" ? "موعد التوصيل:" : "موعد الاستلام:"}
+              </p>
+              <p className="mt-1 text-[13px] text-white/75">
+                {formatScheduledDateTime(pickupTime)}
               </p>
             </div>
           )}
@@ -536,6 +576,7 @@ export default function PaymentClientPage() {
             </div>
 
             {/* Method-specific inputs */}
+          <div ref={methodDetailsRef} />
           {method === "jawwal" && (
             <div className="flex flex-col gap-3 bg-white/10 mb-6 p-4 border border-white/25 rounded-[20px]">
               <div>

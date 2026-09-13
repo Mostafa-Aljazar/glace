@@ -22,7 +22,8 @@ import {
 } from "@/store/orderStore";
 import { useOrders } from "@/hooks/orders";
 import { getLineItemTotal, useCartStore } from "@/store/cartStore";
-import { getStatusSteps } from "@/lib/orderStatusSteps";
+import { getStatusSteps, PAYMENT_STATUS_DISPLAY } from "@/lib/orderStatusSteps";
+import { formatScheduledDateTime } from "@/lib/scheduling";
 import { cn } from "@/lib/utils";
 import DashboardCard from "../shared/DashboardCard";
 import EmptyState from "../shared/EmptyState";
@@ -188,6 +189,12 @@ export default function OrdersPanel() {
           {filtered.map((order) => {
             const isOpen = expandedId === order.id;
             const name = customerName(order);
+            const typeLabel =
+              order.deliveryMethod === "delivery"
+                ? "توصيل"
+                : order.deliveryMethod === "pickup"
+                  ? "استلام من المحل"
+                  : "طلب سريع";
 
             return (
               <div
@@ -198,43 +205,44 @@ export default function OrdersPanel() {
                 <button
                   type="button"
                   onClick={() => setExpandedId(isOpen ? null : order.id)}
-                  className="flex flex-col gap-3 hover:bg-white/10 px-5 py-4 w-full text-white transition-colors cursor-pointer"
+                  aria-label={isOpen ? "إخفاء التفاصيل" : "عرض التفاصيل"}
+                  className="flex items-start gap-3 hover:bg-white/10 px-5 py-4 w-full text-white text-start transition-colors cursor-pointer"
                 >
-                  <div className="flex justify-between items-center gap-3">
-                    <span className="font-bold text-[16px]">#{order.id}</span>
-                    <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-col flex-1 gap-2 min-w-0">
+                    <div className="flex justify-between items-center gap-3">
+                      <span className="font-bold text-[16px]">#{order.id}</span>
                       <span
-                        className={`text-[12px] px-3 py-1 rounded-full ${ORDER_STATUS_COLORS[order.status]}`}
+                        className={`text-[12px] px-3 py-1 rounded-full shrink-0 ${ORDER_STATUS_COLORS[order.status]}`}
                       >
                         {order.status}
                       </span>
-                      {isOpen ? (
-                        <ChevronUp size={18} />
-                      ) : (
-                        <ChevronDown size={18} />
-                      )}
+                    </div>
+
+                    <p className="text-[13px] text-white/60">
+                      {name ? `${typeLabel} · ${name}` : typeLabel}
+                    </p>
+
+                    <div className="border-white/10 border-t" />
+
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold tabular-nums text-[17px] text-glace-yellow">
+                        {order.total.toFixed(2)} ₪
+                      </span>
+                      <span className="text-[13px] text-white/60">
+                        {new Date(order.createdAt).toLocaleDateString("ar-PS", {
+                          dateStyle: "medium",
+                        })}
+                      </span>
                     </div>
                   </div>
 
-                  {name && (
-                    <>
-                      <p className="text-[14px] text-white/70 text-start">
-                        الزبون: {name}
-                      </p>
-                      <div className="border-white/10 border-t" />
-                    </>
-                  )}
-
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold tabular-nums text-[17px] text-glace-yellow">
-                      {order.total.toFixed(2)} ₪
-                    </span>
-                    <span className="text-[13px] text-white/60">
-                      {new Date(order.createdAt).toLocaleDateString("ar-PS", {
-                        dateStyle: "medium",
-                      })}
-                    </span>
-                  </div>
+                  <span className="flex items-center pt-1 text-white shrink-0">
+                    {isOpen ? (
+                      <ChevronUp size={18} />
+                    ) : (
+                      <ChevronDown size={18} />
+                    )}
+                  </span>
                 </button>
 
                 {/* Expanded detail */}
@@ -330,12 +338,26 @@ export default function OrdersPanel() {
                     </div>
 
                     {/* Meta */}
-                    <div className="flex flex-wrap gap-4 text-[13px] text-white/60">
+                    <div className="flex flex-wrap items-center gap-4 text-[13px] text-white/60">
                       <span>
                         الدفع:{" "}
                         {PAYMENT_METHOD_LABELS[order.paymentMethod] ??
                           order.paymentMethod}
                       </span>
+                      {order.paymentStatus &&
+                        PAYMENT_STATUS_DISPLAY[order.paymentStatus] &&
+                        (() => {
+                          const display = PAYMENT_STATUS_DISPLAY[order.paymentStatus!];
+                          const StatusIcon = display.icon;
+                          return (
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${display.className}`}
+                            >
+                              <StatusIcon size={12} />
+                              {display.label}
+                            </span>
+                          );
+                        })()}
                       <span>
                         الاستلام:{" "}
                         {order.deliveryMethod === "delivery"
@@ -344,6 +366,12 @@ export default function OrdersPanel() {
                             ? "من المحل"
                             : "تناول الآن"}
                       </span>
+                      {order.deliveryMethod !== "dine-in" && order.scheduledFor && (
+                        <span>
+                          {order.deliveryMethod === "delivery" ? "موعد التوصيل: " : "موعد الاستلام: "}
+                          {formatScheduledDateTime(order.scheduledFor)}
+                        </span>
+                      )}
                       {order.discount > 0 && (
                         <span className="text-green-300">
                           خصم: -{order.discount} ₪
@@ -382,7 +410,7 @@ export default function OrdersPanel() {
             type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1 || isFetching}
-            className="flex items-center gap-1 disabled:opacity-40 hover:bg-white/10 px-3 py-2 rounded-[12px] text-[13px] text-white transition-colors disabled:cursor-not-allowed cursor-pointer"
+            className="flex items-center gap-1 disabled:opacity-40 bg-glace-yellow hover:brightness-105 px-3 py-2 rounded-[12px] text-[13px] font-bold text-[#1e6a7f] transition disabled:cursor-not-allowed cursor-pointer"
           >
             <ChevronRight size={16} />
             السابق
@@ -394,7 +422,7 @@ export default function OrdersPanel() {
             type="button"
             onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
             disabled={page >= data.totalPages || isFetching}
-            className="flex items-center gap-1 disabled:opacity-40 hover:bg-white/10 px-3 py-2 rounded-[12px] text-[13px] text-white transition-colors disabled:cursor-not-allowed cursor-pointer"
+            className="flex items-center gap-1 disabled:opacity-40 bg-glace-yellow hover:brightness-105 px-3 py-2 rounded-[12px] text-[13px] font-bold text-[#1e6a7f] transition disabled:cursor-not-allowed cursor-pointer"
           >
             التالي
             <ChevronLeft size={16} />

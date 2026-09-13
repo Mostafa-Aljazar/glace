@@ -46,7 +46,8 @@ import {
   useEmailOrderSummary,
 } from "@/hooks/orders";
 import { getLineItemTotal, useCartStore } from "@/store/cartStore";
-import { getStatusSteps } from "@/lib/orderStatusSteps";
+import { getStatusSteps, PAYMENT_STATUS_DISPLAY } from "@/lib/orderStatusSteps";
+import { formatScheduledDateTime } from "@/lib/scheduling";
 import { getApiErrorMessage } from "@/lib/apiWithFallback";
 import ReceiptUploadForm from "@/components/Payment/ReceiptUploadForm";
 
@@ -56,6 +57,7 @@ const CANCEL_REASONS = [
   "طلبت بالخطأ",
   "سبب آخر",
 ];
+
 
 export default function OrderStatusClientPage({ id }: { id: string }) {
   const router = useRouter();
@@ -464,6 +466,12 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
               <p>
                 الوقت: {new Date(order.createdAt).toLocaleTimeString("ar-PS", { timeStyle: "short" })}
               </p>
+              {order.deliveryMethod !== "dine-in" && order.scheduledFor && (
+                <p className="pt-1 font-medium text-glace-yellow">
+                  {order.deliveryMethod === "delivery" ? "موعد التوصيل المجدول: " : "موعد الاستلام المجدول: "}
+                  {formatScheduledDateTime(order.scheduledFor)}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2 bg-white/10 p-4 rounded-[20px] text-[15px]">
@@ -492,6 +500,21 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
                   {PAYMENT_METHOD_LABELS[order.paymentMethod] ??
                     order.paymentMethod}
                 </span>
+                {order.paymentStatus && (
+                  (() => {
+                    const display = PAYMENT_STATUS_DISPLAY[order.paymentStatus];
+                    if (!display) return null;
+                    const StatusIcon = display.icon;
+                    return (
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${display.className}`}
+                      >
+                        <StatusIcon size={12} />
+                        {display.label}
+                      </span>
+                    );
+                  })()
+                )}
               </div>
               <div className="flex items-start gap-2.5">
                 <Truck size={16} className="opacity-60 shrink-0 mt-0.5" />
@@ -501,9 +524,6 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
                     : order.deliveryMethod === "pickup"
                       ? "من المحل"
                       : "تناول الآن"}
-                  {order.deliveryMethod !== "dine-in" && order.pickupTime
-                    ? ` · ${order.pickupTime}`
-                    : ""}
                 </span>
               </div>
               {order.address && (

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -84,7 +84,7 @@ export default function CheckoutClientPage() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
   const user = useAuthStore((s) => s.user);
   const [orderingForSomeoneElse, setOrderingForSomeoneElse] = useState(false);
-  const { data: addresses = [] } = useAddresses();
+  const { data: addresses = [], refetch: refetchAddresses } = useAddresses();
   const selectedId = useAddressStore((s) => s.selectedId);
   const addAddressMutation = useAddAddress();
   const removeAddressMutation = useDeleteAddress();
@@ -92,16 +92,16 @@ export default function CheckoutClientPage() {
   const selectedAddress = addresses.find((a) => a.id === selectedId) ?? null;
   const setCheckoutDraft = useCheckoutDraftStore((s) => s.setDraft);
 
-  // Auto-select default address on load or when addresses change
+  // Auto-select a default address only once addresses first load — guarded
+  // by a ref (not just `!selectedId`) so a `confirmNewAddress` refetch that
+  // resolves before its own `selectAddress(id)` commits can't have this
+  // effect race it back to the default address on the same addresses update.
+  const didAutoSelect = useRef(false);
   useEffect(() => {
-    if (!selectedId && addresses.length > 0) {
-      const defaultAddress = addresses.find((a) => a.isDefault);
-      if (defaultAddress) {
-        selectAddress(defaultAddress.id);
-      } else if (addresses.length > 0) {
-        selectAddress(addresses[0].id);
-      }
-    }
+    if (didAutoSelect.current || selectedId || addresses.length === 0) return;
+    didAutoSelect.current = true;
+    const defaultAddress = addresses.find((a) => a.isDefault);
+    selectAddress(defaultAddress?.id ?? addresses[0].id);
   }, [addresses, selectedId, selectAddress]);
 
   function handleToggleForSomeoneElse(value: boolean) {
@@ -109,6 +109,33 @@ export default function CheckoutClientPage() {
   }
 
   const isAddingNewAddress = addresses.length === 0 || showNewAddressForm;
+  const [confirmingNewAddress, setConfirmingNewAddress] = useState(false);
+
+  /** Going straight from a freshly-created address to `/payment` (using the
+   *  id from the `POST /addresses` response) intermittently gets rejected
+   *  by `POST /orders` with "اختر عنوان التوصيل" — the backend doesn't treat
+   *  that address as ready yet in the same round trip. Instead: save it,
+   *  re-fetch the saved-addresses list from the server so the new one is
+   *  confirmed present, select it there, and drop back to the normal saved-
+   *  address screen — the customer then explicitly presses "تأكيد وانتقل
+   *  للدفع" like any other saved address, never auto-navigating on a
+   *  same-request id. `selectedId` is persisted (see addressStore) so it
+   *  survives that round trip. */
+  async function confirmNewAddress(id: string) {
+    setConfirmingNewAddress(true);
+    const previousIds = new Set(addresses.map((a) => a.id));
+    const { data: freshAddresses } = await refetchAddresses();
+    // The id from the `POST /addresses` response has, in practice, not
+    // always matched the id the same address later carries in
+    // `GET /addresses` — fall back to "whichever address is new since
+    // before this save" so selection doesn't silently miss.
+    const match =
+      freshAddresses?.find((a) => a.id === id) ??
+      freshAddresses?.find((a) => !previousIds.has(a.id));
+    selectAddress(match?.id ?? id);
+    setConfirmingNewAddress(false);
+    setShowNewAddressForm(false);
+  }
 
   function goToPayment(
     address: {
@@ -523,14 +550,13 @@ export default function CheckoutClientPage() {
                 <AddressForm
                   defaultName={orderingForSomeoneElse ? "" : (user?.name ?? "")}
                   defaultPhone={orderingForSomeoneElse ? "" : (user?.phone ?? "")}
-                  submitLabel="تأكيد وانتقل للدفع"
+                  submitLabel="حفظ العنوان"
                   hideSubmit={!isLoggedIn}
+                  submitting={confirmingNewAddress}
                   onSubmit={(data) => {
-                    const payload = { ...data, label: `عنوان ${addresses.length + 1}` };
-                    addAddressMutation.mutate(payload, {
+                    addAddressMutation.mutate(data, {
                       onSuccess: (created) => {
-                        setShowNewAddressForm(false);
-                        goToPayment(data, created.id);
+                        confirmNewAddress(created.id);
                       },
                     });
                   }}

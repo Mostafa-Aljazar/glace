@@ -1,5 +1,34 @@
-import { CheckCircle2, Clock, ChefHat, Truck, Package } from "lucide-react";
+import { CheckCircle2, Clock, ChefHat, Truck, Package, XCircle } from "lucide-react";
 import type { OrderStatus, DeliveryMethod } from "@/store/orderStore";
+
+/** Display for `Order.paymentStatus` — separate from the order lifecycle
+ *  `status`, e.g. a manual-transfer order can be "قيد المراجعة" while staff
+ *  hasn't verified the uploaded receipt yet. */
+export const PAYMENT_STATUS_DISPLAY: Record<
+  string,
+  { label: string; className: string; icon: typeof Clock }
+> = {
+  pending: {
+    label: "بانتظار تأكيد الدفع",
+    className: "bg-yellow-500/15 text-yellow-300 border-yellow-500/30",
+    icon: Clock,
+  },
+  paid: {
+    label: "تم تأكيد الدفع",
+    className: "bg-green-500/15 text-green-300 border-green-500/30",
+    icon: CheckCircle2,
+  },
+  failed: {
+    label: "فشل الدفع",
+    className: "bg-red-500/15 text-red-300 border-red-500/30",
+    icon: XCircle,
+  },
+  refunded: {
+    label: "تم استرداد المبلغ",
+    className: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+    icon: CheckCircle2,
+  },
+};
 
 export type StatusStep = {
   key: OrderStatus;

@@ -19,6 +19,11 @@ export interface PlaceOrderInput {
   /** Reference to a saved address — required when deliveryMethod is "delivery". */
   addressId?: string;
   pickupTime?: string;
+  /** Free-text note for the delivery captain (gate code, floor, landmark
+   *  detail) — set on the address in Checkout, forwarded here since the
+   *  backend expects it as its own order field, not nested under the
+   *  address. */
+  captainNote?: string;
   /** Transfer receipt photo, for RECEIPT_METHODS orders — uploaded as a real
    *  file (multipart), never base64. */
   receiptImage?: File;
@@ -55,10 +60,15 @@ export function usePlaceOrder() {
       const formData = new FormData();
       formData.append("items", JSON.stringify(input.items.map(toWireItem)));
       if (input.couponCode) formData.append("couponCode", input.couponCode);
-      formData.append("paymentMethod", input.paymentMethod);
+      // Backend's payment_method enum uses "palpay", not "paypal".
+      formData.append(
+        "paymentMethod",
+        input.paymentMethod === "paypal" ? "palpay" : input.paymentMethod,
+      );
       formData.append("deliveryMethod", input.deliveryMethod);
       if (input.addressId) formData.append("addressId", input.addressId);
       if (input.pickupTime) formData.append("pickupTime", input.pickupTime);
+      if (input.captainNote) formData.append("captainNote", input.captainNote);
       if (input.receiptImage) formData.append("receiptImage", input.receiptImage);
       if (input.receiptNote) formData.append("receiptNote", input.receiptNote);
       if (input.jawwalPhone) formData.append("jawwalPhone", input.jawwalPhone);

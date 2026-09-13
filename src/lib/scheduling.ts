@@ -49,6 +49,38 @@ function toDateKey(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** Formats an ISO datetime (e.g. `Order.scheduledFor`) for display as
+ *  "اليوم · 10:45 م", "غداً · 10:45 م", or "13/9/2026 · 10:45 م" once it's
+ *  further out — relative day names read better than a bare date for
+ *  something the customer picked only a day or two ahead. */
+export function formatScheduledDateTime(iso: string, now: Date = new Date()) {
+  const target = new Date(iso);
+  const time = target.toLocaleTimeString("ar-PS", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  const targetKey = toDateKey(target);
+  const todayKey = toDateKey(now);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  let dayPart: string;
+  if (targetKey === todayKey) {
+    dayPart = "اليوم";
+  } else if (targetKey === toDateKey(tomorrow)) {
+    dayPart = "غداً";
+  } else {
+    dayPart = target.toLocaleDateString("ar-PS", {
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+    });
+  }
+
+  return `${dayPart} · ${time}`;
+}
+
 function dayLabel(d: Date, isToday: boolean) {
   if (isToday) return "اليوم";
   return d.toLocaleDateString("ar", { weekday: "long", day: "numeric", month: "short" });

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export type AddressType = "home" | "work" | "other";
 
@@ -29,14 +30,21 @@ export interface SavedAddress {
 }
 
 interface AddressState {
-  /** Which saved address is selected for checkout — pure UI state, not
-   *  persisted; the addresses themselves live on the server, see
-   *  `src/hooks/addresses/*`. */
+  /** Which saved address is selected for checkout — persisted to
+   *  localStorage so a freshly-created address (confirmed via
+   *  `POST /addresses`, then explicitly re-selected from the saved list)
+   *  survives navigation between checkout and payment. The addresses
+   *  themselves still live on the server, see `src/hooks/addresses/*`. */
   selectedId: string | null;
   selectAddress: (id: string) => void;
 }
 
-export const useAddressStore = create<AddressState>()((set) => ({
-  selectedId: null,
-  selectAddress: (id) => set({ selectedId: id }),
-}));
+export const useAddressStore = create<AddressState>()(
+  persist(
+    (set) => ({
+      selectedId: null,
+      selectAddress: (id) => set({ selectedId: id }),
+    }),
+    { name: "glace-selected-address" },
+  ),
+);

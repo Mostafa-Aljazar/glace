@@ -97,7 +97,17 @@ export interface Order {
   address?: DeliveryAddress;
   /** Requested dine-in time, e.g. "17:00" — only set when deliveryMethod is "dine-in". */
   pickupTime?: string;
+  /** The customer's scheduled delivery/pickup datetime (ISO string) — what
+   *  `POST /orders`'s `pickupTime` field actually becomes server-side; the
+   *  backend echoes it back under this different name on `GET /orders`, not
+   *  `pickupTime`. Set for "delivery"/"pickup" orders, absent for "dine-in". */
+  scheduledFor?: string;
   status: OrderStatus;
+  /** Separate from `status` (order lifecycle) — whether the payment itself
+   *  has been confirmed. Only meaningful for RECEIPT_METHODS/manual-transfer
+   *  orders, where the order can already be "قيد المراجعة" while staff
+   *  hasn't verified the uploaded receipt yet. */
+  paymentStatus?: "pending" | "paid" | "failed" | "refunded" | (string & {});
   createdAt: string;
   /** URL of the uploaded transfer receipt, for RECEIPT_METHODS orders. */
   receiptImage?: string;

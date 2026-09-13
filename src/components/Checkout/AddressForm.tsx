@@ -65,7 +65,16 @@ const DEFAULT_LABEL: Record<AddressType, string> = {
 
 const schema = z.object({
   label: z.string().min(1, "اسم العنوان مطلوب"),
-  name: z.string().min(1, "الاسم مطلوب"),
+  name: z
+    .string()
+    .min(1, "الاسم مطلوب")
+    .refine((v) => {
+      const words = v.trim().split(/\s+/).filter(Boolean);
+      return (
+        words.length >= 2 &&
+        words.every((w) => /^[ء-ي]{2,}$/.test(w))
+      );
+    }, "اكتب اسمك الثنائي بالعربي على الأقل (مثلاً: مصطفى الجزار)، وكل مقطع حرفان على الأقل"),
   phone: z
     .string()
     .min(1, "رقم الجوال مطلوب")
@@ -113,6 +122,10 @@ interface AddressFormProps {
    *  can fill the form but must log in (via a separate sticky bar) before
    *  the address can actually be saved/submitted. */
   hideSubmit?: boolean;
+  /** True while the parent is still saving/confirming the address —
+   *  disables the button and swaps its label so double-submits and a
+   *  frozen-looking form don't happen while that settles. */
+  submitting?: boolean;
 }
 
 export default function AddressForm({
@@ -124,6 +137,7 @@ export default function AddressForm({
   footer,
   beforeContact,
   hideSubmit,
+  submitting,
 }: AddressFormProps) {
   const [type, setType] = useState<AddressType>(initialValue?.type ?? "home");
   const [customLabel, setCustomLabel] = useState(type === "other");
@@ -286,11 +300,14 @@ export default function AddressForm({
                       <User size={18} className={fieldIconClass} />
                       <Input
                         {...field}
-                        placeholder="الاسم الكامل"
+                        placeholder="مثلاً: مصطفى الجزار"
                         className={`peer ${inputClass}`}
                       />
                     </div>
                   </FormControl>
+                  <p className="mt-1 text-[12px] text-white/50">
+                    اكتب اسمك الثنائي بالعربي على الأقل (مثلاً: مصطفى الجزار)، وكل مقطع حرفان على الأقل
+                  </p>
                   <FormMessage className="font-semibold text-[13px] text-rose-300" />
                 </FormItem>
               )}
@@ -493,9 +510,10 @@ export default function AddressForm({
         {!hideSubmit && (
           <Button
             type="submit"
-            className="bg-glace-yellow hover:bg-yellow-300 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] py-3.5 border-0 rounded-[18px] h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 cursor-pointer"
+            disabled={submitting}
+            className="bg-glace-yellow hover:bg-yellow-300 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] py-3.5 border-0 rounded-[18px] h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:pointer-events-none disabled:hover:translate-y-0"
           >
-            {submitLabel}
+            {submitting ? "جاري التأكيد..." : submitLabel}
           </Button>
         )}
       </form>

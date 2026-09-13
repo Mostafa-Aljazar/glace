@@ -61,6 +61,8 @@
 }
 
 @theme {
+  --breakpoint-xs: 400px;
+
   /* Glace brand colors extracted from style.css */
   --color-glace-blue: #51c9f4;
   --color-glace-blue-dark: #44abcf;
