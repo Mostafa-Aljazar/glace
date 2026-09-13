@@ -101,7 +101,12 @@ export default function PhoneOtpFlow() {
     if (secondsLeft > 0) return;
     sendOtp.mutate(
       { phone },
-      { onSuccess: () => setSecondsLeft(RESEND_SECONDS) },
+      {
+        onSuccess: (data) => {
+          setUserExists(data.userExists);
+          setSecondsLeft(RESEND_SECONDS);
+        },
+      },
     );
   }
 
@@ -153,14 +158,19 @@ export default function PhoneOtpFlow() {
           </div>
         )}
 
-        <OtpInput
-          value={code}
-          onChange={(newCode) => {
-            setCode(newCode);
-            verifyOtp.reset();
-          }}
-          disabled={verifyOtp.isPending}
-        />
+        <div>
+          <label className={labelClass}>أدخل رمز التحقق</label>
+          <div className="mt-2">
+            <OtpInput
+              value={code}
+              onChange={(newCode) => {
+                setCode(newCode);
+                verifyOtp.reset();
+              }}
+              disabled={verifyOtp.isPending}
+            />
+          </div>
+        </div>
 
         {verifyOtp.isError && (
           <div className="bg-rose-500/15 px-3.5 py-2.5 border border-rose-400/40 rounded-[14px]">

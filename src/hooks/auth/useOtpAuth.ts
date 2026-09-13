@@ -23,17 +23,33 @@ interface VerifyOtpResponse {
   user: AuthUser;
 }
 
+interface ApiEnvelope<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+function extractErrorMessage(error: any): string {
+  const status = error?.response?.status;
+  if (status === 429) {
+    return "لقد تجاوزت الحد المسموح من المحاولات، الرجاء الانتظار قليلاً ثم إعادة المحاولة";
+  }
+  const message = error?.response?.data?.message;
+  if (message) return message;
+  return "حدث خطأ غير متوقع، الرجاء المحاولة مرة أخرى";
+}
+
 export function useSendOtp() {
   return useMutation({
     mutationFn: async (data: SendOtpPayload) => {
       try {
-        const response = await userApi.post<SendOtpResponse>("/auth/otp/send", data);
-        return response.data;
+        const response = await userApi.post<ApiEnvelope<SendOtpResponse>>(
+          "/auth/otp/send",
+          data,
+        );
+        return response.data.data;
       } catch (error: any) {
-        if (error?.response?.data?.message) {
-          throw new Error(error.response.data.message);
-        }
-        throw error;
+        throw new Error(extractErrorMessage(error));
       }
     },
   });
@@ -47,14 +63,13 @@ export function useVerifyOtp() {
   return useMutation({
     mutationFn: async (data: VerifyOtpPayload) => {
       try {
-        const response = await userApi.post<VerifyOtpResponse>("/auth/otp/verify", data);
-        return response.data;
+        const response = await userApi.post<ApiEnvelope<VerifyOtpResponse>>(
+          "/auth/otp/verify",
+          data,
+        );
+        return response.data.data;
       } catch (error: any) {
-        // Extract and throw error message from backend
-        if (error?.response?.data?.message) {
-          throw new Error(error.response.data.message);
-        }
-        throw error;
+        throw new Error(extractErrorMessage(error));
       }
     },
     onSuccess: ({ token, user }) => {
