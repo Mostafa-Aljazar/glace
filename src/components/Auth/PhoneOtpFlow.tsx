@@ -48,7 +48,11 @@ const otpSchema = z.object({
   fullName: z.string().optional(),
 });
 
-export default function PhoneOtpFlow() {
+interface PhoneOtpFlowProps {
+  onSuccess?: () => void;
+}
+
+export default function PhoneOtpFlow({ onSuccess }: PhoneOtpFlowProps = {}) {
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [userExists, setUserExists] = useState(false);
@@ -57,7 +61,7 @@ export default function PhoneOtpFlow() {
   const [secondsLeft, setSecondsLeft] = useState(0);
 
   const sendOtp = useSendOtp();
-  const verifyOtp = useVerifyOtp();
+  const verifyOtp = useVerifyOtp(onSuccess);
 
   const phoneForm = useForm<z.infer<typeof phoneSchema>>({
     resolver: zodResolver(phoneSchema),

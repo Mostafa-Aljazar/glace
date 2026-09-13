@@ -33,6 +33,7 @@ import { useAddresses, useAddAddress, useDeleteAddress } from "@/hooks/addresses
 import { useCheckoutDraftStore } from "@/store/checkoutDraftStore";
 import ScheduleTimePicker from "@/components/Checkout/ScheduleTimePicker";
 import AddressForm from "@/components/Checkout/AddressForm";
+import LoginSheet from "@/components/Checkout/LoginSheet";
 import {
   formatTime12h,
   getScheduleDays,
@@ -70,6 +71,7 @@ export default function CheckoutClientPage() {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [deliveryUnavailableOpen, setDeliveryUnavailableOpen] = useState(false);
   const [deliveryBlockedOpen, setDeliveryBlockedOpen] = useState(false);
+  const [loginSheetOpen, setLoginSheetOpen] = useState(false);
   const deliveryAvailable = useMemo(() => isDeliveryAvailableToday(), []);
   const router = useRouter();
   const items = useCartStore((s) => s.items);
@@ -779,18 +781,21 @@ export default function CheckoutClientPage() {
 
                 <div className="hidden md:block flex-1" />
 
-                <Link
-                  href="/auth?redirect=/checkout"
-                  className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-glace-yellow hover:bg-yellow-300 border-0 rounded-[16px] px-6 py-3 text-[#1e6a7f] text-[15px] font-bold shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] transition-all"
+                <button
+                  type="button"
+                  onClick={() => setLoginSheetOpen(true)}
+                  className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-glace-yellow hover:bg-yellow-300 border-0 rounded-[16px] px-6 py-3 text-[#1e6a7f] text-[15px] font-bold shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] transition-all cursor-pointer"
                 >
                   <LogIn size={16} />
                   سجّل دخولك للمتابعة
-                </Link>
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      <LoginSheet open={loginSheetOpen} onOpenChange={setLoginSheetOpen} />
     </div>
   );
 }

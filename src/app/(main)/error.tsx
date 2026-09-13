@@ -41,7 +41,7 @@ export default function Error({
         </div>
 
         <div className="bg-white/17 backdrop-blur-[15px] border border-white/15 rounded-[30px] overflow-hidden">
-          <div className="flex flex-col items-center gap-6 px-6 py-16 sm:py-20 text-center">
+          <div className="flex flex-col items-center gap-6 px-4 sm:px-6 py-16 sm:py-20 text-center">
             <div className="relative">
               <div className="flex items-center justify-center size-24 sm:size-28 rounded-full bg-white/10 border border-white/15">
                 <AlertTriangle
@@ -65,20 +65,22 @@ export default function Error({
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-1">
+            <div className="flex flex-nowrap items-center justify-center gap-2 sm:gap-3 mt-1">
               <button
                 type="button"
                 onClick={reset}
-                className="inline-flex items-center gap-2 bg-glace-yellow hover:bg-yellow-300 text-[#1e6a7f] font-bold text-[15px] px-7 py-3 rounded-full transition-all shadow-[0_4px_16px_rgba(244,228,81,0.35)] hover:shadow-[0_6px_24px_rgba(244,228,81,0.45)] hover:-translate-y-0.5 cursor-pointer"
+                className="inline-flex items-center gap-1.5 sm:gap-2 bg-glace-yellow hover:bg-yellow-300 text-[#1e6a7f] font-bold text-[13.5px] sm:text-[15px] px-4 sm:px-7 py-2.5 sm:py-3 rounded-full transition-all shadow-[0_4px_16px_rgba(244,228,81,0.35)] hover:shadow-[0_6px_24px_rgba(244,228,81,0.45)] hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
               >
-                <RefreshCw size={16} />
+                <RefreshCw size={15} className="sm:hidden shrink-0" />
+                <RefreshCw size={16} className="hidden sm:block shrink-0" />
                 حاول مجدداً
               </button>
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 bg-white/12 hover:bg-white/20 border border-white/20 text-white font-bold text-[15px] px-7 py-3 rounded-full transition-all"
+                className="inline-flex items-center gap-1.5 sm:gap-2 bg-white/12 hover:bg-white/20 border border-white/20 text-white font-bold text-[13.5px] sm:text-[15px] px-4 sm:px-7 py-2.5 sm:py-3 rounded-full transition-all whitespace-nowrap"
               >
-                <Home size={16} />
+                <Home size={15} className="sm:hidden shrink-0" />
+                <Home size={16} className="hidden sm:block shrink-0" />
                 الرئيسية
               </Link>
             </div>

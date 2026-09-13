@@ -409,27 +409,6 @@ export default function WalletPanel() {
                   </button>
                 </div>
 
-                <div className="mb-4">
-                  <label className="block mb-2 text-[14px] text-white/80">
-                    المبلغ المدفوع <span className="text-red-300">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={amount}
-                    onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
-                    placeholder="أدخل المبلغ"
-                    className="bg-white/10 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] px-3.5 py-2.5 w-full text-white text-[15px] placeholder:text-white/40 outline-none transition-colors"
-                  />
-                  {!amountValid && (
-                    <p className="mt-1.5 text-[13px] text-red-300">
-                      {amount === ""
-                        ? "أدخل المبلغ الذي حوّلته لتفعيل زر تأكيد الشحن"
-                        : "المبلغ يجب ألا يقل عن 1 ₪"}
-                    </p>
-                  )}
-                </div>
-
                 <div className="flex flex-col items-center gap-3 mb-4">
                   <div className="bg-white p-2 rounded-[14px]">
                     <Image
@@ -512,6 +491,27 @@ export default function WalletPanel() {
                         </button>
                       </div>
                     </div>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block mb-2 text-[14px] text-white/80">
+                    المبلغ المدفوع <span className="text-red-300">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={amount}
+                    onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
+                    placeholder="أدخل المبلغ"
+                    className="bg-white/10 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] px-3.5 py-2.5 w-full text-white text-[15px] placeholder:text-white/40 outline-none transition-colors"
+                  />
+                  {!amountValid && (
+                    <p className="mt-1.5 text-[13px] text-red-300">
+                      {amount === ""
+                        ? "أدخل المبلغ الذي حوّلته لتفعيل زر تأكيد الشحن"
+                        : "المبلغ يجب ألا يقل عن 1 ₪"}
+                    </p>
                   )}
                 </div>
 

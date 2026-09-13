@@ -114,15 +114,15 @@ export default function ScheduleTimePicker({
   };
 
   return (
-    <div className="flex items-center gap-3 bg-white/8 border border-white/15 rounded-[16px] p-4">
+    <div className="flex items-start gap-3 bg-white/8 border border-white/15 rounded-[16px] p-4">
       <span className="flex items-center justify-center bg-glace-yellow/15 text-glace-yellow rounded-full size-10 shrink-0">
         <CalendarClock size={20} />
       </span>
 
-      <div className="flex flex-1 gap-2.5 min-w-0">
-        {/* Day select */}
+      <div className="flex flex-col flex-1 gap-2.5 min-w-0">
+        {/* Day select — full width row on its own */}
         <Select value={selectedDate || ""} onValueChange={handleDateChange}>
-          <SelectTrigger className="flex-1 min-w-0 bg-white/10 hover:bg-white/15 border-0 text-white rounded-[14px] py-5 text-[14px] font-bold focus:ring-0 focus:ring-offset-0 [&_svg]:size-4 [&_svg]:text-white/60 h-12">
+          <SelectTrigger className="w-full min-w-0 bg-white/10 hover:bg-white/15 border-0 text-white rounded-[14px] py-5 text-[14px] font-bold focus:ring-0 focus:ring-offset-0 [&_svg]:size-4 [&_svg]:text-white/60 h-12">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-[#2d8aaa] backdrop-blur-[20px] border-0 rounded-[20px] text-white shadow-lg ring-1 ring-white/20 p-2 [&_[data-slot=select-scroll-up-button]]:bg-[#2d8aaa] [&_[data-slot=select-scroll-down-button]]:bg-[#2d8aaa] [&_[data-slot=select-scroll-up-button]]:text-white [&_[data-slot=select-scroll-down-button]]:text-white">
@@ -134,33 +134,34 @@ export default function ScheduleTimePicker({
           </SelectContent>
         </Select>
 
-        {/* Hour select */}
-        <Select value={selectedHour12 || ""} onValueChange={handleHourChange}>
-          <SelectTrigger className="w-24 bg-white/10 hover:bg-white/15 border-0 text-white rounded-[14px] py-5 text-[14px] font-bold focus:ring-0 focus:ring-offset-0 [&_svg]:size-4 [&_svg]:text-white/60 h-12">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-[#2d8aaa] backdrop-blur-[20px] border-0 rounded-[20px] text-white shadow-lg ring-1 ring-white/20 p-2 [&_[data-slot=select-scroll-up-button]]:bg-[#2d8aaa] [&_[data-slot=select-scroll-down-button]]:bg-[#2d8aaa] [&_[data-slot=select-scroll-up-button]]:text-white [&_[data-slot=select-scroll-down-button]]:text-white">
-            {hoursForDay.map((hour) => (
-              <SelectItem key={hour} value={hour} className="rounded-[14px] text-white hover:bg-white/20 focus:bg-white/20 cursor-pointer py-3 px-3 my-0.5 text-[14px] justify-center">
-                {hour}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Hour + minute selects — second row */}
+        <div className="flex gap-2.5">
+          <Select value={selectedHour12 || ""} onValueChange={handleHourChange}>
+            <SelectTrigger className="flex-1 min-w-0 bg-white/10 hover:bg-white/15 border-0 text-white rounded-[14px] py-5 text-[14px] font-bold focus:ring-0 focus:ring-offset-0 [&_svg]:size-4 [&_svg]:text-white/60 h-12">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#2d8aaa] backdrop-blur-[20px] border-0 rounded-[20px] text-white shadow-lg ring-1 ring-white/20 p-2 [&_[data-slot=select-scroll-up-button]]:bg-[#2d8aaa] [&_[data-slot=select-scroll-down-button]]:bg-[#2d8aaa] [&_[data-slot=select-scroll-up-button]]:text-white [&_[data-slot=select-scroll-down-button]]:text-white">
+              {hoursForDay.map((hour) => (
+                <SelectItem key={hour} value={hour} className="rounded-[14px] text-white hover:bg-white/20 focus:bg-white/20 cursor-pointer py-3 px-3 my-0.5 text-[14px] justify-center">
+                  {hour}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        {/* Minute select */}
-        <Select value={selectedMinute || ""} onValueChange={handleMinuteChange}>
-          <SelectTrigger className="w-20 bg-white/10 hover:bg-white/15 border-0 text-white rounded-[14px] py-5 text-[14px] font-bold focus:ring-0 focus:ring-offset-0 [&_svg]:size-4 [&_svg]:text-white/60 h-12">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-[#2d8aaa] backdrop-blur-[20px] border-0 rounded-[20px] text-white shadow-lg ring-1 ring-white/20 p-2 [&_[data-slot=select-scroll-up-button]]:bg-[#2d8aaa] [&_[data-slot=select-scroll-down-button]]:bg-[#2d8aaa] [&_[data-slot=select-scroll-up-button]]:text-white [&_[data-slot=select-scroll-down-button]]:text-white">
-            {minutesForHour.map((minute) => (
-              <SelectItem key={minute} value={minute} className="rounded-[14px] text-white hover:bg-white/20 focus:bg-white/20 cursor-pointer py-3 px-3 my-0.5 text-[14px] justify-center">
-                {minute}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={selectedMinute || ""} onValueChange={handleMinuteChange}>
+            <SelectTrigger className="flex-1 min-w-0 bg-white/10 hover:bg-white/15 border-0 text-white rounded-[14px] py-5 text-[14px] font-bold focus:ring-0 focus:ring-offset-0 [&_svg]:size-4 [&_svg]:text-white/60 h-12">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#2d8aaa] backdrop-blur-[20px] border-0 rounded-[20px] text-white shadow-lg ring-1 ring-white/20 p-2 [&_[data-slot=select-scroll-up-button]]:bg-[#2d8aaa] [&_[data-slot=select-scroll-down-button]]:bg-[#2d8aaa] [&_[data-slot=select-scroll-up-button]]:text-white [&_[data-slot=select-scroll-down-button]]:text-white">
+              {minutesForHour.map((minute) => (
+                <SelectItem key={minute} value={minute} className="rounded-[14px] text-white hover:bg-white/20 focus:bg-white/20 cursor-pointer py-3 px-3 my-0.5 text-[14px] justify-center">
+                  {minute}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );

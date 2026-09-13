@@ -55,7 +55,7 @@ export function useSendOtp() {
   });
 }
 
-export function useVerifyOtp() {
+export function useVerifyOtp(onAuthenticated?: () => void) {
   const setAuth = useAuthStore((s) => s.setAuth);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -74,6 +74,10 @@ export function useVerifyOtp() {
     },
     onSuccess: ({ token, user }) => {
       setAuth(token, user);
+      if (onAuthenticated) {
+        onAuthenticated();
+        return;
+      }
       const redirect = searchParams.get("redirect");
       router.push(redirect && redirect.startsWith("/") ? redirect : "/my-account");
     },
