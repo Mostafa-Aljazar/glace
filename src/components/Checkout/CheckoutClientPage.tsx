@@ -744,7 +744,7 @@ export default function CheckoutClientPage() {
                 <div className="hidden md:block flex-1" />
 
                 <Link
-                  href="/auth/login?redirect=/checkout"
+                  href="/auth?redirect=/checkout"
                   className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-glace-yellow hover:bg-yellow-300 border-0 rounded-[16px] px-6 py-3 text-[#1e6a7f] text-[15px] font-bold shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] transition-all"
                 >
                   <LogIn size={16} />

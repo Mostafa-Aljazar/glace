@@ -6,7 +6,7 @@ import AuthLayout from "@/components/Auth/AuthLayout";
 import PhoneOtpFlow from "@/components/Auth/PhoneOtpFlow";
 import { useAuthStore } from "@/store/authStore";
 
-export default function LoginForm() {
+export default function UnifiedAuthForm() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -20,7 +20,11 @@ export default function LoginForm() {
   if (isLoggedIn) return null;
 
   return (
-    <AuthLayout title="تسجيل الدخول / إنشاء حساب" subtitle="أدخل رقم جوالك لتسجيل الدخول أو إنشاء حساب جديد" activeHref="/auth/login">
+    <AuthLayout
+      title="تسجيل الدخول / إنشاء حساب"
+      subtitle="أدخل رقم جوالك لتسجيل الدخول أو إنشاء حساب جديد"
+      activeHref="/auth"
+    >
       <PhoneOtpFlow />
     </AuthLayout>
   );

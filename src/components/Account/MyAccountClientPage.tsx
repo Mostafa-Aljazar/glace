@@ -17,7 +17,7 @@ export default function MyAccountClientPage({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoggedIn) router.replace(`/auth/login?redirect=${pathname}`);
+    if (!isLoggedIn) router.replace(`/auth?redirect=${pathname}`);
   }, [isLoggedIn, router, pathname]);
 
   const { isLoading } = useMe();

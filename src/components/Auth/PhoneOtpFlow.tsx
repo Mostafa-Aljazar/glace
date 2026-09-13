@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -23,13 +22,10 @@ import {
   fieldIconClass,
 } from "@/components/Auth/authFieldStyles";
 import { useSendOtp, useVerifyOtp } from "@/hooks/auth/useOtpAuth";
-import type { PhoneFormValues, RegisterPhoneFormValues } from "@/types";
 
 const RESEND_SECONDS = 45;
 const SUPPORT_WHATSAPP_HREF = "https://wa.me/972592226522";
 
-/** Inline SVG instead of the 🇵🇸 emoji — flag emojis render as bare "PS"
- *  letters or a blank box on Windows/some browsers with no flag-glyph font. */
 function PalestineFlag() {
   return (
     <svg viewBox="0 0 30 20" className="w-4.5 h-3 rounded-xs shrink-0" aria-hidden>
@@ -41,50 +37,36 @@ function PalestineFlag() {
   );
 }
 
-const loginSchema = z.object({
+const phoneSchema = z.object({
   phone: z
     .string()
     .min(1, "رقم الجوال مطلوب")
     .regex(/^(\+972|009725|972|05)\d{8}$|^5\d{8}$/, "رقم الجوال غير صالح"),
 });
 
-const registerSchema = loginSchema.extend({
-  fullName: z.string().min(1, "الاسم الكامل مطلوب"),
+const otpSchema = z.object({
+  fullName: z.string().optional(),
 });
 
-type Props =
-  | {
-      mode: "login";
-      switchLinkHref: string;
-      switchLinkLabel: string;
-      switchLinkText: string;
-    }
-  | {
-      mode: "register";
-      switchLinkHref: string;
-      switchLinkLabel: string;
-      switchLinkText: string;
-    };
-
-export default function PhoneOtpFlow({
-  mode,
-  switchLinkHref,
-  switchLinkLabel,
-  switchLinkText,
-}: Props) {
+export default function PhoneOtpFlow() {
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [userExists, setUserExists] = useState(false);
   const [code, setCode] = useState("");
+  const [fullName, setFullName] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(0);
 
   const sendOtp = useSendOtp();
   const verifyOtp = useVerifyOtp();
 
-  const phoneForm = useForm<RegisterPhoneFormValues | PhoneFormValues>({
-    resolver: zodResolver(mode === "register" ? registerSchema : loginSchema),
-    defaultValues:
-      mode === "register" ? { fullName: "", phone: "" } : { phone: "" },
+  const phoneForm = useForm<z.infer<typeof phoneSchema>>({
+    resolver: zodResolver(phoneSchema),
+    defaultValues: { phone: "" },
+  });
+
+  const otpForm = useForm<z.infer<typeof otpSchema>>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: { fullName: "" },
   });
 
   useEffect(() => {
@@ -93,14 +75,15 @@ export default function PhoneOtpFlow({
     return () => clearInterval(timer);
   }, [step, secondsLeft]);
 
-  function requestOtp(values: PhoneFormValues | RegisterPhoneFormValues) {
+  function requestOtp(values: z.infer<typeof phoneSchema>) {
     setPhone(values.phone);
-    if ("fullName" in values) setFullName(values.fullName);
     sendOtp.mutate(
       { phone: values.phone },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
+          setUserExists(data.userExists);
           setCode("");
+          setFullName("");
           setStep("otp");
           setSecondsLeft(RESEND_SECONDS);
         },
@@ -111,6 +94,7 @@ export default function PhoneOtpFlow({
   function handlePhoneEdit() {
     setStep("phone");
     sendOtp.reset();
+    verifyOtp.reset();
   }
 
   function handleResend() {
@@ -126,7 +110,7 @@ export default function PhoneOtpFlow({
     verifyOtp.mutate({
       phone,
       code,
-      fullName: mode === "register" ? fullName : undefined,
+      fullName: !userExists ? fullName : undefined,
     });
   }
 
@@ -152,6 +136,23 @@ export default function PhoneOtpFlow({
           </p>
         </div>
 
+        {!userExists && (
+          <div>
+            <label className={labelClass}>الاسم الكامل</label>
+            <div className="relative mt-2">
+              <User size={18} className={fieldIconClass} />
+              <Input
+                type="text"
+                placeholder="إدخال اسمك الكامل هنا"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                disabled={verifyOtp.isPending}
+                className={`peer ${inputClass}`}
+              />
+            </div>
+          </div>
+        )}
+
         <OtpInput
           value={code}
           onChange={(newCode) => {
@@ -162,28 +163,19 @@ export default function PhoneOtpFlow({
         />
 
         {verifyOtp.isError && (
-          <div className="flex flex-col gap-3 bg-rose-500/15 px-3.5 py-2.5 border border-rose-400/40 rounded-[14px]">
+          <div className="bg-rose-500/15 px-3.5 py-2.5 border border-rose-400/40 rounded-[14px]">
             <p className="font-semibold text-[13.5px] text-rose-200 text-center">
               {verifyOtp.error instanceof Error
                 ? verifyOtp.error.message
                 : "حدث خطأ في التحقق"}
             </p>
-            {verifyOtp.error instanceof Error &&
-              verifyOtp.error.message.includes("الاسم مطلوب") && (
-                <Link
-                  href={switchLinkHref}
-                  className="text-center text-[12px] font-semibold text-glace-yellow hover:text-yellow-300 transition-colors"
-                >
-                  إنشاء حساب جديد ←
-                </Link>
-              )}
           </div>
         )}
 
         <div className="flex flex-col gap-3">
           <Button
             type="button"
-            disabled={code.length !== 6 || verifyOtp.isPending}
+            disabled={code.length !== 6 || verifyOtp.isPending || (!userExists && !fullName.trim())}
             onClick={handleVerify}
             className="bg-glace-yellow hover:bg-yellow-300 disabled:opacity-60 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] disabled:shadow-none py-3.5 border-0 rounded-[18px] w-full h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 disabled:translate-y-0 cursor-pointer disabled:pointer-events-none"
           >
@@ -201,6 +193,19 @@ export default function PhoneOtpFlow({
               : "إعادة إرسال الرمز"}
           </button>
         </div>
+
+        <a
+          href={SUPPORT_WHATSAPP_HREF}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-1.5 text-[13px] text-white/90 hover:text-white transition-colors"
+        >
+          تواجه مشكلة في التسجيل؟{" "}
+          <span className="inline-flex items-center gap-1 font-semibold text-glace-yellow">
+            <MessageCircle size={14} />
+            تواصل مع الدعم عبر واتساب
+          </span>
+        </a>
       </div>
     );
   }
@@ -212,30 +217,6 @@ export default function PhoneOtpFlow({
         noValidate
         className="flex flex-col gap-4"
       >
-        {mode === "register" && (
-          <FormField
-            control={phoneForm.control}
-            name="fullName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className={labelClass}>الاسم الكامل</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <User size={18} className={fieldIconClass} />
-                    <Input
-                      {...field}
-                      type="text"
-                      placeholder="إدخال اسمك الكامل هنا"
-                      className={`peer ${inputClass}`}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage className="font-semibold text-[13px] text-rose-300" />
-              </FormItem>
-            )}
-          />
-        )}
-
         <FormField
           control={phoneForm.control}
           name="phone"
@@ -252,6 +233,7 @@ export default function PhoneOtpFlow({
                     type="tel"
                     dir="ltr"
                     placeholder="05xxxxxxxx"
+                    disabled={sendOtp.isPending}
                     className={`peer ${inputClass} text-left`}
                   />
                 </div>
@@ -261,6 +243,15 @@ export default function PhoneOtpFlow({
           )}
         />
 
+        {sendOtp.isError && (
+          <div className="bg-rose-500/15 px-3.5 py-2.5 border border-rose-400/40 rounded-[14px]">
+            <p className="font-semibold text-[13.5px] text-rose-200 text-center">
+              {sendOtp.error instanceof Error
+                ? sendOtp.error.message
+                : "حدث خطأ في إرسال الرمز"}
+            </p>
+          </div>
+        )}
 
         <p className="flex justify-center items-center gap-1.5 text-[12.5px] text-white/90 text-center">
           <MessageCircle size={13} />
@@ -274,16 +265,6 @@ export default function PhoneOtpFlow({
         >
           {sendOtp.isPending ? "جاري الإرسال..." : "إرسال رمز التحقق"}
         </Button>
-
-        <span className="block text-[14px] text-white text-center">
-          {switchLinkText}{" "}
-          <Link
-            href={switchLinkHref}
-            className="font-semibold text-glace-yellow"
-          >
-            {switchLinkLabel}
-          </Link>
-        </span>
 
         <a
           href={SUPPORT_WHATSAPP_HREF}

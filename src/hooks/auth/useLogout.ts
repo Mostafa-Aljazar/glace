@@ -11,7 +11,7 @@ export function useLogout() {
     mutationFn: async () => {
       clearAuth();
       queryClient.clear();
-      router.push("/auth/login");
+      router.push("/auth");
     },
   });
 }

@@ -18,16 +18,11 @@ export default function RegisterForm() {
 
   return (
     <AuthLayout
-      title="إنشاء الحساب"
-      subtitle="يمكنك إنشاء حساب جديد بكل سهولة"
+      title="تسجيل الدخول / إنشاء حساب"
+      subtitle="أدخل رقم جوالك لتسجيل الدخول أو إنشاء حساب جديد"
       activeHref="/auth/register"
     >
-      <PhoneOtpFlow
-        mode="register"
-        switchLinkHref="/auth/login"
-        switchLinkLabel="تسجيل الدخول"
-        switchLinkText="أمتلك حساب بالفعل؟"
-      />
+      <PhoneOtpFlow />
     </AuthLayout>
   );
 }

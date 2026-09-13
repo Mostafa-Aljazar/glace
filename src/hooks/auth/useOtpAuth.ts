@@ -8,6 +8,10 @@ interface SendOtpPayload {
   phone: string;
 }
 
+interface SendOtpResponse {
+  userExists: boolean;
+}
+
 interface VerifyOtpPayload {
   phone: string;
   code: string;
@@ -21,8 +25,17 @@ interface VerifyOtpResponse {
 
 export function useSendOtp() {
   return useMutation({
-    mutationFn: (data: SendOtpPayload) =>
-      userApi.post("/auth/otp/send", data).then(() => undefined),
+    mutationFn: async (data: SendOtpPayload) => {
+      try {
+        const response = await userApi.post<SendOtpResponse>("/auth/otp/send", data);
+        return response.data;
+      } catch (error: any) {
+        if (error?.response?.data?.message) {
+          throw new Error(error.response.data.message);
+        }
+        throw error;
+      }
+    },
   });
 }
 
