@@ -838,7 +838,7 @@ export default function PaymentClientPage() {
               />
             </div>
             <DialogTitle className="text-white text-2xl">
-              تم تأكيد طلبك بنجاح!
+              طلبك قيد المراجعة
             </DialogTitle>
             <DialogDescription className="text-white/90 text-base">
               رقم طلبك هو:{" "}
