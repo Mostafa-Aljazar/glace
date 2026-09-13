@@ -15,7 +15,6 @@ import {
   ChevronLeft,
   Home,
   IceCreamCone,
-  Tag,
   CalendarDays,
   MapPin,
   Phone,
@@ -39,7 +38,6 @@ import type { NavItem } from "@/types";
 const navItems: NavItem[] = [
   { label: "الرئيسية", href: "/", icon: Home },
   { label: "المنيو", href: "/menu", icon: IceCreamCone },
-  { label: "العروض", href: "/offers", icon: Tag },
   {
     label: "موقعنا و ساعات العمل",
     shortLabel: "موقعنا",

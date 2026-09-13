@@ -165,9 +165,8 @@ glace-next/
 | 11 | `/favorites` | Favorites |
 | 12 | `/events` · `/events/[id]` | Events list & detail |
 | 13 | `/contact` | Contact form |
-| 14 | `/offers` | Offers |
-| 15 | `/auth/*` | Login · register · restore / new password |
-| 16 | `/swagger` | OpenAPI UI |
+| 14 | `/auth/*` | Login · register · restore / new password |
+| 15 | `/swagger` | OpenAPI UI |
 
 ---
 

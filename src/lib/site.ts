@@ -10,4 +10,4 @@ export const SITE_DESCRIPTION =
 
 // Routes that are actually live for the public and worth indexing.
 // Keep in sync with the LIVE list in src/middleware.ts.
-export const PUBLIC_ROUTES = ["/", "/menu", "/offers", "/events", "/contact"];
+export const PUBLIC_ROUTES = ["/", "/menu", "/events", "/contact"];

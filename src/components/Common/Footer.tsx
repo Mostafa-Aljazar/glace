@@ -5,7 +5,6 @@ import { logo, bgFooter } from "@/assets/images";
 const footerLinks = [
   { label: "الرئيسية", href: "/" },
   { label: "المنيو", href: "/menu" },
-  { label: "العروض", href: "/offers" },
   { label: "الفعاليات", href: "/events" },
   { label: "من نحن", href: "/#about" },
   { label: "تواصل معنا", href: "/contact" },
