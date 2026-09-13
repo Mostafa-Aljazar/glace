@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -33,7 +33,6 @@ import { useAddresses, useAddAddress, useDeleteAddress } from "@/hooks/addresses
 import { useCheckoutDraftStore } from "@/store/checkoutDraftStore";
 import ScheduleTimePicker from "@/components/Checkout/ScheduleTimePicker";
 import AddressForm from "@/components/Checkout/AddressForm";
-import { findDeliveryZone } from "@/lib/deliveryZones";
 import {
   formatTime12h,
   getScheduleDays,
@@ -93,6 +92,18 @@ export default function CheckoutClientPage() {
   const selectedAddress = addresses.find((a) => a.id === selectedId) ?? null;
   const setCheckoutDraft = useCheckoutDraftStore((s) => s.setDraft);
 
+  // Auto-select default address on load or when addresses change
+  useEffect(() => {
+    if (!selectedId && addresses.length > 0) {
+      const defaultAddress = addresses.find((a) => a.isDefault);
+      if (defaultAddress) {
+        selectAddress(defaultAddress.id);
+      } else if (addresses.length > 0) {
+        selectAddress(addresses[0].id);
+      }
+    }
+  }, [addresses, selectedId, selectAddress]);
+
   function handleToggleForSomeoneElse(value: boolean) {
     setOrderingForSomeoneElse(value);
   }
@@ -105,6 +116,8 @@ export default function CheckoutClientPage() {
       phone: string;
       city: string;
       zoneId: string;
+      area?: string;
+      fee?: number;
       street: string;
       landmark?: string;
     },
@@ -114,23 +127,21 @@ export default function CheckoutClientPage() {
       setDeliveryBlockedOpen(true);
       return;
     }
-    const zone = findDeliveryZone(address.zoneId);
     setCheckoutDraft({
       deliveryMethod: "delivery",
       address: {
         name: address.name,
         phone: address.phone,
         city: address.city,
-        // `DeliveryAddress.area` is a display string (order history, payment
-        // summary) — resolve the zone name here so those screens don't need
-        // to know about the zone catalog at all.
-        area: zone?.name ?? address.zoneId,
+        // Trust the value saved with the address as-is — the backend's own
+        // `area`/`fee` are the source of truth, not a local zone lookup.
+        area: address.area ?? "",
         street: address.street,
         landmark: address.landmark,
         note: captainNote.trim() || undefined,
       },
       addressId,
-      deliveryFee: zone?.fee ?? 0,
+      deliveryFee: address.fee ?? 0,
       pickupTime: pickupTimeISO,
     });
     router.push("/payment");
@@ -444,8 +455,7 @@ export default function CheckoutClientPage() {
                               </span>
                             </div>
                             <p className="text-white/60 text-[14px] leading-relaxed">
-                              {address.city} ·{" "}
-                              {findDeliveryZone(address.zoneId)?.name ?? address.zoneId} ·{" "}
+                              {address.city} · {address.area} ·{" "}
                               {address.street}
                               {address.landmark ? ` · ${address.landmark}` : ""}
                             </p>
@@ -459,9 +469,9 @@ export default function CheckoutClientPage() {
 
                     <div className="mb-6">
                       <label className={labelClass}>
-                        وقت التوصيل{" "}
+                        هل تريد جدولة وقت التوصيل؟{" "}
                         <span className="text-white/35 font-normal">
-                          (اختياري — اتركه فارغًا للتوصيل الفوري)
+                          (اختياري)
                         </span>
                       </label>
                       <ScheduleTimePicker
@@ -589,9 +599,9 @@ export default function CheckoutClientPage() {
                     <>
                       <div>
                         <label className={labelClass}>
-                          وقت التوصيل{" "}
+                          هل تريد جدولة وقت التوصيل؟{" "}
                           <span className="text-white/35 font-normal">
-                            (اختياري — اتركه فارغًا للتوصيل الفوري)
+                            (اختياري)
                           </span>
                         </label>
                         <ScheduleTimePicker
@@ -645,9 +655,9 @@ export default function CheckoutClientPage() {
 
                   <div className="mb-6">
                     <label className={`${labelClass} mb-2.5`}>
-                      وقت الاستلام{" "}
+                      هل تريد جدولة وقت الاستلام؟{" "}
                       <span className="text-white/35 font-normal">
-                        (اختياري — اتركه فارغًا للاستلام الفوري)
+                        (اختياري)
                       </span>
                     </label>
                     <ScheduleTimePicker

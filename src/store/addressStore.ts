@@ -14,6 +14,12 @@ export interface SavedAddress {
   /** Named delivery zone id (see `src/lib/deliveryZones.ts`) — replaces the
    *  old free-text area field so pricing/description can be looked up. */
   zoneId: string;
+  /** Zone name for display purposes */
+  area?: string;
+  /** Boundary streets/landmarks describing the zone's extent */
+  zoneDescription?: string;
+  /** Delivery fee for this zone */
+  fee?: number;
   street: string;
   landmark?: string;
   /** GPS pin dropped via "استخدم موقعي الحالي" or "اختر من الخريطة".

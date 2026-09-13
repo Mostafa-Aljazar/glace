@@ -4,7 +4,6 @@ import { useState } from "react";
 import { MapPin, MapPinOff, Plus, Pencil, Trash2 } from "lucide-react";
 import type { SavedAddress } from "@/store/addressStore";
 import { useAuthStore } from "@/store/authStore";
-import { findDeliveryZone } from "@/lib/deliveryZones";
 import {
   useAddresses,
   useAddAddress,
@@ -59,7 +58,9 @@ export default function AddressesPanel() {
       ) : (
         <div className="flex flex-col gap-3">
           {addresses.map((address) => {
-            const zone = findDeliveryZone(address.zoneId);
+            // Trust the backend's own `area` value as-is — it's the source
+            // of truth for what was actually saved.
+            const areaName = address.area;
             return (
               <div
                 key={address.id}
@@ -89,7 +90,7 @@ export default function AddressesPanel() {
                       )}
                     </div>
                     <p className="mt-1.5 text-white/60 text-[14px] leading-relaxed">
-                      {address.city} · {zone?.name ?? address.zoneId} · {address.street}
+                      {address.city} · {areaName} · {address.street}
                       {address.landmark ? ` · ${address.landmark}` : ""}
                     </p>
                     <p className="text-white/45 text-[13px]">

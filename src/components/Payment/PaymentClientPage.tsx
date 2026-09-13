@@ -94,6 +94,7 @@ function sanitizeAmount(value: string): string {
 export default function PaymentClientPage() {
   const hasDraft = useCheckoutDraftStore((s) => s.hasDraft);
   const deliveryMethod = useCheckoutDraftStore((s) => s.deliveryMethod);
+  const address = useCheckoutDraftStore((s) => s.address);
   const addressId = useCheckoutDraftStore((s) => s.addressId);
   const deliveryFee = useCheckoutDraftStore((s) => s.deliveryFee);
   const pickupTime = useCheckoutDraftStore((s) => s.pickupTime);
@@ -293,6 +294,23 @@ export default function PaymentClientPage() {
             <div className="flex-1 bg-white/25 h-px" />
           </div>
 
+          {deliveryMethod === "delivery" && address && (
+            <div className="bg-[#dff7ff]/10 mb-4 p-3 sm:p-4 border border-white/25 rounded-[22px]">
+              <p className="text-[14px] text-white/90 mb-2 font-medium">
+                عنوان التوصيل:
+              </p>
+              <p className="text-[13px] text-white/75 leading-relaxed">
+                {address.street}{address.landmark ? ` · ${address.landmark}` : ""}
+              </p>
+              <p className="text-[13px] text-white/75 mt-1">
+                {address.city} · {address.area || "المنطقة"}
+              </p>
+              <p className="text-[13px] text-white/60 mt-1">
+                {address.name} · {address.phone}
+              </p>
+            </div>
+          )}
+
           <div className="bg-[#dff7ff]/10 mb-4 p-3 sm:p-4 border border-white/25 rounded-[22px]">
             <div className="flex justify-between items-center gap-3">
               <span className="text-[14px] text-white sm:text-[15px] shrink-0">
@@ -351,7 +369,9 @@ export default function PaymentClientPage() {
 
             {deliveryFee > 0 && (
               <div className="flex justify-between items-center pb-3 border-white/20 border-b">
-                <span className="text-white">رسوم التوصيل</span>
+                <span className="text-white">
+                  {deliveryMethod === "delivery" ? "رسوم التوصيل" : "رسوم الاستلام"}
+                </span>
                 <span>{deliveryFee.toFixed(2)} ₪</span>
               </div>
             )}

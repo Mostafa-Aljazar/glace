@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ZonePickerSheet from "@/components/Checkout/ZonePickerSheet";
 import MapPickerDialog from "@/components/Checkout/MapPickerDialog";
-import { findDeliveryZone, type DeliveryZone } from "@/lib/deliveryZones";
+import type { DeliveryZone } from "@/lib/deliveryZones";
 import type { AddressType, SavedAddress } from "@/store/addressStore";
 
 /** Inline SVG instead of the 🇵🇸 emoji — flag emojis render as bare "PS"
@@ -67,8 +68,8 @@ const schema = z.object({
   name: z.string().min(1, "الاسم مطلوب"),
   phone: z
     .string()
-    .min(1, "رقم الهاتف مطلوب")
-    .regex(/^05\d{8}$/, "رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام"),
+    .min(1, "رقم الجوال مطلوب")
+    .regex(/^05\d{8}$/, "رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام"),
   zoneId: z.string().min(1, "المنطقة مطلوبة"),
   street: z.string().min(1, "الشارع مطلوب"),
   landmark: z.string().optional(),
@@ -129,7 +130,15 @@ export default function AddressForm({
   const [zonePickerOpen, setZonePickerOpen] = useState(false);
   const [mapPickerOpen, setMapPickerOpen] = useState(false);
   const [selectedZone, setSelectedZone] = useState<DeliveryZone | undefined>(
-    () => findDeliveryZone(initialValue?.zoneId),
+    () =>
+      initialValue?.zoneId && initialValue.area
+        ? {
+            id: initialValue.zoneId,
+            name: initialValue.area,
+            description: initialValue.zoneDescription,
+            fee: initialValue.fee ?? 0,
+          }
+        : undefined,
   );
 
   const form = useForm<z.infer<typeof schema>>({
@@ -153,6 +162,7 @@ export default function AddressForm({
     if (defaultPhone !== undefined) form.setValue("phone", defaultPhone);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultName, defaultPhone]);
+
 
   function selectType(next: AddressType) {
     setType(next);
@@ -188,6 +198,9 @@ export default function AddressForm({
       phone: data.phone,
       city: CITY,
       zoneId: data.zoneId,
+      area: selectedZone?.name,
+      zoneDescription: selectedZone?.description,
+      fee: selectedZone?.fee,
       street: data.street,
       landmark: data.landmark,
       location,
@@ -267,7 +280,7 @@ export default function AddressForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={labelClass}>الاسم الكامل</FormLabel>
+                  <FormLabel className={labelClass}>الاسم الكامل <span className="text-rose-400">*</span></FormLabel>
                   <FormControl>
                     <div className="relative">
                       <User size={18} className={fieldIconClass} />
@@ -287,7 +300,7 @@ export default function AddressForm({
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={labelClass}>رقم الهاتف</FormLabel>
+                  <FormLabel className={labelClass}>رقم الجوال <span className="text-rose-400">*</span></FormLabel>
                   <FormControl>
                     <div
                       className={`flex items-center gap-2.5 ${phoneInputClass}`}
@@ -342,7 +355,7 @@ export default function AddressForm({
               name="zoneId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={labelClass}>المنطقة / الحي</FormLabel>
+                  <FormLabel className={labelClass}>المنطقة / الحي <span className="text-rose-400">*</span></FormLabel>
                   <FormControl>
                     <button
                       type="button"
@@ -378,8 +391,10 @@ export default function AddressForm({
                     onOpenChange={setZonePickerOpen}
                     selectedZoneId={field.value}
                     onSelect={(zone) => {
-                      field.onChange(zone.id);
-                      setSelectedZone(zone);
+                      flushSync(() => {
+                        field.onChange(zone.id);
+                        setSelectedZone(zone);
+                      });
                     }}
                   />
                 </FormItem>
@@ -391,7 +406,7 @@ export default function AddressForm({
               name="street"
               render={({ field }) => (
                 <FormItem className="sm:col-span-2">
-                  <FormLabel className={labelClass}>الشارع والعنوان</FormLabel>
+                  <FormLabel className={labelClass}>الشارع والعنوان <span className="text-rose-400">*</span></FormLabel>
                   <FormControl>
                     <div className="relative">
                       <MapPin size={18} className={fieldIconClass} />
