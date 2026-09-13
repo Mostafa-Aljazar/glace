@@ -23,7 +23,7 @@ import {
 } from "@/components/Auth/authFieldStyles";
 import { useSendOtp, useVerifyOtp } from "@/hooks/auth/useOtpAuth";
 
-const RESEND_SECONDS = 45;
+const RESEND_SECONDS = 60;
 const SUPPORT_WHATSAPP_HREF = "https://wa.me/972592226522";
 
 function PalestineFlag() {
