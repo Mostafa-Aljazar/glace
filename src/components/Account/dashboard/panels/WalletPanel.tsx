@@ -473,6 +473,28 @@ export default function WalletPanel() {
                       </button>
                     </div>
                   </div>
+                  {account.accountNumber && (
+                    <div className="flex justify-between items-center text-[14px]">
+                      <span className="text-white/70">رقم الحساب</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold" dir="ltr">
+                          {account.accountNumber}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(account.accountNumber!)}
+                          aria-label="نسخ"
+                          className="flex justify-center items-center hover:bg-white/10 rounded-full size-7 text-white/70 hover:text-white transition-colors cursor-pointer"
+                        >
+                          {copiedField ? (
+                            <Check size={14} className="text-green-300" />
+                          ) : (
+                            <Copy size={14} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {account.iban && (
                     <div className="flex justify-between items-center text-[14px]">
                       <span className="text-white/70">رقم الآيبان (IBAN)</span>

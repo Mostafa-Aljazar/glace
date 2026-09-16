@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { MapPin, Phone, MessageCircle } from "lucide-react";
 import { imgTimesWorkSec, imgbgBS, imgpp, imgpp2 } from "@/assets/images";
+import { resolveMapEmbedSrc } from "@/lib/media";
 import type { IHomeBranchesData } from "@/types/home.types";
 
 /** Branches without a backend `available` flag yet — matched by label until
@@ -207,7 +208,7 @@ export default function TimesWorkSection({
 
           <div className="z-[1] relative mx-auto lg:mx-0 lg:ml-50 w-full lg:w-105 md:max-w-112.5 lg:max-w-none h-72 sm:h-82.5 md:h-100 lg:h-96 shrink-0">
             <iframe
-              src={branch.mapSrc}
+              src={resolveMapEmbedSrc(branch.mapSrc)}
               width="600"
               height="450"
               style={{

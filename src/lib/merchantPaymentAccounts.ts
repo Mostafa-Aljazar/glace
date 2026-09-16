@@ -22,6 +22,10 @@ export interface MerchantPaymentAccount {
   /** Optional — the IBAN alongside the account/phone number, for banks
    *  that only accept IBAN transfers. */
   iban?: string;
+  /** Optional — the bank account number itself (distinct from `iban` and
+   *  from `accountValue`, which is usually the phone number). Only set for
+   *  bank-transfer methods once the merchant has entered it on the backend. */
+  accountNumber?: string;
 }
 
 /** An account with a real transfer target — excludes `visa`'s
@@ -98,6 +102,7 @@ interface PaymentAccountDto {
   primaryValue?: string;
   secondaryLabel?: string;
   secondaryValue?: string;
+  accountNumber?: string;
 }
 
 function normalizePaymentAccount(dto: PaymentAccountDto): MerchantPaymentAccount {
@@ -110,6 +115,7 @@ function normalizePaymentAccount(dto: PaymentAccountDto): MerchantPaymentAccount
     accountLabel: dto.primaryLabel,
     accountValue: dto.primaryValue,
     iban: dto.secondaryValue,
+    accountNumber: dto.accountNumber,
   };
 }
 
