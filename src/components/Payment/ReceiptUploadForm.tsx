@@ -22,6 +22,10 @@ interface Props {
   /** Extra condition (e.g. a required amount field owned by the parent)
    *  that must also hold before the submit button enables. */
   submitDisabled?: boolean;
+  /** True while the parent's submit mutation is in flight — disables the
+   *  button and swaps its label so a slow request can't be double-submitted
+   *  and doesn't look stuck/frozen while it settles. */
+  submitting?: boolean;
 }
 
 /** Shared receipt-upload UI — used both on the initial payment confirm step
@@ -36,6 +40,7 @@ export default function ReceiptUploadForm({
   onSubmit,
   submitLabel,
   submitDisabled,
+  submitting,
 }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | undefined>(initialImage);
@@ -62,7 +67,8 @@ export default function ReceiptUploadForm({
   const canSubmit =
     (troubleUploading ? note.trim().length > 0 : !!file) &&
     senderAccountName.trim().length > 0 &&
-    !submitDisabled;
+    !submitDisabled &&
+    !submitting;
 
   function handleSubmit() {
     if (!canSubmit) return;
@@ -152,7 +158,7 @@ export default function ReceiptUploadForm({
         disabled={!canSubmit}
         className="bg-[#117291] hover:bg-[#0e6080] disabled:opacity-50 py-3 rounded-[20px] w-full font-bold text-[16px] text-white transition disabled:cursor-not-allowed cursor-pointer"
       >
-        {submitLabel}
+        {submitting ? "جاري الإرسال..." : submitLabel}
       </button>
     </div>
   );

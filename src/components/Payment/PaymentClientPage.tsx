@@ -700,6 +700,7 @@ export default function PaymentClientPage() {
                     <ReceiptUploadForm
                       onSubmit={handleReceiptSubmit}
                       submitLabel="تأكيد الدفع"
+                      submitting={placeOrderMutation.isPending}
                     />
                     <button
                       type="button"

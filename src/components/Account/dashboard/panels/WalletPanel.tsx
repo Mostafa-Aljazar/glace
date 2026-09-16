@@ -525,6 +525,7 @@ export default function WalletPanel() {
                   onSubmit={handleReceiptSubmit}
                   submitLabel="تأكيد الشحن"
                   submitDisabled={!amountValid}
+                  submitting={submitTopUpRequestMutation.isPending}
                 />
                 {receiptError && (
                   <p className="mt-3 text-[13px] text-red-300 text-center">

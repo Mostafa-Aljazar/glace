@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, MapPinOff, Plus, Pencil, Trash2 } from "lucide-react";
+import { MapPin, Plus, Pencil, Trash2 } from "lucide-react";
 import type { SavedAddress } from "@/store/addressStore";
 import { useAuthStore } from "@/store/authStore";
 import {
@@ -80,12 +80,6 @@ export default function AddressesPanel() {
                       {address.isDefault && (
                         <span className="bg-glace-yellow/20 text-glace-yellow text-[11px] font-bold px-2 py-0.5 rounded-full">
                           الافتراضي
-                        </span>
-                      )}
-                      {!address.location && (
-                        <span className="flex items-center gap-1 text-white/40 text-[11px]">
-                          <MapPinOff size={12} />
-                          بدون موقع GPS
                         </span>
                       )}
                     </div>

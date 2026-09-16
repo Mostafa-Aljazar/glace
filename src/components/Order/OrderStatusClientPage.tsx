@@ -698,6 +698,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
             initialSenderAccountName={order.senderAccountName}
             onSubmit={handleReuploadSubmit}
             submitLabel="حفظ"
+            submitting={updateReceiptMutation.isPending}
           />
           {receiptError && (
             <p className="text-[13px] text-red-300 text-center">{receiptError}</p>

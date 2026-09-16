@@ -13,8 +13,6 @@ import {
   User,
   Building2,
   Landmark,
-  Navigation,
-  Map as MapIcon,
 } from "lucide-react";
 import {
   Form,
@@ -27,7 +25,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ZonePickerSheet from "@/components/Checkout/ZonePickerSheet";
-import MapPickerDialog from "@/components/Checkout/MapPickerDialog";
 import type { DeliveryZone } from "@/lib/deliveryZones";
 import type { AddressType, SavedAddress } from "@/store/addressStore";
 
@@ -142,7 +139,6 @@ export default function AddressForm({
   const [type, setType] = useState<AddressType>(initialValue?.type ?? "home");
   const [customLabel, setCustomLabel] = useState(type === "other");
   const [zonePickerOpen, setZonePickerOpen] = useState(false);
-  const [mapPickerOpen, setMapPickerOpen] = useState(false);
   const [selectedZone, setSelectedZone] = useState<DeliveryZone | undefined>(
     () =>
       initialValue?.zoneId && initialValue.area
@@ -189,21 +185,6 @@ export default function AddressForm({
     }
   }
 
-  const [location, setLocation] = useState(initialValue?.location);
-
-  function handleGeolocate() {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-      },
-      () => {
-        /* Permission denied or unavailable — silently no-op; the field
-           simply stays empty and the address remains saveable without it. */
-      },
-    );
-  }
-
   function handleSubmit(data: z.infer<typeof schema>) {
     onSubmit({
       type,
@@ -217,7 +198,6 @@ export default function AddressForm({
       fee: selectedZone?.fee,
       street: data.street,
       landmark: data.landmark,
-      location,
     });
   }
 
@@ -463,46 +443,6 @@ export default function AddressForm({
               )}
             />
           </div>
-        </div>
-
-        {/* GPS */}
-        <div>
-          <h3 className={`mb-1 ${sectionLabelClass}`}>الموقع على الخريطة</h3>
-          <p className="mb-3 text-[12.5px] text-white/45">
-            إضافة موقعك يتيح للكابتن تقدير وقت وصوله إليك بدقة.
-          </p>
-          <div className="flex flex-col gap-2.5">
-            <div className="flex gap-2.5">
-              <button
-                type="button"
-                onClick={handleGeolocate}
-                className="flex flex-1 justify-center items-center gap-2 bg-white/6 hover:bg-white/10 px-4 py-3 border border-white/20 rounded-[16px] font-bold text-[14px] text-glace-yellow transition-colors cursor-pointer"
-              >
-                <Navigation size={16} />
-                استخدم موقعي الحالي
-              </button>
-              <button
-                type="button"
-                onClick={() => setMapPickerOpen(true)}
-                className="flex flex-1 justify-center items-center gap-2 bg-white/6 hover:bg-white/10 px-4 py-3 border border-white/20 rounded-[16px] font-bold text-[14px] text-glace-yellow transition-colors cursor-pointer"
-              >
-                <MapIcon size={16} />
-                اختر من الخريطة
-              </button>
-            </div>
-            {location && (
-              <p className="tabular-nums text-[12px] text-white/45 text-center">
-                تم تحديد الموقع: {location.lat.toFixed(5)},{" "}
-                {location.lng.toFixed(5)}
-              </p>
-            )}
-          </div>
-          <MapPickerDialog
-            open={mapPickerOpen}
-            onOpenChange={setMapPickerOpen}
-            initialPosition={location}
-            onConfirm={setLocation}
-          />
         </div>
 
         {footer}

@@ -23,9 +23,6 @@ export interface SavedAddress {
   fee?: number;
   street: string;
   landmark?: string;
-  /** GPS pin dropped via "استخدم موقعي الحالي" or "اختر من الخريطة".
-   *  Absent means the address has no map location yet. */
-  location?: { lat: number; lng: number };
   isDefault: boolean;
 }
 
