@@ -32,6 +32,9 @@ export interface TopUpRequest {
   createdAt: string;
   receiptImage?: string;
   receiptNote?: string;
+  /** Required for receipt-based methods — the name on the account the
+   *  customer transferred from. */
+  senderAccountName?: string;
   /** Only set for "jawwal" (auto) — the number the customer paid from. */
   phone?: string;
 }

@@ -9,7 +9,7 @@ export interface WalletResponse {
 
 /** Temporary fake balance shown while `/wallet` isn't live yet on the
  *  backend — remove once the real endpoint is up. */
-const FAKE_BALANCE = 400;
+const FAKE_BALANCE = 0;
 
 export async function fetchWallet(): Promise<WalletResponse> {
   try {

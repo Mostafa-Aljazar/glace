@@ -10,16 +10,18 @@ interface UpdateReceiptInput {
   id: string;
   receiptImage?: File;
   receiptNote?: string;
+  senderAccountName?: string;
 }
 
 export function useUpdateReceipt() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, receiptImage, receiptNote }: UpdateReceiptInput) => {
+    mutationFn: ({ id, receiptImage, receiptNote, senderAccountName }: UpdateReceiptInput) => {
       const formData = new FormData();
       if (receiptImage) formData.append("receiptImage", receiptImage);
       if (receiptNote) formData.append("receiptNote", receiptNote);
+      if (senderAccountName) formData.append("senderAccountName", senderAccountName);
 
       return userApi
         .post<Order>(`/orders/${id}/receipt`, formData, {

@@ -4,13 +4,20 @@ import { useEffect, useState } from "react";
 import { Upload, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 interface Props {
   /** Existing receipt image URL to preview, e.g. when re-uploading on an
    *  order that already has one attached. */
   initialImage?: string;
   initialNote?: string;
-  onSubmit: (receiptImage: File | undefined, note: string | undefined) => void;
+  /** Existing sender account name, for re-upload/edit flows. */
+  initialSenderAccountName?: string;
+  onSubmit: (
+    receiptImage: File | undefined,
+    note: string | undefined,
+    senderAccountName: string,
+  ) => void;
   submitLabel: string;
   /** Extra condition (e.g. a required amount field owned by the parent)
    *  that must also hold before the submit button enables. */
@@ -25,6 +32,7 @@ interface Props {
 export default function ReceiptUploadForm({
   initialImage,
   initialNote,
+  initialSenderAccountName,
   onSubmit,
   submitLabel,
   submitDisabled,
@@ -33,6 +41,9 @@ export default function ReceiptUploadForm({
   const [preview, setPreview] = useState<string | undefined>(initialImage);
   const [troubleUploading, setTroubleUploading] = useState(false);
   const [note, setNote] = useState(initialNote ?? "");
+  const [senderAccountName, setSenderAccountName] = useState(
+    initialSenderAccountName ?? "",
+  );
 
   useEffect(() => {
     return () => {
@@ -49,15 +60,34 @@ export default function ReceiptUploadForm({
   }
 
   const canSubmit =
-    (troubleUploading ? note.trim().length > 0 : !!file) && !submitDisabled;
+    (troubleUploading ? note.trim().length > 0 : !!file) &&
+    senderAccountName.trim().length > 0 &&
+    !submitDisabled;
 
   function handleSubmit() {
     if (!canSubmit) return;
-    onSubmit(troubleUploading ? undefined : file ?? undefined, troubleUploading ? note.trim() : undefined);
+    onSubmit(
+      troubleUploading ? undefined : file ?? undefined,
+      troubleUploading ? note.trim() : undefined,
+      senderAccountName.trim(),
+    );
   }
 
   return (
     <div className="flex flex-col gap-4">
+      <div>
+        <label className="block mb-2 text-[14px] text-white/80">
+          اسم صاحب الحساب اللي حوّلت منه{" "}
+          <span className="text-red-300">*</span>
+        </label>
+        <Input
+          value={senderAccountName}
+          onChange={(e) => setSenderAccountName(e.target.value)}
+          placeholder="مثال: أحمد علي"
+          className="bg-white/10 border-white/25 focus-visible:border-glace-yellow/50 h-11 px-3.5 text-white text-[15px] placeholder:text-white/40 rounded-[14px] focus-visible:ring-glace-yellow/20"
+        />
+      </div>
+
       {!troubleUploading &&
         (preview ? (
           <div className="relative rounded-[20px] border border-white/25 overflow-hidden">

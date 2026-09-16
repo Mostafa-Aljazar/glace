@@ -88,18 +88,6 @@ const CASH_METHOD: typeof WALLET_METHOD = {
  *  when the order is going out for delivery. */
 const IN_STORE_ONLY_METHODS: PaymentMethod[] = ["visa", "cash"];
 
-/** Keeps digits and a single decimal point, so a text input can hold a
- *  monetary amount without the native number spinner/locale quirks. */
-function sanitizeAmount(value: string): string {
-  const cleaned = value.replace(/[^\d.]/g, "");
-  const firstDot = cleaned.indexOf(".");
-  if (firstDot === -1) return cleaned;
-  return (
-    cleaned.slice(0, firstDot + 1) +
-    cleaned.slice(firstDot + 1).replace(/\./g, "")
-  );
-}
-
 export default function PaymentClientPage() {
   const hasDraft = useCheckoutDraftStore((s) => s.hasDraft);
   const deliveryMethod = useCheckoutDraftStore((s) => s.deliveryMethod);
@@ -129,7 +117,6 @@ export default function PaymentClientPage() {
     "detail"
   );
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [cashPaid, setCashPaid] = useState("");
   const [placedOrderId, setPlacedOrderId] = useState("");
   /** True once the wallet deduction for this order has succeeded — guards
    *  against re-deducting if the follow-up `POST /orders` then fails, since
@@ -165,6 +152,7 @@ export default function PaymentClientPage() {
   }, [method]);
 
   const items = useCartStore((s) => s.items);
+  const orderNote = useCartStore((s) => s.orderNote);
   const subtotal = useCartStore((s) => s.subtotal);
   const total = useCartStore((s) => s.total);
   const discount = useCartStore((s) => s.discount);
@@ -179,31 +167,32 @@ export default function PaymentClientPage() {
   const [orderError, setOrderError] = useState<string | null>(null);
 
   const [couponInput, setCouponInput] = useState(coupon);
-  const [lastCheckedCoupon, setLastCheckedCoupon] = useState<string | null>(null);
+  const [couponInvalid, setCouponInvalid] = useState(false);
   const couponApplied = discount > 0;
-  const couponInvalid =
-    !couponApplied &&
-    lastCheckedCoupon !== null &&
-    couponInput.trim() === lastCheckedCoupon;
 
   const orderTotal = total() + deliveryFee;
-  const cashChange = cashPaid
-    ? Math.max(0, parseFloat(cashPaid) - orderTotal)
-    : 0;
 
   function handleApplyCoupon() {
     const code = couponInput.trim();
     if (!code) return;
+    setCouponInvalid(false);
     applyCouponMutation.mutate(
       { code, subtotal: subtotal() },
-      { onSettled: () => setLastCheckedCoupon(code) },
+      {
+        onSuccess: (result) => {
+          if (!result.valid) {
+            setCouponInput("");
+            setCouponInvalid(true);
+          }
+        },
+      },
     );
   }
 
   function handleRemoveCoupon() {
     useCartStore.getState().setCoupon("", 0);
     setCouponInput("");
-    setLastCheckedCoupon(null);
+    setCouponInvalid(false);
   }
 
   function handleCopy(field: string, value: string) {
@@ -228,14 +217,13 @@ export default function PaymentClientPage() {
     );
   }
 
-  const cashAmountInvalid =
-    method === "cash" && (cashPaid === "" || parseFloat(cashPaid) < orderTotal);
   const jawwalAmountInvalid =
     method === "jawwal" && (!jawwalCodeSent || !jawwalCode.trim());
 
   function placeConfirmedOrder(
     receiptImage?: File,
-    receiptNote?: string
+    receiptNote?: string,
+    senderAccountName?: string
   ) {
     setOrderError(null);
     placeOrderMutation.mutate(
@@ -247,8 +235,10 @@ export default function PaymentClientPage() {
         addressId,
         pickupTime,
         captainNote: address?.note,
+        orderNote: orderNote || undefined,
         receiptImage,
         receiptNote,
+        senderAccountName,
         jawwalPhone: method === "jawwal" ? jawwalPhone.trim() : undefined,
         jawwalCode: method === "jawwal" ? jawwalCode.trim() : undefined,
       },
@@ -278,15 +268,16 @@ export default function PaymentClientPage() {
 
   function handleReceiptSubmit(
     receiptImage: File | undefined,
-    receiptNote: string | undefined
+    receiptNote: string | undefined,
+    senderAccountName: string
   ) {
-    placeConfirmedOrder(receiptImage, receiptNote);
+    placeConfirmedOrder(receiptImage, receiptNote, senderAccountName);
   }
 
   function handleConfirm() {
     if (walletDeducted) return;
     if (method === "wallet" && walletBalance < orderTotal) return;
-    if (cashAmountInvalid || jawwalAmountInvalid) return;
+    if (jawwalAmountInvalid) return;
 
     setOrderError(null);
 
@@ -309,6 +300,13 @@ export default function PaymentClientPage() {
 
   const inputClass =
     "bg-white/10 border-white/25 focus-visible:border-glace-yellow/50 h-11 px-3.5 text-white text-[15px] placeholder:text-white/40 rounded-[14px] focus-visible:ring-glace-yellow/20";
+
+  function inStoreOnlyLabel(id: PaymentMethod) {
+    return (
+      paymentAccounts?.find((a) => a.method === id)?.holderName ??
+      "الدفع داخل المحل"
+    );
+  }
 
   function renderListMethod(m: typeof WALLET_METHOD) {
     const Icon = m.icon;
@@ -338,7 +336,7 @@ export default function PaymentClientPage() {
           )}
           {IN_STORE_ONLY_METHODS.includes(m.id) && (
             <span className="block mt-0.5 text-[11px] text-white/70">
-              الدفع داخل المحل
+              {inStoreOnlyLabel(m.id)}
             </span>
           )}
           {m.id === "wallet" && (
@@ -383,7 +381,7 @@ export default function PaymentClientPage() {
           <span className="block font-bold text-[14px] truncate">{m.label}</span>
           {IN_STORE_ONLY_METHODS.includes(m.id) && (
             <span className="block mt-0.5 text-[11px] text-white/70">
-              الدفع داخل المحل
+              {inStoreOnlyLabel(m.id)}
             </span>
           )}
         </div>
@@ -405,10 +403,10 @@ export default function PaymentClientPage() {
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden text-white">
       <EventsBackground />
 
-      <div className="z-10 relative mx-auto px-3 sm:px-6 lg:px-8 pt-18 sm:pt-20 lg:pt-28 pb-10 sm:pb-12 max-w-7xl">
+      <div className="z-10 relative mx-auto px-3 sm:px-6 lg:px-8 pt-18 sm:pt-20 lg:pt-28 pb-32 sm:pb-16 lg:pb-12 max-w-7xl">
         <div className="bg-white/10 shadow-[0_18px_50px_rgba(10,65,82,0.18)] backdrop-blur-md px-3.5 sm:px-6 py-3.5 sm:py-6 border border-white/30 rounded-[24px] sm:rounded-[32px]">
           <div className="flex justify-between items-center gap-4 mb-3 sm:mb-4 text-white/95">
-            <span className="font-medium text-[16px] sm:text-[22px]">ملخص الطلب</span>
+            <span className="font-medium text-[16px] sm:text-[22px] text-glace-yellow">ملخص الطلب</span>
             <div className="flex-1 bg-white/25 h-px" />
           </div>
 
@@ -426,6 +424,11 @@ export default function PaymentClientPage() {
               <p className="text-[12.5px] sm:text-[13px] text-white/60 mt-1">
                 {address.name} · {address.phone}
               </p>
+              {address.note && (
+                <p className="text-[12.5px] sm:text-[13px] text-glace-yellow mt-2">
+                  ملاحظة للكابتن: {address.note}
+                </p>
+              )}
             </div>
           )}
 
@@ -449,7 +452,10 @@ export default function PaymentClientPage() {
               <input
                 type="text"
                 value={couponInput}
-                onChange={(e) => setCouponInput(e.target.value)}
+                onChange={(e) => {
+                  setCouponInput(e.target.value);
+                  setCouponInvalid(false);
+                }}
                 onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
                 placeholder="ادخل الكود"
                 disabled={couponApplied}
@@ -545,8 +551,8 @@ export default function PaymentClientPage() {
             <div className="gap-2 sm:gap-3 grid grid-cols-1 sm:grid-cols-2 mb-5 sm:mb-6">
               {renderListMethod(WALLET_METHOD)}
               {CARD_METHODS_BEFORE_CASH.map(renderCardMethod)}
-              {renderListMethod(CASH_METHOD)}
-              {CARD_METHODS_AFTER_CASH.map(renderCardMethod)}
+              {inStoreOnlyAvailable && renderListMethod(CASH_METHOD)}
+              {inStoreOnlyAvailable && CARD_METHODS_AFTER_CASH.map(renderCardMethod)}
             </div>
 
             <div className="bg-white/10 mb-5 sm:mb-6 p-3.5 sm:p-5 border border-white/25 rounded-[20px] sm:rounded-[26px] text-start">
@@ -568,9 +574,23 @@ export default function PaymentClientPage() {
                   </span>
                 </span>
                 <div className="text-end">
-                  <div className="font-bold text-[21px] sm:text-[28px] text-glace-yellow leading-none">
-                    {orderTotal.toFixed(2)} ₪
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy("total", orderTotal.toFixed(2))}
+                    aria-label="نسخ الإجمالي"
+                    title="نسخ الإجمالي"
+                    className="group inline-flex items-center gap-1.5 hover:bg-white/6 px-2 py-1 rounded-[12px] font-bold text-[21px] sm:text-[28px] text-glace-yellow leading-none transition"
+                  >
+                    {copiedField === "total" ? (
+                      <Check size={14} className="sm:size-4 text-green-300 shrink-0" />
+                    ) : (
+                      <Copy
+                        size={14}
+                        className="sm:size-4 text-white/55 group-hover:text-white/80 transition"
+                      />
+                    )}
+                    <span>{orderTotal.toFixed(2)} ₪</span>
+                  </button>
                   {discount > 0 && (
                     <div className="mt-1 text-[12.5px] sm:text-[14px] text-white/45 line-through">
                       {(subtotal() + deliveryFee).toFixed(2)} ₪
@@ -800,36 +820,16 @@ export default function PaymentClientPage() {
 
           {method === "visa" && (
             <p className="bg-white/10 mb-5 sm:mb-6 px-3.5 sm:px-4 py-2.5 sm:py-3 border border-white/25 rounded-[16px] sm:rounded-[20px] text-[13px] sm:text-[14px] text-white/80">
-              الدفع بالفيزا يتم على ماكينة الدفع داخل المحل
+              {paymentAccounts?.find((a) => a.method === "visa")?.holderName ??
+                "الدفع بالفيزا يتم على ماكينة الدفع داخل المحل"}
             </p>
           )}
 
           {method === "cash" && (
-            <div className="bg-white/10 mb-5 sm:mb-6 p-3.5 sm:p-4 border border-white/25 rounded-[16px] sm:rounded-[20px]">
-              <label className="block mb-2 text-[13px] sm:text-[14px] text-white/80">
-                المبلغ المدفوع
-              </label>
-              <Input
-                value={cashPaid}
-                onChange={(e) => setCashPaid(sanitizeAmount(e.target.value))}
-                type="text"
-                inputMode="decimal"
-                placeholder="أدخل المبلغ"
-                className={inputClass}
-              />
-              {cashPaid !== "" && parseFloat(cashPaid) < orderTotal && (
-                <p className="mt-1.5 text-[12.5px] sm:text-[13px] text-red-300">
-                  المبلغ يجب أن يكون مساوياً للمطلوب ({orderTotal.toFixed(2)} ₪)
-                  أو أكثر
-                </p>
-              )}
-              {cashChange > 0 && (
-                <p className="mt-2 text-[13px] sm:text-[14px] text-glace-yellow">
-                  المتبقي: {cashChange.toFixed(2)} ₪ — سيتم مراجعة طلبك وإضافة
-                  الباقي لمحفظة النظام
-                </p>
-              )}
-            </div>
+            <p className="bg-white/10 mb-5 sm:mb-6 px-3.5 sm:px-4 py-2.5 sm:py-3 border border-white/25 rounded-[16px] sm:rounded-[20px] text-[13px] sm:text-[14px] text-white/80">
+              {paymentAccounts?.find((a) => a.method === "cash")?.holderName ??
+                "الدفع كاش داخل المحل فقط"}
+            </p>
           )}
 
           {method === "wallet" && walletBalance < orderTotal && (
@@ -864,14 +864,14 @@ export default function PaymentClientPage() {
             </p>
           )}
 
-          {!RECEIPT_METHODS.includes(method) && (
+          {!RECEIPT_METHODS.includes(method) &&
+            (method !== "jawwal" || jawwalCodeSent) && (
             <Button
               type="button"
               onClick={handleConfirm}
               disabled={
                 walletDeducted ||
                 (method === "wallet" && walletBalance < orderTotal) ||
-                cashAmountInvalid ||
                 jawwalAmountInvalid ||
                 placeOrderMutation.isPending ||
                 deductWalletMutation.isPending

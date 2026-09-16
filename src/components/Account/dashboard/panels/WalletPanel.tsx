@@ -149,7 +149,8 @@ export default function WalletPanel() {
 
   function handleReceiptSubmit(
     receiptImage: File | undefined,
-    receiptNote: string | undefined
+    receiptNote: string | undefined,
+    senderAccountName: string
   ) {
     if (!method || method === "jawwal" || method === "visa" || !amountValid) return;
     setReceiptError(null);
@@ -159,6 +160,7 @@ export default function WalletPanel() {
         amount: amountValue,
         receiptImage,
         receiptNote,
+        senderAccountName,
       },
       {
         onSuccess: (request) => {
@@ -267,7 +269,7 @@ export default function WalletPanel() {
                 <button
                   type="button"
                   onClick={() => setStep("method")}
-                  className="text-[13px] text-white/60 hover:text-white/80 underline cursor-pointer"
+                  className="text-[13px] text-glace-yellow hover:brightness-110 underline cursor-pointer"
                 >
                   تغيير الطريقة
                 </button>
@@ -384,13 +386,14 @@ export default function WalletPanel() {
                 <button
                   type="button"
                   onClick={() => setStep("method")}
-                  className="text-[13px] text-white/60 hover:text-white/80 underline cursor-pointer"
+                  className="text-[13px] text-glace-yellow hover:brightness-110 underline cursor-pointer"
                 >
                   تغيير الطريقة
                 </button>
               </div>
               <p className="bg-white/10 px-4 py-3 border border-white/25 rounded-[20px] text-[14px] text-white/80">
-                الدفع بالفيزا يتم على ماكينة الدفع داخل المحل
+                {paymentAccounts?.find((a) => a.method === "visa")?.holderName ??
+                  "الدفع بالفيزا يتم على ماكينة الدفع داخل المحل"}
               </p>
             </>
           ) : (
@@ -403,7 +406,7 @@ export default function WalletPanel() {
                   <button
                     type="button"
                     onClick={() => setStep("method")}
-                    className="text-[13px] text-white/60 hover:text-white/80 underline cursor-pointer"
+                    className="text-[13px] text-glace-yellow hover:brightness-110 underline cursor-pointer"
                   >
                     تغيير الطريقة
                   </button>
@@ -591,6 +594,16 @@ export default function WalletPanel() {
                             <span className="text-white/70">رقم الجوال</span>
                             <span className="font-bold" dir="ltr">
                               {req.phone}
+                            </span>
+                          </div>
+                        )}
+                        {req.senderAccountName && (
+                          <div className="flex justify-between text-[14px]">
+                            <span className="text-white/70">
+                              حُوّل من حساب
+                            </span>
+                            <span className="font-bold">
+                              {req.senderAccountName}
                             </span>
                           </div>
                         )}

@@ -138,11 +138,12 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
 
   function handleReuploadSubmit(
     receiptImage: File | undefined,
-    receiptNote: string | undefined
+    receiptNote: string | undefined,
+    senderAccountName: string
   ) {
     setReceiptError(null);
     updateReceiptMutation.mutate(
-      { id: order!.id, receiptImage, receiptNote },
+      { id: order!.id, receiptImage, receiptNote, senderAccountName },
       {
         onSuccess: () => setReuploadOpen(false),
         onError: () =>
@@ -535,10 +536,28 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
                   </span>
                 </div>
               )}
-              {order.address?.note && (
+              {(order.captainNote || order.address?.note) && (
                 <div className="flex items-start gap-2.5">
                   <StickyNote size={16} className="opacity-60 shrink-0 mt-0.5" />
-                  <span className="opacity-80">{order.address.note}</span>
+                  <span className="opacity-80">
+                    ملاحظة للكابتن: {order.captainNote || order.address?.note}
+                  </span>
+                </div>
+              )}
+              {order.orderNote && (
+                <div className="flex items-start gap-2.5">
+                  <StickyNote size={16} className="opacity-60 shrink-0 mt-0.5" />
+                  <span className="opacity-80">
+                    ملاحظة الطلب: {order.orderNote}
+                  </span>
+                </div>
+              )}
+              {order.senderAccountName && (
+                <div className="flex items-start gap-2.5">
+                  <CreditCard size={16} className="opacity-60 shrink-0 mt-0.5" />
+                  <span className="opacity-80">
+                    حُوّل من حساب: {order.senderAccountName}
+                  </span>
                 </div>
               )}
             </div>
@@ -676,6 +695,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
           <ReceiptUploadForm
             initialImage={order.receiptImage}
             initialNote={order.receiptNote}
+            initialSenderAccountName={order.senderAccountName}
             onSubmit={handleReuploadSubmit}
             submitLabel="حفظ"
           />

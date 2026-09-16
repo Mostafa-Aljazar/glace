@@ -263,7 +263,7 @@ export default function LogoNav() {
 
       {/* ── Main header bar ──────────────────────────────────────── */}
       <header
-        className={`${isMenuPage ? "absolute top-3 inset-x-0" : "top-3 fixed inset-x-0"} z-[9999999] px-3 lg:px-5 w-full`}
+        className={`${isMenuPage ? "absolute inset-x-0" : "fixed inset-x-0"} top-[calc(1.75rem+env(safe-area-inset-top))] sm:top-3 z-[9999999] px-3 lg:px-5 w-full`}
       >
         <div className="mx-auto max-w-[1180px]">
           <div className="flex items-center gap-2 bg-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-xl px-3 lg:px-3.5 py-1.5 lg:py-2 border border-white/25 rounded-[22px] transition-all duration-200">

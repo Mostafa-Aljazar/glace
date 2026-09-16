@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { type ScheduleDay } from "@/lib/scheduling";
 
 interface ScheduleTimePickerProps {
@@ -35,13 +36,20 @@ function getHour24Format(hour12: string): string {
 /** Date + time picker with day select and time in 12-hour format with AM/PM.
  *  Hour/minute options come from each day's actual bookable slots
  *  (`ScheduleDay.slots`), which for today already start 30min from now — so
- *  picking today never offers a time that has already passed. */
+ *  picking today never offers a time that has already passed.
+ *
+ *  Gated behind a checkbox: `value` arrives pre-filled with the earliest
+ *  slot (see CheckoutClientPage) even though scheduling is optional, so
+ *  without this the picker always shows a date/time as if the customer had
+ *  already opted in. The checkbox reflects `value !== null` and clearing it
+ *  reports `null` upward instead of hiding an already-chosen value. */
 export default function ScheduleTimePicker({
   days,
   value,
   onChange,
 }: ScheduleTimePickerProps) {
   const [selectedDate, setSelectedDate] = useState<string>(value?.date || days[0]?.date || "");
+  const enabled = value !== null;
 
   const activeDay = useMemo(
     () => days.find((d) => d.date === selectedDate) ?? days[0],
@@ -113,12 +121,29 @@ export default function ScheduleTimePicker({
     commit(selectedDate, selectedHour12, minute);
   };
 
-  return (
-    <div className="flex items-start gap-3 bg-white/8 border border-white/15 rounded-[16px] p-4">
-      <span className="flex items-center justify-center bg-glace-yellow/15 text-glace-yellow rounded-full size-10 shrink-0">
-        <CalendarClock size={20} />
-      </span>
+  function handleToggle(checked: boolean) {
+    if (!checked) {
+      onChange(null);
+      return;
+    }
+    commit(selectedDate, selectedHour12, selectedMinute);
+  }
 
+  return (
+    <div className="flex flex-col gap-3 bg-white/8 border border-white/15 rounded-[16px] p-4">
+      <label className="flex items-center gap-2.5 cursor-pointer select-none">
+        <Checkbox
+          checked={enabled}
+          onCheckedChange={(checked) => handleToggle(checked === true)}
+          className="data-[state=checked]:bg-glace-yellow data-[state=checked]:border-glace-yellow data-[state=checked]:text-[#1e6a7f]"
+        />
+        <span className="flex items-center justify-center bg-glace-yellow/15 text-glace-yellow rounded-full size-8 shrink-0">
+          <CalendarClock size={16} />
+        </span>
+        <span className="text-[14px] font-bold text-white">جدولة الوقت</span>
+      </label>
+
+      {enabled && (
       <div className="flex flex-col flex-1 gap-2.5 min-w-0">
         {/* Day select — full width row on its own */}
         <Select value={selectedDate || ""} onValueChange={handleDateChange}>
@@ -163,6 +188,7 @@ export default function ScheduleTimePicker({
           </Select>
         </div>
       </div>
+      )}
     </div>
   );
 }

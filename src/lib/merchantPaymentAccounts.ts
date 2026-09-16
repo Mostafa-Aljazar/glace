@@ -100,8 +100,7 @@ interface PaymentAccountDto {
   secondaryValue?: string;
 }
 
-function normalizePaymentAccount(dto: PaymentAccountDto): MerchantPaymentAccount | null {
-  if (dto.method === "cash") return null;
+function normalizePaymentAccount(dto: PaymentAccountDto): MerchantPaymentAccount {
   const method = dto.method === "palpay" ? "paypal" : dto.method;
   return {
     method,
@@ -121,9 +120,7 @@ export async function fetchPaymentAccounts(): Promise<MerchantPaymentAccount[]> 
     () =>
       guestApi
         .get<PaymentAccountDto[]>("/payment-accounts")
-        .then((r) => r.data
-          .map(normalizePaymentAccount)
-          .filter((a): a is MerchantPaymentAccount => a !== null)),
+        .then((r) => r.data.map(normalizePaymentAccount)),
     () => MERCHANT_PAYMENT_ACCOUNTS,
   );
 }

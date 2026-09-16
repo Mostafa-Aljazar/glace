@@ -53,14 +53,10 @@ export default function CheckoutClientPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [delivery, setDelivery] = useState<DeliveryMethod>("dine-in");
   const scheduleDays = useMemo(() => getScheduleDays(), []);
-  // Defaults to the earliest bookable slot (today, ASAP) rather than "فوري" —
-  // the customer can still clear it or pick a later time.
-  const [schedule, setSchedule] = useState<{ date: string; time: string } | null>(
-    () =>
-      scheduleDays[0]?.slots[0]
-        ? { date: scheduleDays[0].date, time: scheduleDays[0].slots[0] }
-        : null
-  );
+  // Starts unchecked/off — scheduling is optional ("اختياري"), so the
+  // picker shouldn't look pre-selected until the customer opts in via its
+  // checkbox (ScheduleTimePicker fills in the earliest slot once checked).
+  const [schedule, setSchedule] = useState<{ date: string; time: string } | null>(null);
   const scheduleLabel = schedule
     ? `${scheduleDays.find((d) => d.date === schedule.date)?.label ?? schedule.date} · ${formatTime12h(schedule.time)}`
     : undefined;

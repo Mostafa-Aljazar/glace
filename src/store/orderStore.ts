@@ -109,11 +109,22 @@ export interface Order {
    *  hasn't verified the uploaded receipt yet. */
   paymentStatus?: "pending" | "paid" | "failed" | "refunded" | (string & {});
   createdAt: string;
+  /** Free-text note about the order itself (allergies, special requests) —
+   *  set in Cart, sent as `orderNote` on `POST /orders`, echoed back under
+   *  the same name here. */
+  orderNote?: string;
+  /** Free-text note for the delivery captain (gate code, floor, landmark
+   *  detail) — sent as `captainNote` on `POST /orders`; the backend echoes
+   *  it back as this top-level field, separate from `address.note`. */
+  captainNote?: string;
   /** URL of the uploaded transfer receipt, for RECEIPT_METHODS orders. */
   receiptImage?: string;
   /** Fallback note when the customer can't upload a receipt image — the
    *  account/bank name they paid from, for manual staff matching. */
   receiptNote?: string;
+  /** Required for RECEIPT_METHODS orders — the name on the account the
+   *  customer transferred from. */
+  senderAccountName?: string;
   /** Set when the order is cancelled by the customer. */
   cancelReason?: string;
   /** Driver info for delivery orders. */

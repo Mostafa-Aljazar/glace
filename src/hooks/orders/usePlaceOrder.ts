@@ -24,10 +24,18 @@ export interface PlaceOrderInput {
    *  backend expects it as its own order field, not nested under the
    *  address. */
   captainNote?: string;
+  /** Free-text note about the order itself (allergies, special requests) —
+   *  set in Cart, separate from `captainNote` which is about reaching the
+   *  address, not the order contents. */
+  orderNote?: string;
   /** Transfer receipt photo, for RECEIPT_METHODS orders — uploaded as a real
    *  file (multipart), never base64. */
   receiptImage?: File;
   receiptNote?: string;
+  /** Required for RECEIPT_METHODS orders — the name on the account the
+   *  customer transferred from, so staff can match the incoming transfer
+   *  to this order regardless of whether a receipt image was attached. */
+  senderAccountName?: string;
   /** Required when `paymentMethod` is `jawwal` (automatic) — the phone
    *  JawwalPay texted the confirmation code to, and the code itself, from
    *  a prior `POST /orders/jawwal/send-code`. The server verifies the code
@@ -69,8 +77,11 @@ export function usePlaceOrder() {
       if (input.addressId) formData.append("addressId", input.addressId);
       if (input.pickupTime) formData.append("pickupTime", input.pickupTime);
       if (input.captainNote) formData.append("captainNote", input.captainNote);
+      if (input.orderNote) formData.append("orderNote", input.orderNote);
       if (input.receiptImage) formData.append("receiptImage", input.receiptImage);
       if (input.receiptNote) formData.append("receiptNote", input.receiptNote);
+      if (input.senderAccountName)
+        formData.append("senderAccountName", input.senderAccountName);
       if (input.jawwalPhone) formData.append("jawwalPhone", input.jawwalPhone);
       if (input.jawwalCode) formData.append("jawwalCode", input.jawwalCode);
 
