@@ -305,7 +305,7 @@ export default function MenuClientPage() {
         className="hidden lg:block top-27.5 left-16 absolute opacity-60 w-20 object-contain pointer-events-none"
       />
 
-      <div className="z-90 relative mx-auto px-3 sm:px-6 lg:px-8 pt-22.5 lg:pt-26.5 pb-28 lg:pb-8 max-w-screen-2xl">
+      <div className="z-90 relative mx-auto px-3 sm:px-6 lg:px-8 pt-19 lg:pt-26.5 pb-28 lg:pb-8 max-w-screen-2xl">
         <div className="relative flex flex-col items-center pt-8 pb-10 sm:pb-14 text-center">
           <div className="hidden top-0 left-0 absolute sm:flex gap-3 opacity-80 pointer-events-none">
             <Image

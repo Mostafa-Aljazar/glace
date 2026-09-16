@@ -253,7 +253,7 @@ export default function OrderFlatListTemplate({
                         {item.label}
                       </p>
                       {item.description && (
-                        <p className="text-[12px] text-white/60 line-clamp-2 leading-tight">
+                        <p className="text-[12px] text-white/60 leading-tight">
                           {item.description}
                         </p>
                       )}
