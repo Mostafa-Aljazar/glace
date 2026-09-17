@@ -8,16 +8,19 @@ import { useAuthStore } from "@/store/authStore";
 
 export default function UnifiedAuthForm() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!hasHydrated || !isLoggedIn) return;
     const redirect = searchParams.get("redirect");
-    router.replace(redirect && redirect.startsWith("/") ? redirect : "/my-account");
-  }, [isLoggedIn, router, searchParams]);
+    router.replace(
+      redirect && redirect.startsWith("/") ? redirect : "/my-account",
+    );
+  }, [hasHydrated, isLoggedIn, router, searchParams]);
 
-  if (isLoggedIn) return null;
+  if (!hasHydrated || isLoggedIn) return null;
 
   return (
     <AuthLayout

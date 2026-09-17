@@ -33,7 +33,11 @@ function isStandalone() {
 }
 
 function isIos() {
-  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+  return (
+    /iphone|ipad|ipod/i.test(window.navigator.userAgent) ||
+    (window.navigator.platform === "MacIntel" &&
+      window.navigator.maxTouchPoints > 1)
+  );
 }
 
 export default function InstallPwaButton() {
@@ -42,18 +46,18 @@ export default function InstallPwaButton() {
   const [modalOpen, setModalOpen] = useState(false);
   // Lazily read the client-only iOS flag once, at mount time, instead of
   // setting it from inside the effect body (which would double-render).
-  const [iosMode] = useState(
+  const [iosMode, setIosMode] = useState(
     () => typeof window !== "undefined" && !isStandalone() && isIos(),
   );
-  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     if (isStandalone()) return;
 
+    let modalFrame: number | undefined;
     const hasSeenInstallPrompt =
       localStorage.getItem("glace-install-prompt-seen") === "true";
     if (!hasSeenInstallPrompt) {
-      setModalOpen(true);
+      modalFrame = window.requestAnimationFrame(() => setModalOpen(true));
       localStorage.setItem("glace-install-prompt-seen", "true");
     }
 
@@ -62,13 +66,13 @@ export default function InstallPwaButton() {
       setDeferredPrompt(event as BeforeInstallPromptEvent);
     };
     const handleAppInstalled = () => {
-      setDismissed(true);
       setDeferredPrompt(null);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
     return () => {
+      if (modalFrame !== undefined) window.cancelAnimationFrame(modalFrame);
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt,
@@ -78,11 +82,17 @@ export default function InstallPwaButton() {
   }, [iosMode]);
 
   const handleInstallNow = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      if (isIos()) {
+        setIosMode(true);
+        setModalOpen(true);
+      }
+      return;
+    }
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === "accepted") {
-      setDismissed(true);
+      setModalOpen(false);
     }
     setDeferredPrompt(null);
     setModalOpen(false);

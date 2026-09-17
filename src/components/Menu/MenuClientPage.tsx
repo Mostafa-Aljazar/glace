@@ -156,7 +156,9 @@ export default function MenuClientPage() {
   const [activeCategory, setActiveCategory] = useState(
     queryCategory ?? "ice-cream",
   );
-  const [closedDialogOpen, setClosedDialogOpen] = useState(() => !isStoreOpen());
+  const [closedDialogOpen, setClosedDialogOpen] = useState(
+    () => !isStoreOpen(),
+  );
 
   useEffect(() => {
     if (!queryCategory) return;
@@ -254,16 +256,16 @@ export default function MenuClientPage() {
       <Dialog open={closedDialogOpen} onOpenChange={setClosedDialogOpen}>
         <DialogContent
           showCloseButton={false}
-          className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] text-center text-white ring-0"
+          className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
         >
           <DialogHeader className="items-center gap-3">
             <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
               <Clock className="size-8 text-white" strokeWidth={2.5} />
             </div>
-            <DialogTitle className="text-2xl text-white">
+            <DialogTitle className="text-white text-2xl">
               المحل مغلق حاليًا
             </DialogTitle>
-            <DialogDescription className="text-base text-white/90">
+            <DialogDescription className="text-white/90 text-base">
               رح نفتح من جديد يوم {getReopenLabel()}.
             </DialogDescription>
           </DialogHeader>
@@ -271,7 +273,7 @@ export default function MenuClientPage() {
             render={
               <button
                 type="button"
-                className="bg-glace-yellow hover:bg-yellow-300 mt-4 px-6 py-2.5 rounded-[30px] w-full text-[#1e6a7f] font-bold text-lg transition-colors cursor-pointer"
+                className="bg-glace-yellow hover:bg-yellow-300 mt-4 px-6 py-2.5 rounded-[30px] w-full font-bold text-[#1e6a7f] text-lg transition-colors cursor-pointer"
               />
             }
           >
@@ -305,7 +307,7 @@ export default function MenuClientPage() {
         className="hidden lg:block top-27.5 left-16 absolute opacity-60 w-20 object-contain pointer-events-none"
       />
 
-      <div className="z-90 relative mx-auto px-3 sm:px-6 lg:px-8 pt-19 lg:pt-26.5 pb-28 lg:pb-8 max-w-screen-2xl">
+      <div className="z-90 relative mx-auto px-3 sm:px-6 lg:px-8 pt-28 lg:pt-26.5 pb-28 lg:pb-8 max-w-screen-2xl">
         <div className="relative flex flex-col items-center pt-8 pb-10 sm:pb-14 text-center">
           <div className="hidden top-0 left-0 absolute sm:flex gap-3 opacity-80 pointer-events-none">
             <Image
@@ -341,7 +343,7 @@ export default function MenuClientPage() {
           </div>
 
           <div className="z-10 relative">
-            <h1 className="drop-shadow-lg font-bold text-white text-[36px] sm:text-[46px] leading-tight">
+            <h1 className="drop-shadow-lg font-bold text-[36px] text-white sm:text-[46px] leading-tight">
               منيو جلاسيه الأمير - غزة
             </h1>
           </div>

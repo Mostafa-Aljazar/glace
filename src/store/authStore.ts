@@ -11,10 +11,12 @@ export interface AuthUser {
 interface AuthState {
   token: string | null;
   user: AuthUser | null;
+  hasHydrated: boolean;
   setAuth: (token: string, user: AuthUser) => void;
   setUser: (user: AuthUser) => void;
   clearAuth: () => void;
   isLoggedIn: () => boolean;
+  setHasHydrated: (hasHydrated: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -22,11 +24,18 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       token: null,
       user: null,
+      hasHydrated: false,
       setAuth: (token, user) => set({ token, user }),
       setUser: (user) => set({ user }),
       clearAuth: () => set({ token: null, user: null }),
       isLoggedIn: () => !!get().token,
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     }),
-    { name: "glace-auth" }
+    {
+      name: "glace-auth",
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
+    }
   )
 );

@@ -8,13 +8,15 @@ import { useAuthStore } from "@/store/authStore";
 
 export default function RegisterForm() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoggedIn) router.replace("/my-account");
-  }, [isLoggedIn, router]);
+    if (!hasHydrated || !isLoggedIn) return;
+    router.replace("/my-account");
+  }, [hasHydrated, isLoggedIn, router]);
 
-  if (isLoggedIn) return null;
+  if (!hasHydrated || isLoggedIn) return null;
 
   return (
     <AuthLayout

@@ -13,17 +13,19 @@ export default function MyAccountClientPage({
   children: React.ReactNode;
 }) {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoggedIn) router.replace(`/auth?redirect=${pathname}`);
-  }, [isLoggedIn, router, pathname]);
+    if (hasHydrated && !isLoggedIn)
+      router.replace(`/auth?redirect=${pathname}`);
+  }, [hasHydrated, isLoggedIn, router, pathname]);
 
   const { isLoading } = useMe();
   const user = useAuthStore((s) => s.user);
 
-  if (!isLoggedIn) return null;
+  if (!hasHydrated || !isLoggedIn) return null;
 
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
