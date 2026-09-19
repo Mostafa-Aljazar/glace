@@ -25,16 +25,17 @@ import {
 } from "@/hooks/wallet";
 import { usePaymentAccounts } from "@/hooks/payments/usePaymentAccounts";
 import type { TransferPaymentAccount } from "@/lib/merchantPaymentAccounts";
+import { visaCard, cashIcon } from "@/assets/images";
 import ReceiptUploadForm from "@/components/Payment/ReceiptUploadForm";
 import DashboardCard from "../shared/DashboardCard";
 import EmptyState from "../shared/EmptyState";
 
-const TOP_UP_METHODS: { id: TopUpMethod; label: string; logo: string; bg?: string }[] = [
+const TOP_UP_METHODS: { id: TopUpMethod; label: string; logo?: string; asset?: typeof visaCard; bg?: string }[] = [
   { id: "jawwal-manual", label: "جوال باي (يدوي)", logo: "/images/JAWWAL_PAY.webp" },
   { id: "jawwal", label: "جوال باي (آلي)", logo: "/images/JAWWAL_PAY.webp" },
   { id: "paypal", label: "بال باي", logo: "/images/PalPay.jpg" },
   { id: "bop", label: "بنك فلسطين", logo: "/images/BOP.webp" },
-  { id: "visa", label: "فيزا", logo: "/images/VISA.webp", bg: "bg-white" },
+  { id: "visa", label: "فيزا", asset: visaCard, bg: "bg-white" },
 ];
 
 /** Visa has no online transfer/receipt flow — it can only be charged on the
@@ -252,7 +253,7 @@ export default function WalletPanel() {
                       className={`flex justify-center items-center shrink-0 rounded-[12px] size-11 overflow-hidden ${m.bg ? `${m.bg} p-1.5` : ""}`}
                     >
                       <Image
-                        src={m.logo}
+                        src={m.asset || m.logo!}
                         alt={m.label}
                         width={44}
                         height={44}
@@ -395,7 +396,7 @@ export default function WalletPanel() {
               </div>
               <p className="bg-white/10 px-4 py-3 border border-white/25 rounded-[20px] text-[14px] text-white/80">
                 {paymentAccounts?.find((a) => a.method === "visa")?.holderName ??
-                  "الدفع بالفيزا يتم على ماكينة الدفع داخل المحل"}
+                  "فيزا ماكينة فقط داخل المحل"}
               </p>
             </>
           ) : (

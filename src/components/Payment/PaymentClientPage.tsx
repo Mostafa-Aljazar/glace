@@ -309,10 +309,9 @@ export default function PaymentClientPage() {
     "bg-white/10 border-white/25 focus-visible:border-glace-yellow/50 h-11 px-3.5 text-white text-[15px] placeholder:text-white/40 rounded-[14px] focus-visible:ring-glace-yellow/20";
 
   function inStoreOnlyLabel(id: PaymentMethod) {
-    return (
-      paymentAccounts?.find((a) => a.method === id)?.holderName ??
-      "الدفع داخل المحل"
-    );
+    const account = paymentAccounts?.find((a) => a.method === id);
+    if (account?.holderName) return account.holderName;
+    return id === "visa" ? "فيزا ماكينة فقط داخل المحل" : "كاش داخل المحل فقط";
   }
 
   function renderListMethod(m: typeof WALLET_METHOD) {
@@ -358,6 +357,9 @@ export default function PaymentClientPage() {
 
   function renderCardMethod(m: (typeof CARD_METHODS_BEFORE_CASH)[number]) {
     const disabled = IN_STORE_ONLY_METHODS.includes(m.id) && !inStoreOnlyAvailable;
+    const isAssetMethod = m.asset;
+    const subtitle = IN_STORE_ONLY_METHODS.includes(m.id) ? inStoreOnlyLabel(m.id) : null;
+
     return (
       <button
         key={m.id}
@@ -385,12 +387,9 @@ export default function PaymentClientPage() {
           />
         </span>
         <div className="flex-1 min-w-0">
-          <span className="block font-bold text-[14px] truncate">{m.label}</span>
-          {IN_STORE_ONLY_METHODS.includes(m.id) && (
-            <span className="block mt-0.5 text-[11px] text-white/70">
-              {inStoreOnlyLabel(m.id)}
-            </span>
-          )}
+          <span className="block font-bold text-[14px]">
+            {isAssetMethod && subtitle ? subtitle : m.label}
+          </span>
         </div>
       </button>
     );
