@@ -18,8 +18,11 @@ export interface WalletTransaction {
 }
 /** "قيد المراجعة" matches the same wording used for orders under staff
  *  review (orderStore's OrderStatus) — a submitted top-up sits here until
- *  someone on the dashboard checks the receipt. */
-export type TopUpRequestStatus = "قيد المراجعة" | "مكتمل";
+ *  someone on the dashboard checks the receipt. "مرفوض" is the terminal
+ *  rejection state — staff declined the receipt/code, so the amount was
+ *  never credited; `rejectionReason` (when the dashboard provides one)
+ *  tells the customer why. */
+export type TopUpRequestStatus = "قيد المراجعة" | "مكتمل" | "مرفوض";
 
 /** A bank/wallet-transfer top-up the customer submitted — either with a
  *  receipt/fallback note (bop, paypal, jawwal-manual) or a phone number
@@ -37,6 +40,9 @@ export interface TopUpRequest {
   senderAccountName?: string;
   /** Only set for "jawwal" (auto) — the number the customer paid from. */
   phone?: string;
+  /** Only set when status is "مرفوض" — why staff declined the request,
+   *  shown to the customer in place of a silent rejection. */
+  rejectionReason?: string;
 }
 
 /** Backend's id for بال باي is `palpay`, not the frontend's `paypal` —

@@ -44,6 +44,7 @@ const IN_STORE_ONLY_TOP_UP_METHODS: TopUpMethod[] = ["visa"];
 const TOP_UP_REQUEST_STATUS_COLORS: Record<TopUpRequestStatus, string> = {
   "قيد المراجعة": "bg-yellow-500/30 text-yellow-200",
   "مكتمل": "bg-green-500/30 text-green-200",
+  "مرفوض": "bg-red-500/30 text-red-200",
 };
 
 const TOP_UP_METHOD_LABELS: Record<TopUpMethod, string> = {
@@ -606,6 +607,13 @@ export default function WalletPanel() {
 
                     {isOpen && (
                       <div className="flex flex-col gap-3 px-4 pt-3 pb-4 border-white/10 border-t">
+                        {req.status === "مرفوض" && (
+                          <div className="bg-red-500/15 px-3 py-2.5 rounded-[12px] text-[13px] text-red-200">
+                            {req.rejectionReason?.trim()
+                              ? req.rejectionReason
+                              : "تم رفض طلب الشحن هذا. تواصل معنا لمعرفة السبب."}
+                          </div>
+                        )}
                         <div className="flex justify-between text-[14px]">
                           <span className="text-white/70">طريقة الدفع</span>
                           <span className="font-bold">
