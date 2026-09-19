@@ -33,6 +33,7 @@ import {
   PAYMENT_METHOD_LABELS,
 } from "@/store/orderStore";
 import type { PaymentMethod } from "@/store/orderStore";
+import { cashIcon, visaCard } from "@/assets/images";
 import { useCheckoutDraftStore } from "@/store/checkoutDraftStore";
 import { usePaymentAccounts } from "@/hooks/payments/usePaymentAccounts";
 import type { TransferPaymentAccount } from "@/lib/merchantPaymentAccounts";
@@ -48,7 +49,8 @@ import ReceiptUploadForm from "@/components/Payment/ReceiptUploadForm";
 const CARD_METHODS_BEFORE_CASH: {
   id: PaymentMethod;
   label: string;
-  logo: string;
+  logo?: string;
+  asset?: typeof cashIcon;
   bg?: string;
 }[] = [
   {
@@ -62,7 +64,7 @@ const CARD_METHODS_BEFORE_CASH: {
 ];
 
 const CARD_METHODS_AFTER_CASH: typeof CARD_METHODS_BEFORE_CASH = [
-  { id: "visa", label: "فيزا", logo: "/images/VISA.webp", bg: "bg-white" },
+  { id: "visa", label: "فيزا", asset: visaCard, bg: "bg-white" },
 ];
 
 const WALLET_METHOD: {
@@ -77,11 +79,16 @@ const WALLET_METHOD: {
   icon: Wallet,
 };
 
-const CASH_METHOD: typeof WALLET_METHOD = {
+const CASH_METHOD: {
+  id: PaymentMethod;
+  label: string;
+  asset: typeof cashIcon;
+  bg?: string;
+} = {
   id: "cash",
   label: "كاش",
-  desc: "",
-  icon: Banknote,
+  asset: cashIcon,
+  bg: "bg-white/10",
 };
 
 /** Visa and cash require being physically at the store — not available
@@ -370,7 +377,7 @@ export default function PaymentClientPage() {
           className={`flex size-10 sm:size-11 shrink-0 items-center justify-center overflow-hidden rounded-[10px] sm:rounded-[12px] ${m.bg ? `${m.bg} p-1.5` : ""}`}
         >
           <Image
-            src={m.logo}
+            src={m.asset || m.logo!}
             alt={m.label}
             width={44}
             height={44}
@@ -551,7 +558,7 @@ export default function PaymentClientPage() {
             <div className="gap-2 sm:gap-3 grid grid-cols-1 sm:grid-cols-2 mb-5 sm:mb-6">
               {renderListMethod(WALLET_METHOD)}
               {CARD_METHODS_BEFORE_CASH.map(renderCardMethod)}
-              {inStoreOnlyAvailable && renderListMethod(CASH_METHOD)}
+              {inStoreOnlyAvailable && renderCardMethod(CASH_METHOD)}
               {inStoreOnlyAvailable && CARD_METHODS_AFTER_CASH.map(renderCardMethod)}
             </div>
 

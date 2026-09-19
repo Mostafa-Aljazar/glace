@@ -21,6 +21,8 @@ import browniesCake from "./brownies-cake.png";
 import cakePop from "./cake-pop.png";
 import cake from "./cake.png";
 import calendarIcon from "./calendarIcon.svg";
+import cashIcon from "./payment/cash-icon.webp";
+import visaCard from "./payment/visa-card.png";
 import candiesPop from "./candies-pop.png";
 import candies from "./candies.png";
 import caramelIce from "./flavors/caramel-ice.png";
@@ -176,7 +178,7 @@ export {
   islamSobhi, maskGroup, path27, addItemIcon, arabianIce, arrowS,
   bananaIce, bazookaIce, bgFooter, bgOrderD, bgWA, biscuitIceCream,
   blueberryIce, bountyIce, browniesCake, cakePop, cake, calendarIcon,
-  candiesPop, candies, caramelIce, checkImg, checkImgB, chocolateIce,
+  candiesPop, candies, caramelIce, cashIcon, checkImg, checkImgB, chocolateIce,
   circleE, classicIceCream, cloudsimg, coconutIce, coktailIce, coldDrinks,
   cornPop, corn, createRequestImg, crepe, darkIce, dondurmaBasklava,
   emptyPop, energyIce, envelopeIcon, eyy, familyIceCream, floraIce,
@@ -198,6 +200,6 @@ export {
   popImgG, popImgP, ppp, refrigerator, rocket, sanSebastian, saturnimg,
   saturnimg2, searchIconW, snickersIce, sodachi, specialIceCream,
   squarePointsImg, starsbg, stevia, strawberryIce, strawberryImg,
-  sunImg, titleheader, umbrellaImg, vanillaIce, vanillaaIce, waffle,
+  sunImg, titleheader, umbrellaImg, vanillaIce, vanillaaIce, visaCard, waffle,
   wrigglingArrow, zigzagsImg, zigzagsImgSvg,
 };
