@@ -39,9 +39,12 @@ export function useConfirmJawwalTopUp() {
 
   return useMutation({
     mutationFn: (input: ConfirmInput) =>
+      // Matches the `{ request: ... }` envelope confirmed on the other
+      // /wallet/topup-requests* endpoints (submit returns `{request}`, list
+      // returns `{requests}`) — this one almost certainly follows suit.
       userApi
-        .post<TopUpRequest>("/wallet/topup-requests/jawwal/confirm", input)
-        .then((r) => r.data),
+        .post<{ request: TopUpRequest }>("/wallet/topup-requests/jawwal/confirm", input)
+        .then((r) => r.data.request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: WALLET_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: WALLET_TRANSACTIONS_QUERY_KEY });

@@ -7,9 +7,9 @@ type TopUpRequestDto = Omit<TopUpRequest, "method"> & { method: string };
 
 export async function fetchTopUpRequests(): Promise<TopUpRequest[]> {
   return userApi
-    .get<TopUpRequestDto[]>("/wallet/topup-requests")
+    .get<{ requests: TopUpRequestDto[] }>("/wallet/topup-requests")
     .then((r) =>
-      r.data.map((dto) => ({
+      r.data.requests.map((dto) => ({
         ...dto,
         method: fromWireTopUpMethod(dto.method),
       }) as TopUpRequest),

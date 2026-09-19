@@ -20,8 +20,10 @@ export interface WalletTransaction {
  *  review (orderStore's OrderStatus) — a submitted top-up sits here until
  *  someone on the dashboard checks the receipt. "مرفوض" is the terminal
  *  rejection state — staff declined the receipt/code, so the amount was
- *  never credited; `rejectionReason` (when the dashboard provides one)
- *  tells the customer why. */
+ *  never credited. Confirmed against the live backend (2026-09-19): it
+ *  sends exactly this string but — unlike the other two statuses — no
+ *  reason field alongside it, so the UI can only say a request was
+ *  rejected, not why. */
 export type TopUpRequestStatus = "قيد المراجعة" | "مكتمل" | "مرفوض";
 
 /** A bank/wallet-transfer top-up the customer submitted — either with a
@@ -40,9 +42,6 @@ export interface TopUpRequest {
   senderAccountName?: string;
   /** Only set for "jawwal" (auto) — the number the customer paid from. */
   phone?: string;
-  /** Only set when status is "مرفوض" — why staff declined the request,
-   *  shown to the customer in place of a silent rejection. */
-  rejectionReason?: string;
 }
 
 /** Backend's id for بال باي is `palpay`, not the frontend's `paypal` —

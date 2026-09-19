@@ -38,10 +38,10 @@ export function useSubmitTopUpRequest() {
       if (senderAccountName) formData.append("senderAccountName", senderAccountName);
 
       return userApi
-        .post<TopUpRequestDto>("/wallet/topup-requests", formData)
+        .post<{ request: TopUpRequestDto }>("/wallet/topup-requests", formData)
         .then((r) => ({
-          ...r.data,
-          method: fromWireTopUpMethod(r.data.method),
+          ...r.data.request,
+          method: fromWireTopUpMethod(r.data.request.method),
         }) as TopUpRequest);
     },
     onSuccess: () => {

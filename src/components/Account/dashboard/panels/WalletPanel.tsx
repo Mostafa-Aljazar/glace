@@ -97,6 +97,7 @@ export default function WalletPanel() {
   const [expandedRequestId, setExpandedRequestId] = useState<string | null>(
     null
   );
+  const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
   const [method, setMethod] = useState<TopUpMethod | null>(null);
   const [copiedField, setCopiedField] = useState(false);
   const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(
@@ -609,9 +610,10 @@ export default function WalletPanel() {
                       <div className="flex flex-col gap-3 px-4 pt-3 pb-4 border-white/10 border-t">
                         {req.status === "مرفوض" && (
                           <div className="bg-red-500/15 px-3 py-2.5 rounded-[12px] text-[13px] text-red-200">
-                            {req.rejectionReason?.trim()
-                              ? req.rejectionReason
-                              : "تم رفض طلب الشحن هذا. تواصل معنا لمعرفة السبب."}
+                            {/* Backend doesn't send a rejection reason (confirmed
+                                against the live API 2026-09-19) — only the status
+                                itself, so this can't say why, only that it happened. */}
+                            تم رفض طلب الشحن هذا. تواصل معنا لمعرفة السبب.
                           </div>
                         )}
                         <div className="flex justify-between text-[14px]">
@@ -673,57 +675,79 @@ export default function WalletPanel() {
           {transactions.length === 0 ? (
             <EmptyState icon={Wallet} message="لا يوجد معاملات بعد" />
           ) : (
-            <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto">
-              {transactions.map((tx) => (
-                <div
-                  key={tx.id}
-                  className="flex flex-col gap-3 border border-white/20 rounded-[16px] px-4 py-3"
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="flex flex-1 items-center gap-3 min-w-0">
-                      <div className={`flex justify-center items-center rounded-full size-9 shrink-0 ${tx.type === "credit" ? "bg-green-500/30" : "bg-red-500/30"}`}>
-                        {tx.type === "credit"
-                          ? <TrendingUp size={18} className="text-green-300" />
-                          : <TrendingDown size={18} className="text-red-300" />}
+            <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pe-1">
+              {transactions.map((tx) => {
+                const isOpen = expandedTxId === tx.id;
+                const hasDetails = Boolean(tx.method || tx.receiptImage);
+                return (
+                  <div
+                    key={tx.id}
+                    className="border border-white/20 rounded-[16px] overflow-hidden shrink-0"
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        hasDetails &&
+                        setExpandedTxId(isOpen ? null : tx.id)
+                      }
+                      className={`flex justify-between items-center px-4 py-3 w-full text-start transition-colors ${hasDetails ? "hover:bg-white/10 cursor-pointer" : "cursor-default"}`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`flex justify-center items-center rounded-full size-7 shrink-0 ${tx.type === "credit" ? "bg-green-500/30" : "bg-red-500/30"}`}>
+                          {tx.type === "credit"
+                            ? <TrendingUp size={14} className="text-green-300" />
+                            : <TrendingDown size={14} className="text-red-300" />}
+                        </span>
+                        <span className="max-w-[160px] font-bold text-[13px] text-white/80 truncate">
+                          {tx.label}
+                        </span>
                       </div>
-                      <div className="min-w-0 text-start">
-                        <p className="text-[15px] font-bold truncate">{tx.label}</p>
-                        <p className="text-white/60 text-[12px]">
-                          {new Date(tx.date).toLocaleString("ar-PS", { dateStyle: "short", timeStyle: "short" })}
-                        </p>
-                      </div>
-                    </div>
-                    <p className={`text-[17px] font-bold whitespace-nowrap shrink-0 ${tx.type === "credit" ? "text-green-300" : "text-red-300"}`}>
-                      {tx.type === "credit" ? "+" : "-"}{tx.amount.toFixed(2)} ₪
-                    </p>
-                  </div>
-
-                  {(tx.method || tx.receiptImage) && (
-                    <div className="flex flex-col gap-3 pt-3 border-white/10 border-t">
-                      {tx.method && (
-                        <div className="flex justify-between text-[14px]">
-                          <span className="text-white/70">طريقة الدفع</span>
-                          <span className="font-bold">
-                            {TRANSACTION_METHOD_LABELS[tx.method]}
-                          </span>
-                        </div>
-                      )}
-                      {tx.receiptImage && (
-                        <div>
-                          <p className="mb-1.5 text-[14px] text-white/70">
-                            صورة الإشعار
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-end">
+                          <p className={`font-bold text-[15px] truncate ${tx.type === "credit" ? "text-green-300" : "text-red-300"}`}>
+                            {tx.type === "credit" ? "+" : "-"}{tx.amount.toFixed(2)} ₪
                           </p>
-                          <img
-                            src={tx.receiptImage}
-                            alt="إشعار الدفع"
-                            className="border border-white/20 rounded-[14px] w-full max-h-72 object-contain bg-black/20"
-                          />
+                          <p className="text-white/60 text-[12px]">
+                            {new Date(tx.date).toLocaleString("ar-PS", { dateStyle: "short", timeStyle: "short" })}
+                          </p>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+                        {hasDetails && (
+                          isOpen ? (
+                            <ChevronUp size={18} />
+                          ) : (
+                            <ChevronDown size={18} />
+                          )
+                        )}
+                      </div>
+                    </button>
+
+                    {isOpen && hasDetails && (
+                      <div className="flex flex-col gap-3 px-4 pt-3 pb-4 border-white/10 border-t">
+                        {tx.method && (
+                          <div className="flex justify-between text-[14px]">
+                            <span className="text-white/70">طريقة الدفع</span>
+                            <span className="font-bold">
+                              {TRANSACTION_METHOD_LABELS[tx.method]}
+                            </span>
+                          </div>
+                        )}
+                        {tx.receiptImage && (
+                          <div>
+                            <p className="mb-1.5 text-[14px] text-white/70">
+                              صورة الإشعار
+                            </p>
+                            <img
+                              src={tx.receiptImage}
+                              alt="إشعار الدفع"
+                              className="border border-white/20 rounded-[14px] w-full max-h-72 object-contain bg-black/20"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
