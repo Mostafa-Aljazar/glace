@@ -85,27 +85,6 @@ export default function ReceiptUploadForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <label className="block mb-2 text-[14px] text-white/80">
-          اسم صاحب الحساب اللي حوّلت منه <span className="text-red-300">*</span>
-        </label>
-        <Input
-          value={senderAccountName}
-          onChange={(e) => setSenderAccountName(e.target.value)}
-          placeholder="مثال: مصطفى الجزار"
-          className={`bg-white/10 h-11 px-3.5 text-white text-[15px] placeholder:text-white/40 rounded-[14px] focus-visible:ring-glace-yellow/20 ${
-            showValidation && missingSenderName
-              ? "border-red-400 focus-visible:border-red-400"
-              : "border-white/25 focus-visible:border-glace-yellow/50"
-          }`}
-        />
-        {showValidation && missingSenderName && (
-          <p className="mt-1.5 text-[12.5px] text-red-300">
-            الرجاء إدخال اسم صاحب الحساب اللي حوّلت منه
-          </p>
-        )}
-      </div>
-
       {!troubleUploading &&
         (preview ? (
           <div className="relative border border-white/25 rounded-[20px] overflow-hidden">
@@ -134,7 +113,7 @@ export default function ReceiptUploadForm({
             >
               <Upload size={22} className="text-glace-yellow" />
               <span className="text-[14px] text-white/80">
-                اضغط لالتقاط صورة أو اختيارها من المعرض
+                اضغط لالتقاط صورة أو اختيارها من المعرج
               </span>
               <input
                 type="file"
@@ -150,6 +129,27 @@ export default function ReceiptUploadForm({
             )}
           </div>
         ))}
+
+      <div>
+        <label className="block mb-2 text-[14px] text-white/80">
+          اسم صاحب الحساب اللي حوّلت منه <span className="text-red-300">*</span>
+        </label>
+        <Input
+          value={senderAccountName}
+          onChange={(e) => setSenderAccountName(e.target.value)}
+          placeholder="مثال: مصطفى الجزار"
+          className={`bg-white/10 h-11 px-3.5 text-white text-[15px] placeholder:text-white/40 rounded-[14px] focus-visible:ring-glace-yellow/20 ${
+            showValidation && missingSenderName
+              ? "border-red-400 focus-visible:border-red-400"
+              : "border-white/25 focus-visible:border-glace-yellow/50"
+          }`}
+        />
+        {showValidation && missingSenderName && (
+          <p className="mt-1.5 text-[12.5px] text-red-300">
+            الرجاء إدخال اسم صاحب الحساب اللي حوّلت منه
+          </p>
+        )}
+      </div>
 
       <label className="flex items-start gap-2.5 cursor-pointer">
         <Checkbox

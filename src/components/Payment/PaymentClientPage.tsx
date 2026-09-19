@@ -13,6 +13,7 @@ import {
   Wallet,
   Copy,
   Check,
+  ChevronRight,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import { Input } from "@/components/ui/input";
@@ -700,6 +701,14 @@ export default function PaymentClientPage() {
               if (receiptStep === "upload") {
                 return (
                   <div className="bg-white/10 mb-5 sm:mb-6 p-3.5 sm:p-4 border border-white/25 rounded-[16px] sm:rounded-[20px]">
+                    <button
+                      type="button"
+                      onClick={() => setReceiptStep("detail")}
+                      className="mb-4 sm:mb-5 flex items-center gap-2 px-4 py-2.5 rounded-[14px] text-[13px] sm:text-[14px] font-medium text-glace-yellow bg-white/10 hover:bg-white/20 border border-glace-yellow/30 hover:border-glace-yellow/60 transition-all cursor-pointer"
+                    >
+                      <ChevronRight size={18} className="rotate-180" />
+                      رجوع لبيانات التحويل
+                    </button>
                     <p className="mb-3 text-[13px] sm:text-[14px] text-white/80">
                       ارفع صورة وصل التحويل
                     </p>
@@ -708,13 +717,6 @@ export default function PaymentClientPage() {
                       submitLabel="تأكيد الدفع"
                       submitting={placeOrderMutation.isPending}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setReceiptStep("detail")}
-                      className="mt-3 text-[12.5px] sm:text-[13px] text-white/60 hover:text-white/80 underline cursor-pointer"
-                    >
-                      رجوع لبيانات التحويل
-                    </button>
                   </div>
                 );
               }

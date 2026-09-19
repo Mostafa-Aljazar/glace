@@ -500,7 +500,9 @@ export default function WalletPanel() {
                   )}
                   {account.iban && (
                     <div className="flex justify-between items-center text-[14px]">
-                      <span className="text-white/70">رقم الآيبان (IBAN)</span>
+                      <span className="text-white/70">
+                        رقم الآيبان (IBAN)
+                      </span>
                       <div className="flex items-center gap-2">
                         <span className="font-bold" dir="ltr">
                           {account.iban}
