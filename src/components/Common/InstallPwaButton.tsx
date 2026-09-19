@@ -44,14 +44,13 @@ export default function InstallPwaButton() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  // Lazily read the client-only iOS flag once, at mount time, instead of
-  // setting it from inside the effect body (which would double-render).
-  const [iosMode, setIosMode] = useState(
-    () => typeof window !== "undefined" && !isStandalone() && isIos(),
-  );
+  const [iosMode, setIosMode] = useState(false);
 
   useEffect(() => {
     if (isStandalone()) return;
+    // SSR renders with iosMode=false; correct it once we're on the client
+    // and know the real user agent.
+    if (isIos()) setIosMode(true);
 
     let modalFrame: number | undefined;
     const hasSeenInstallPrompt =
@@ -79,7 +78,7 @@ export default function InstallPwaButton() {
       );
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
-  }, [iosMode]);
+  }, []);
 
   const handleInstallNow = async () => {
     if (!deferredPrompt) {
@@ -162,9 +161,15 @@ export default function InstallPwaButton() {
                 <span className="flex justify-center items-center bg-glace-yellow rounded-full size-8 font-bold text-[#1a4a5a] text-[13px] shrink-0">
                   1
                 </span>
-                <p className="flex flex-1 items-center gap-1.5 text-[14px] text-white/95 leading-snug">
-                  اضغط على زر <b>المشاركة</b>
-                  <Share size={15} className="text-white/80 shrink-0" />
+                <p className="flex-1 text-[14px] text-white/95 leading-snug">
+                  اضغط على زر{" "}
+                  <span className="inline-flex items-center gap-1">
+                    <b>المشاركة</b>
+                    <Share size={15} className="text-white/80 shrink-0" />
+                  </span>{" "}
+                  <span className="text-white/70 text-[12.5px]">
+                    (من شريط الأدوات بأسفل أو أعلى الشاشة)
+                  </span>
                 </p>
               </div>
               <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl">
@@ -179,7 +184,7 @@ export default function InstallPwaButton() {
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="bg-white/15 hover:bg-white/25 mt-1 py-2.5 rounded-full w-full text-[15px] text-white transition-colors cursor-pointer"
+                className="bg-glace-yellow hover:bg-white shadow-[0_10px_24px_rgba(244,228,81,0.35)] mt-1 py-2.5 rounded-full w-full font-bold text-[#1a4a5a] text-[15px] transition-colors cursor-pointer"
               >
                 حسناً، فهمت
               </button>
