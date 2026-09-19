@@ -24,7 +24,7 @@ import {
   type IMenuCategory,
   type IProduct,
 } from "@/types/menu.types";
-import { isStoreOpen, getReopenLabel } from "@/lib/storeStatus";
+import { useStoreStatus } from "@/hooks/store";
 import {
   Dialog,
   DialogContent,
@@ -146,6 +146,12 @@ export default function MenuClientPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryCategory = searchParams.get("category");
+  const { data: storeStatus } = useStoreStatus();
+
+  // Use real API data for store status
+  const storeOpen = storeStatus?.storeOpen ?? true;
+  const closedMessage = storeStatus?.closedMessage ?? "المتجر مغلق حالياً";
+
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const categoryButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
     {},
@@ -157,7 +163,7 @@ export default function MenuClientPage() {
     queryCategory ?? "ice-cream",
   );
   const [closedDialogOpen, setClosedDialogOpen] = useState(
-    () => !isStoreOpen(),
+    () => !storeOpen,
   );
 
   useEffect(() => {
@@ -266,7 +272,7 @@ export default function MenuClientPage() {
               المحل مغلق حاليًا
             </DialogTitle>
             <DialogDescription className="text-white/90 text-base">
-              رح نفتح من جديد يوم {getReopenLabel()}.
+              {closedMessage}
             </DialogDescription>
           </DialogHeader>
           <DialogClose

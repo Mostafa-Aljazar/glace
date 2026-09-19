@@ -17,8 +17,17 @@ import {
   Clock,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
 import CustomizeAdditionsDialog from "@/components/Cart/CustomizeAdditionsDialog";
 import { useMenuProducts, useMenuAddons } from "@/hooks/menu";
+import { useStoreStatus } from "@/hooks/store";
 import type { IAddonOption } from "@/types/menu.types";
 import {
   useCartStore,
@@ -399,6 +408,11 @@ function OrderSummary() {
   const cartAddonTotal = useCartStore((s) => s.cartAddonTotal);
   const discount = useCartStore((s) => s.discount);
   const subtotal = useCartStore((s) => s.subtotal);
+  const { data: storeStatus } = useStoreStatus();
+
+  const storeOpen = storeStatus?.storeOpen ?? true;
+  const closedMessage = storeStatus?.closedMessage ?? "المتجر مغلق حالياً";
+  const [storeClosedDialogOpen, setStoreClosedDialogOpen] = useState(false);
 
   return (
     <aside className="rounded-[28px] border border-white/15 bg-white/14 backdrop-blur-xl p-6 text-white shadow-[0_20px_50px_rgba(0,0,0,0.12)]">
@@ -487,13 +501,52 @@ function OrderSummary() {
         </div>
       </div>
 
-      <Link
-        href="/checkout"
-        className="flex items-center justify-center gap-2 bg-glace-yellow hover:bg-yellow-300 text-[#1e6a7f] font-bold text-[16px] w-full py-3.5 rounded-[18px] transition-all shadow-[0_8px_28px_rgba(244,228,81,0.32)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.45)] hover:-translate-y-0.5"
-      >
-        إتمام الطلب
-        <ChevronLeft size={18} />
-      </Link>
+      <Dialog open={storeClosedDialogOpen} onOpenChange={setStoreClosedDialogOpen}>
+        <DialogContent
+          showCloseButton={false}
+          className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] text-center text-white ring-0"
+        >
+          <DialogHeader className="items-center gap-3">
+            <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
+              <Clock className="size-8 text-white" strokeWidth={2.5} />
+            </div>
+            <DialogTitle className="text-2xl text-white">
+              المتجر مغلق حالياً
+            </DialogTitle>
+            <DialogDescription className="text-base text-white/90">
+              {closedMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogClose
+            render={
+              <button
+                type="button"
+                className="bg-glace-yellow hover:bg-yellow-300 mt-4 px-6 py-2.5 rounded-[30px] w-full text-[#1e6a7f] font-bold text-lg transition-colors cursor-pointer"
+              />
+            }
+          >
+            حسناً
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
+
+      {!storeOpen ? (
+        <button
+          onClick={() => setStoreClosedDialogOpen(true)}
+          className="flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white font-bold text-[16px] w-full py-3.5 rounded-[18px] transition-all cursor-pointer"
+        >
+          إتمام الطلب
+          <ChevronLeft size={18} />
+        </button>
+      ) : (
+        <Link
+          href="/checkout"
+          className="flex items-center justify-center gap-2 bg-glace-yellow hover:bg-yellow-300 text-[#1e6a7f] font-bold text-[16px] w-full py-3.5 rounded-[18px] transition-all shadow-[0_8px_28px_rgba(244,228,81,0.32)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.45)] hover:-translate-y-0.5"
+        >
+          إتمام الطلب
+          <ChevronLeft size={18} />
+        </Link>
+      )}
     </aside>
   );
 }

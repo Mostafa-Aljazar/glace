@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   Users,
   TriangleAlert,
+  Clock,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import { Button } from "@/components/ui/button";
@@ -40,8 +41,10 @@ import {
   isDeliveryAvailableToday,
   scheduleToISOString,
 } from "@/lib/scheduling";
+import { generateScheduleSlotsFromAPI } from "@/lib/storeStatusUtils";
 import { getDeliveryBlockingItem } from "@/lib/deliveryRestrictions";
 import { useMenuProducts } from "@/hooks/menu/useMenuProducts";
+import { useStoreStatus } from "@/hooks/store";
 
 type DeliveryMethod = "delivery" | "pickup" | "dine-in";
 
@@ -52,7 +55,31 @@ const sectionLabelClass =
 export default function CheckoutClientPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [delivery, setDelivery] = useState<DeliveryMethod>("dine-in");
-  const scheduleDays = useMemo(() => getScheduleDays(), []);
+  const router = useRouter();
+  const items = useCartStore((s) => s.items);
+  const clearCart = useCartStore((s) => s.clearCart);
+  const cartTotal = useCartStore((s) => s.total());
+  const { data: menuProducts } = useMenuProducts();
+  const { data: storeStatus } = useStoreStatus();
+
+  // Use real API data for store/delivery status
+  const storeOpen = storeStatus?.storeOpen ?? true;
+  const deliveryOpen = storeStatus?.deliveryOpen ?? true;
+  const closedMessage = storeStatus?.closedMessage ?? "المتجر مغلق حالياً";
+  const deliveryClosedMessage = storeStatus?.deliveryClosedMessage
+    ?? "خدمة التوصيل غير متاحة حالياً";
+  const autoConfirmMinutes = storeStatus?.autoConfirmMinutes ?? 25;
+  const timezone = storeStatus?.timezone ?? "Asia/Gaza";
+  const serverTime = storeStatus?.serverTime;
+
+  // Generate schedule from API data or fallback to hardcoded
+  const scheduleDays = useMemo(() => {
+    if (storeStatus?.schedule?.delivery && storeStatus.schedule.delivery.length > 0) {
+      return generateScheduleSlotsFromAPI(storeStatus.schedule.delivery, 3, serverTime ? new Date(serverTime) : undefined);
+    }
+    return getScheduleDays();
+  }, [storeStatus?.schedule?.delivery, serverTime]);
+
   // Starts unchecked/off — scheduling is optional ("اختياري"), so the
   // picker shouldn't look pre-selected until the customer opts in via its
   // checkbox (ScheduleTimePicker fills in the earliest slot once checked).
@@ -65,15 +92,11 @@ export default function CheckoutClientPage() {
   const pickupTimeISO = schedule ? scheduleToISOString(schedule) : undefined;
   const [captainNote, setCaptainNote] = useState("");
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  const [storeClosedOpen, setStoreClosedOpen] = useState(false);
   const [deliveryUnavailableOpen, setDeliveryUnavailableOpen] = useState(false);
   const [deliveryBlockedOpen, setDeliveryBlockedOpen] = useState(false);
   const [loginSheetOpen, setLoginSheetOpen] = useState(false);
-  const deliveryAvailable = useMemo(() => isDeliveryAvailableToday(), []);
-  const router = useRouter();
-  const items = useCartStore((s) => s.items);
-  const clearCart = useCartStore((s) => s.clearCart);
-  const cartTotal = useCartStore((s) => s.total());
-  const { data: menuProducts } = useMenuProducts();
+
   const deliveryBlockingItem = useMemo(
     () => getDeliveryBlockingItem(items, menuProducts ?? []),
     [items, menuProducts],
@@ -226,6 +249,35 @@ export default function CheckoutClientPage() {
           إتمام الطلب
         </h1>
 
+        <Dialog open={storeClosedOpen} onOpenChange={setStoreClosedOpen}>
+          <DialogContent
+            showCloseButton={false}
+            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] text-center text-white ring-0"
+          >
+            <DialogHeader className="items-center gap-3">
+              <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
+                <Clock className="size-8 text-white" strokeWidth={2.5} />
+              </div>
+              <DialogTitle className="text-2xl text-white">
+                المتجر مغلق حالياً
+              </DialogTitle>
+              <DialogDescription className="text-base text-white/90">
+                {closedMessage}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogClose
+              render={
+                <button
+                  type="button"
+                  className="bg-glace-yellow hover:bg-yellow-300 mt-4 px-6 py-2.5 rounded-[30px] w-full text-[#1e6a7f] font-bold text-lg transition-colors cursor-pointer"
+                />
+              }
+            >
+              إغلاق
+            </DialogClose>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
           <DialogContent
             showCloseButton={false}
@@ -280,7 +332,7 @@ export default function CheckoutClientPage() {
                 التوصيل غير متاح
               </DialogTitle>
               <DialogDescription className="text-base text-white/90">
-                خدمة التوصيل غير متاحة حاليًا لهذا اليوم
+                {deliveryClosedMessage}
               </DialogDescription>
             </DialogHeader>
             <DialogClose
@@ -379,10 +431,19 @@ export default function CheckoutClientPage() {
                       key={val}
                       type="button"
                       onClick={() => {
-                        if (val === "delivery" && !deliveryAvailable) {
+                        // Check if store is closed (applies to all methods)
+                        if (!storeOpen && (val === "delivery" || val === "pickup" || val === "dine-in")) {
+                          setStoreClosedOpen(true);
+                          return;
+                        }
+
+                        // Check if delivery is closed (applies to delivery and pickup)
+                        if (val === "delivery" && !deliveryOpen) {
                           setDeliveryUnavailableOpen(true);
                           return;
                         }
+
+                        // Check for blocking items
                         if (
                           (val === "delivery" || val === "pickup") &&
                           deliveryBlockingItem
