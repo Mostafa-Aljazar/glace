@@ -43,8 +43,6 @@ function toWhatsAppHref(whatsapp: string): string {
 /** Compact type scale for branch info cards. */
 const sectionTitle =
   "text-[22px] sm:text-[28px] lg:text-[32px] text-white leading-snug";
-const branchTab =
-  "font-bold text-[14px] sm:text-[15px] lg:text-[16px] leading-tight";
 const cardLabel =
   "text-[13px] sm:text-[14px] text-white/75 leading-snug";
 const cardValue =
@@ -52,7 +50,13 @@ const cardValue =
 const cardAddress =
   "text-[15px] sm:text-[16px] leading-relaxed";
 
-function BranchWave({ active }: { active: boolean }) {
+function BranchWave({
+  active,
+  label,
+}: {
+  active: boolean;
+  label: string;
+}) {
   return (
     <svg
       viewBox="0 0 176 58"
@@ -61,8 +65,7 @@ function BranchWave({ active }: { active: boolean }) {
           ? "opacity-100 drop-shadow-[0_6px_14px_rgba(0,0,0,0.28)]"
           : "opacity-90"
       }`}
-      aria-hidden
-      preserveAspectRatio="none"
+      preserveAspectRatio="xMaxYMid meet"
     >
       {active ? (
         <>
@@ -83,6 +86,16 @@ function BranchWave({ active }: { active: boolean }) {
           strokeWidth="2"
         />
       )}
+      <text
+        x="95"
+        y="30"
+        textAnchor="middle"
+        dominantBaseline="central"
+        className={`font-bold ${active ? "fill-[#3a2a18]" : "fill-white/90"}`}
+        style={{ fontSize: 19 }}
+      >
+        {label}
+      </text>
     </svg>
   );
 }
@@ -133,14 +146,7 @@ export default function TimesWorkSection({
                         : "hover:scale-[1.03] cursor-pointer"
                   }`}
                 >
-                  <BranchWave active={active} />
-                  <span
-                    className={`relative z-10 whitespace-nowrap ${branchTab} ${
-                      active ? "text-[#3a2a18]" : "text-white/90"
-                    }`}
-                  >
-                    {b.label}
-                  </span>
+                  <BranchWave active={active} label={b.label} />
                   {!available && (
                     <span className="-top-2.5 z-20 absolute inline-flex items-center bg-rose-600 shadow-[0_2px_8px_rgba(0,0,0,0.35)] px-2 py-0.5 border border-rose-300/40 rounded-full font-bold text-[9px] sm:text-[10px] text-white whitespace-nowrap">
                       تم تدميره
