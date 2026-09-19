@@ -139,7 +139,9 @@ function ItemCard({
           </div>
         )}
 
-        {item.selections.some((s) => s.kind === "flavor" || s.kind === "mix") && (
+        {item.selections.some(
+          (s) => s.kind === "flavor" || s.kind === "mix" || s.kind === "mixItem",
+        ) && (
           <div className="rounded-[14px] border border-glace-yellow/30 bg-glace-yellow/8 p-3">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="flex items-center gap-1.5 text-[12px] font-bold text-glace-yellow">
@@ -147,7 +149,10 @@ function ItemCard({
                 النكهات:
               </span>
               {item.selections
-                .filter((s) => s.kind === "flavor" || s.kind === "mix")
+                .filter(
+                  (s) =>
+                    s.kind === "flavor" || s.kind === "mix" || s.kind === "mixItem",
+                )
                 .map((s) => (
                   <span
                     key={`${s.kind}-${s.id}`}

@@ -127,6 +127,8 @@ export default function OrderFlatListTemplate({
         name: `${product.name} — ${mixLabel}`,
         image: resolveMenuImageSrc(product.image),
         type: mixLabel,
+        mixId: mix.mixId,
+        mixItemIds: mix.selectedItemIds,
         selections,
         addonTotal: 0,
         unitPrice: mix.unitPrice,

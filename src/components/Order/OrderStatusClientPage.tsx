@@ -21,6 +21,7 @@ import {
   User,
   Clock,
   CheckCircle2,
+  IceCreamCone,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import { Button } from "@/components/ui/button";
@@ -408,7 +409,35 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
                         النوع: {item.type}
                       </p>
                     )}
-                    <p className="opacity-70 text-[14px]">
+                    {item.selections.some(
+                      (s) =>
+                        s.kind === "flavor" ||
+                        s.kind === "mix" ||
+                        s.kind === "mixItem",
+                    ) && (
+                      <p className="flex flex-wrap items-center gap-1.5 mt-1 text-[13px]">
+                        <span className="flex items-center gap-1 opacity-70 shrink-0">
+                          <IceCreamCone size={13} />
+                          الأطعمة:
+                        </span>
+                        {item.selections
+                          .filter(
+                            (s) =>
+                              s.kind === "flavor" ||
+                              s.kind === "mix" ||
+                              s.kind === "mixItem",
+                          )
+                          .map((s) => (
+                            <span
+                              key={`${s.kind}-${s.id}`}
+                              className="bg-glace-yellow/18 text-glace-yellow px-2 py-0.5 rounded-md font-semibold"
+                            >
+                              {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
+                            </span>
+                          ))}
+                      </p>
+                    )}
+                    <p className="opacity-70 text-[14px] mt-1">
                       الكمية: {item.quantity}
                     </p>
                   </div>

@@ -15,7 +15,7 @@ export const PAYMENT_STATUS_DISPLAY: Record<
   },
   paid: {
     label: "تم تأكيد الدفع",
-    className: "bg-green-500/15 text-green-300 border-green-500/30",
+    className: "bg-glace-yellow/20 text-glace-yellow border-glace-yellow/40",
     icon: CheckCircle2,
   },
   failed: {

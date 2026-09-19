@@ -295,45 +295,67 @@ export default function OrdersPanel() {
                         <Package size={16} /> المنتجات
                       </p>
                       <div className="flex flex-col gap-3">
-                        {order.items.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex items-center gap-3 pb-3 border-white/10 border-b text-[14px]"
-                          >
-                            <div className="relative flex justify-center items-center bg-linear-to-br from-white/20 to-white/5 border border-white/15 rounded-2xl size-11 overflow-hidden shrink-0">
-                              {item.image ? (
-                                <Image
-                                  src={item.image}
-                                  alt={item.name}
-                                  width={44}
-                                  height={44}
-                                  className="p-1 size-full object-contain"
-                                />
-                              ) : (
-                                <Package
-                                  size={18}
-                                  strokeWidth={1.6}
-                                  className="text-glace-yellow"
-                                />
-                              )}
-                            </div>
+                        {order.items.map((item) => {
+                          const flavors = item.selections.filter(
+                            (s) =>
+                              s.kind === "flavor" ||
+                              s.kind === "mix" ||
+                              s.kind === "mixItem",
+                          );
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-center gap-3 pb-3 border-white/10 border-b text-[14px]"
+                            >
+                              <div className="relative flex justify-center items-center bg-linear-to-br from-white/20 to-white/5 border border-white/15 rounded-2xl size-11 overflow-hidden shrink-0">
+                                {item.image ? (
+                                  <Image
+                                    src={item.image}
+                                    alt={item.name}
+                                    width={44}
+                                    height={44}
+                                    className="p-1 size-full object-contain"
+                                  />
+                                ) : (
+                                  <Package
+                                    size={18}
+                                    strokeWidth={1.6}
+                                    className="text-glace-yellow"
+                                  />
+                                )}
+                              </div>
 
-                            <div className="flex-1 min-w-0">
-                              <span className="font-bold">{item.name}</span>
-                              {item.size && (
-                                <span className="mr-2 text-white/60">
-                                  ({item.size})
-                                </span>
-                              )}
-                              <span className="mr-2 text-white/60">
-                                × {item.quantity}
+                              <div className="flex-1 min-w-0">
+                                <div>
+                                  <span className="font-bold">{item.name}</span>
+                                  {item.size && (
+                                    <span className="mr-2 text-white/60">
+                                      ({item.size})
+                                    </span>
+                                  )}
+                                  <span className="mr-2 text-white/60">
+                                    × {item.quantity}
+                                  </span>
+                                </div>
+                                {flavors.length > 0 && (
+                                  <div className="flex flex-wrap items-center gap-1 mt-1">
+                                    {flavors.map((s) => (
+                                      <span
+                                        key={`${s.kind}-${s.id}`}
+                                        className="bg-glace-yellow/18 text-glace-yellow px-1.5 py-0.5 rounded text-[11px] font-semibold"
+                                      >
+                                        {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <span className="shrink-0">
+                                {getLineItemTotal(item).toFixed(2)} ₪
                               </span>
                             </div>
-                            <span className="shrink-0">
-                              {getLineItemTotal(item).toFixed(2)} ₪
-                            </span>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 

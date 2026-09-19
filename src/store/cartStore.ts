@@ -25,8 +25,12 @@ export const MAX_MULTI_ADDONS = 4;
 
 /** One structured, priced pick inside a cart line — replaces the old
  *  `flavors?: string[]` / `addons?: string[]` string-encoded pair (which
- *  needed two differently-anchored regexes to parse quantities back out). */
-export type SelectionKind = "flavor" | "mix" | "addon";
+ *  needed two differently-anchored regexes to parse quantities back out).
+ *  `"mixItem"` is not sent by the frontend — it's how the backend echoes a
+ *  mix flavor pick back on `GET /orders/{id}` (confirmed against a real
+ *  order), where the frontend always sends/expects `"mix"`. Both must be
+ *  treated as the same thing when reading a fetched order. */
+export type SelectionKind = "flavor" | "mix" | "mixItem" | "addon";
 
 export interface CartSelection {
   kind: SelectionKind;
@@ -66,6 +70,22 @@ export interface CartItem {
    *  Flat-list, non-mix selections only; mixes carry sub-item ids per-flavor
    *  in `selections[].id` instead. */
   itemId?: string;
+  /** Backend id of the mix rule this line was built from (menu API's
+   *  `mixes[].id`, e.g. "mix" / "super-mix") — required by `items[].mixId`
+   *  so the server can validate the picked flavors against that rule's
+   *  `itemIds` for THIS product. Mix lines only; shared/not unique per
+   *  product, so it must travel alongside `productId`, never alone. */
+  mixId?: string;
+  /** The picked flavor/variant ids for a mix line, one per pick slot —
+   *  required by `items[].mixItemIds` alongside `mixId`. The server does NOT
+   *  derive this from `selections[]`: confirmed against a real order, a mix
+   *  item sent with `mixId` but no `mixItemIds` is rejected as "غير موجود
+   *  ضمن هذا المنتج" even though `selections[]` carries the same ids. Order
+   *  matches `selections[]`'s expansion (repeats included), so it doubles
+   *  as the flat list `toWireItem` needs — kept separate from `flavorIds`
+   *  (which covers builder products' flavor picks) since a mix line is the
+   *  only case needing this exact field name. */
+  mixItemIds?: string[];
   flavorFamily?: "classic" | "special" | "mix";
   /** Structured flavor/mix/addon picks for this line. */
   selections: CartSelection[];
@@ -111,7 +131,7 @@ export function getLineItemSummaryParts(item: CartItem): string[] {
   if (props.length > 0) parts.push(props.join(" · "));
 
   const flavors = item.selections
-    .filter((s) => s.kind === "flavor" || s.kind === "mix")
+    .filter((s) => s.kind === "flavor" || s.kind === "mix" || s.kind === "mixItem")
     .map(labelWithQty);
   if (flavors.length > 0) parts.push(`الأطعمة: ${flavors.join("، ")}`);
 
@@ -180,7 +200,7 @@ export interface LineItemRow {
  *  per-unit customization, one row for the whole line otherwise. */
 export function getLineItemRows(item: CartItem): LineItemRow[] {
   const flavors = item.selections
-    .filter((s) => s.kind === "flavor" || s.kind === "mix")
+    .filter((s) => s.kind === "flavor" || s.kind === "mix" || s.kind === "mixItem")
     .map(labelWithQty)
     .join("، ") || "—";
 
@@ -308,6 +328,7 @@ function findMatchingItem(
       existing.sizeId === item.sizeId &&
       existing.containerId === item.containerId &&
       existing.itemId === item.itemId &&
+      existing.mixId === item.mixId &&
       existing.flavorFamily === item.flavorFamily &&
       existing.addonTotal === item.addonTotal &&
       selectionsMatch(existing.selections, item.selections),

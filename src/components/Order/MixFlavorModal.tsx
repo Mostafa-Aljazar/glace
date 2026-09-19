@@ -64,7 +64,11 @@ export default function MixFlavorModal({
     remaining === 1 ? "طعم واحد" : remaining === 2 ? "طعمين" : `${remaining} أطعمة`;
   const isFull = selected.length >= mix.pick;
 
-  const MAX_SAME_FLAVOR = mix.pick >= 3 ? 2 : 1;
+  // The backend rejects any repeated flavor within a single mix instance
+  // ("لا يمكن اختيار نفس الصنف أكثر من مرة في المكس") — confirmed against a
+  // real order — so every pick slot must be a distinct item, regardless of
+  // how many flavors the mix asks for.
+  const MAX_SAME_FLAVOR = 1;
 
   function addFlavor(itemId: string) {
     setSelected((prev) => {
@@ -113,11 +117,6 @@ export default function MixFlavorModal({
                 {selected.length}/{mix.pick}
               </span>
             </p>
-            {MAX_SAME_FLAVOR > 1 && (
-              <p className="mt-1 text-[11px] text-white/45">
-                يمكن اختيار نفس الطعم مرتين كحد أقصى
-              </p>
-            )}
           </div>
           <button
             type="button"
