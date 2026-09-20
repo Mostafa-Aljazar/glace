@@ -165,13 +165,15 @@ export default function HeroSection({
                   />
 
                   {/* character */}
-                  <Image
-                    src={resolveHomeImageSrc(slide.manImg)}
-                    alt=""
-                    width={260}
-                    height={200}
-                    className="flex mb-[-5px] w-full h-[130px] sm:h-[150px] md:h-[150px] lg:h-[170px] 2xl:h-[200px] xl:h-[180px] object-bottom-left object-contain"
-                  />
+                  {slide.manImg && (
+                    <Image
+                      src={resolveHomeImageSrc(slide.manImg)}
+                      alt=""
+                      width={260}
+                      height={200}
+                      className="flex mb-[-5px] w-full h-[130px] sm:h-[150px] md:h-[150px] lg:h-[170px] 2xl:h-[200px] xl:h-[180px] object-bottom-left object-contain"
+                    />
+                  )}
 
                   {/* title blocks */}
                   <div className="mx-auto w-full max-w-full text-center">
@@ -204,13 +206,15 @@ export default function HeroSection({
                   </div>
 
                   {/* piece ice — desktop/tablet only (avoids overlapping the CTA on mobile) */}
-                  <Image
-                    src={resolveHomeImageSrc(slide.pieceImg)}
-                    alt=""
-                    width={155}
-                    height={155}
-                    className="hidden md:block right-[-79px] md:right-[-123px] lg:right-[-230px] 2xl:right-[-230px] absolute w-[80px] md:w-[85px] lg:w-[120px] 2xl:w-[130px] h-[80px] md:h-[85px] lg:h-[120px] 2xl:h-[130px] object-contain hover:scale-105 transition-transform -translate-y-[10px] md:-translate-y-[25px] lg:-translate-y-[50px] 2xl:-translate-y-[25px] duration-[1500ms]"
-                  />
+                  {slide.pieceImg && (
+                    <Image
+                      src={resolveHomeImageSrc(slide.pieceImg)}
+                      alt=""
+                      width={155}
+                      height={155}
+                      className="hidden md:block right-[-79px] md:right-[-123px] lg:right-[-230px] 2xl:right-[-230px] absolute w-[80px] md:w-[85px] lg:w-[120px] 2xl:w-[130px] h-[80px] md:h-[85px] lg:h-[120px] 2xl:h-[130px] object-contain hover:scale-105 transition-transform -translate-y-[10px] md:-translate-y-[25px] lg:-translate-y-[50px] 2xl:-translate-y-[25px] duration-[1500ms]"
+                    />
+                  )}
 
                   {/* order now — wavy blob button */}
                   <div className="z-[200] relative flex justify-center mt-6 sm:mt-10 lg:mt-12 mb-6 sm:mb-8 lg:mb-10 animate-cta-pop">

@@ -356,6 +356,7 @@ export default function OrderFlatListTemplate({
               canAdd={totalItems > 0 || mixItems > 0}
               addedToCart={addedToCart}
               validationMsg={validationMsg}
+              hasSelections={hasPendingSelections}
               cartQuantity={productCartQuantity}
             />
           </div>

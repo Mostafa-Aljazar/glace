@@ -5,6 +5,8 @@ interface AddToCartButtonProps {
   canAdd: boolean;
   addedToCart: boolean;
   validationMsg: string;
+  /** Whether any form selections have been made */
+  hasSelections?: boolean;
   /** How many of this product are already sitting in the cart — shown as a
    *  persistent badge so it's visible without checking the cart bar. */
   cartQuantity?: number;
@@ -15,8 +17,11 @@ export default function AddToCartButton({
   canAdd,
   addedToCart,
   validationMsg,
+  hasSelections = false,
   cartQuantity = 0,
 }: AddToCartButtonProps) {
+  const isViewCart = !hasSelections && !addedToCart;
+
   return (
     <>
       <div className="relative min-w-0 shrink-0 lg:w-48">
@@ -27,12 +32,16 @@ export default function AddToCartButton({
             ${
               addedToCart
                 ? "bg-green-400 text-white"
-                : canAdd
+                : canAdd || isViewCart
                   ? "bg-glace-yellow hover:bg-yellow-300 text-[#1e6a7f] shadow-[0_4px_20px_rgba(244,228,81,0.4)] hover:-translate-y-0.5"
                   : "bg-white/30 text-white/60"
             }`}
         >
-          {addedToCart ? "✓ تمت الإضافة" : "أضف للسلة"}
+          {addedToCart
+            ? "✓ تمت الإضافة"
+            : isViewCart
+              ? "عرض السلة"
+              : "أضف للسلة"}
         </button>
 
         {cartQuantity > 0 && (

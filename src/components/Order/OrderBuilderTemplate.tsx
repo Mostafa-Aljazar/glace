@@ -973,6 +973,7 @@ export default function OrderBuilderTemplate({
               canAdd={!!selectedSize}
               addedToCart={addedToCart}
               validationMsg={validationMsg}
+              hasSelections={hasPendingSelections}
               cartQuantity={productCartQuantity}
             />
           </div>

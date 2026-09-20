@@ -68,7 +68,7 @@ export default function HomeClientPage() {
       style={{ backgroundColor: bgColor }}
     >
       <HeroSection
-        slides={data.hero.slides}
+        slides={data.hero?.slides}
         bgColor={bgColor}
         onColorChange={setBgColor}
       />
