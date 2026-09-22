@@ -6,14 +6,12 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   CheckCircle2,
-  Tag,
   CheckCircle,
   XCircle,
   Banknote,
   Wallet,
   Copy,
   Check,
-  ChevronRight,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
 import { Input } from "@/components/ui/input";
@@ -121,9 +119,6 @@ export default function PaymentClientPage() {
   const [jawwalCode, setJawwalCode] = useState("");
   const [jawwalError, setJawwalError] = useState<string | null>(null);
   const sendJawwalOrderCodeMutation = useSendJawwalOrderCode();
-  const [receiptStep, setReceiptStep] = useState<"detail" | "upload">(
-    "detail"
-  );
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [placedOrderId, setPlacedOrderId] = useState("");
   /** True once the wallet deduction for this order has succeeded — guards
@@ -138,9 +133,6 @@ export default function PaymentClientPage() {
     }
   }, [inStoreOnlyAvailable, method]);
 
-  useEffect(() => {
-    setReceiptStep("detail");
-  }, [method]);
 
   // Scroll the method-specific detail (cash input, receipt upload, etc.)
   // into view whenever the customer picks a payment method — it renders
@@ -356,10 +348,19 @@ export default function PaymentClientPage() {
     );
   }
 
+  function getDisplayLabel(methodId: PaymentMethod): string {
+    // Try to get displayName from payment accounts (from backend)
+    const account = paymentAccounts.find((a) => a.method === methodId);
+    if (account?.displayName) return account.displayName;
+    // Fallback to hardcoded label
+    return PAYMENT_METHOD_LABELS[methodId] ?? methodId;
+  }
+
   function renderCardMethod(m: (typeof CARD_METHODS_BEFORE_CASH)[number]) {
     const disabled = IN_STORE_ONLY_METHODS.includes(m.id) && !inStoreOnlyAvailable;
     const isAssetMethod = m.asset;
     const subtitle = IN_STORE_ONLY_METHODS.includes(m.id) ? inStoreOnlyLabel(m.id) : null;
+    const displayLabel = getDisplayLabel(m.id);
 
     return (
       <button
@@ -381,7 +382,7 @@ export default function PaymentClientPage() {
         >
           <Image
             src={m.asset || m.logo!}
-            alt={m.label}
+            alt={displayLabel}
             width={44}
             height={44}
             className="w-full h-full object-contain"
@@ -389,7 +390,7 @@ export default function PaymentClientPage() {
         </span>
         <div className="flex-1 min-w-0">
           <span className="block font-bold text-[14px]">
-            {isAssetMethod && subtitle ? subtitle : m.label}
+            {isAssetMethod && subtitle ? subtitle : displayLabel}
           </span>
         </div>
       </button>
@@ -698,29 +699,6 @@ export default function PaymentClientPage() {
               );
               if (!account) return null;
 
-              if (receiptStep === "upload") {
-                return (
-                  <div className="bg-white/10 mb-5 sm:mb-6 p-3.5 sm:p-4 border border-white/25 rounded-[16px] sm:rounded-[20px]">
-                    <button
-                      type="button"
-                      onClick={() => setReceiptStep("detail")}
-                      className="mb-4 sm:mb-5 flex items-center gap-2 px-4 py-2.5 rounded-[14px] text-[13px] sm:text-[14px] font-medium text-glace-yellow bg-white/10 hover:bg-white/20 border border-glace-yellow/30 hover:border-glace-yellow/60 transition-all cursor-pointer"
-                    >
-                      <ChevronRight size={18} className="rotate-180" />
-                      رجوع لبيانات التحويل
-                    </button>
-                    <p className="mb-3 text-[13px] sm:text-[14px] text-white/80">
-                      ارفع صورة وصل التحويل
-                    </p>
-                    <ReceiptUploadForm
-                      onSubmit={handleReceiptSubmit}
-                      submitLabel="تأكيد الدفع"
-                      submitting={placeOrderMutation.isPending}
-                    />
-                  </div>
-                );
-              }
-
               return (
                 <div className="bg-white/10 mb-5 sm:mb-6 p-3.5 sm:p-4 border border-white/25 rounded-[16px] sm:rounded-[20px]">
                   <div className="flex flex-col items-center gap-2.5 sm:gap-3 mb-3.5 sm:mb-4">
@@ -753,7 +731,7 @@ export default function PaymentClientPage() {
                     <div className="flex-1 border-white/20 border-t" />
                   </div>
 
-                  <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-col gap-2.5 mb-4 sm:mb-5">
                     {account.bankName && (
                       <div className="flex justify-between items-center text-[13px] sm:text-[14px]">
                         <span className="text-white/70">البنك</span>
@@ -840,13 +818,19 @@ export default function PaymentClientPage() {
                     )}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setReceiptStep("upload")}
-                    className="bg-glace-yellow hover:brightness-105 mt-4 sm:mt-5 py-2.5 sm:py-3 rounded-[16px] sm:rounded-[20px] w-full font-bold text-[#1e6a7f] text-[14.5px] sm:text-[16px] transition cursor-pointer"
-                  >
-                    ارفع الوصل للمتابعة
-                  </button>
+                  <div className="flex items-center gap-3 my-4 sm:my-5">
+                    <div className="flex-1 border-white/20 border-t" />
+                    <span className="text-[11.5px] sm:text-[12px] text-white/60">
+                      ارفع إشعار التحويل
+                    </span>
+                    <div className="flex-1 border-white/20 border-t" />
+                  </div>
+
+                  <ReceiptUploadForm
+                    onSubmit={handleReceiptSubmit}
+                    submitLabel="تأكيد الدفع"
+                    submitting={placeOrderMutation.isPending}
+                  />
                 </div>
               );
             })()}

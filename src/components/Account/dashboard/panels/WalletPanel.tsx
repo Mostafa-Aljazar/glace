@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import {
   Wallet,
@@ -77,6 +77,7 @@ function sanitizeAmount(value: string): string {
 type Step = "method" | "details";
 
 export default function WalletPanel() {
+  const amountInputRef = useRef<HTMLInputElement>(null);
   const { data: wallet } = useWallet();
   const balance = wallet?.balance ?? 0;
   const [txPage, setTxPage] = useState(1);
@@ -85,9 +86,18 @@ export default function WalletPanel() {
   });
   const transactions = txData?.items ?? [];
   const { data: topUpRequests = [] } = useTopUpRequests();
+  const { data: paymentAccounts = [] } = usePaymentAccounts();
   const submitTopUpRequestMutation = useSubmitTopUpRequest();
   const sendJawwalCodeMutation = useSendJawwalTopUpCode();
   const confirmJawwalMutation = useConfirmJawwalTopUp();
+
+  function getDisplayLabel(methodId: TopUpMethod): string {
+    // Try to get displayName from payment accounts (from backend)
+    const account = paymentAccounts.find((a) => a.method === methodId);
+    if (account?.displayName) return account.displayName;
+    // Fallback to hardcoded label
+    return TOP_UP_METHOD_LABELS[methodId] ?? methodId;
+  }
 
   const [step, setStep] = useState<Step>("method");
   const [amount, setAmount] = useState("");
@@ -108,7 +118,8 @@ export default function WalletPanel() {
   const [receiptError, setReceiptError] = useState<string | null>(null);
 
   const amountValue = parseFloat(amount) || 0;
-  const amountValid = amountValue >= 1;
+  const MAX_TOP_UP = 500;
+  const amountValid = amountValue >= 1 && amountValue <= MAX_TOP_UP;
 
   function handlePickMethod(m: TopUpMethod) {
     setMethod(m);
@@ -155,7 +166,14 @@ export default function WalletPanel() {
     receiptNote: string | undefined,
     senderAccountName: string
   ) {
-    if (!method || method === "jawwal" || method === "visa" || !amountValid) return;
+    if (!amountValid) {
+      setTimeout(() => {
+        amountInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        amountInputRef.current?.focus();
+      }, 0);
+      return;
+    }
+    if (!method || method === "jawwal" || method === "visa") return;
     setReceiptError(null);
     submitTopUpRequestMutation.mutate(
       {
@@ -189,7 +207,6 @@ export default function WalletPanel() {
     if (clearSubmitted) setSubmittedRequestId(null);
   }
 
-  const { data: paymentAccounts } = usePaymentAccounts();
   const account =
     method && method !== "jawwal" && !IN_STORE_ONLY_TOP_UP_METHODS.includes(method)
       ? paymentAccounts?.find(
@@ -242,27 +259,30 @@ export default function WalletPanel() {
                 اختر طريقة التحويل
               </p>
               <div className="flex flex-col gap-3">
-                {TOP_UP_METHODS.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => handlePickMethod(m.id)}
-                    className="flex items-center gap-3 hover:bg-white/20 p-3 border border-white/30 hover:border-white rounded-[18px] text-start transition-colors cursor-pointer"
-                  >
-                    <span
-                      className={`flex justify-center items-center shrink-0 rounded-[12px] size-11 overflow-hidden ${m.bg ? `${m.bg} p-1.5` : ""}`}
+                {TOP_UP_METHODS.map((m) => {
+                  const displayLabel = getDisplayLabel(m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => handlePickMethod(m.id)}
+                      className="flex items-center gap-3 hover:bg-white/20 p-3 border border-white/30 hover:border-white rounded-[18px] text-start transition-colors cursor-pointer"
                     >
-                      <Image
-                        src={m.asset || m.logo!}
-                        alt={m.label}
-                        width={44}
-                        height={44}
-                        className="w-full h-full object-contain"
-                      />
-                    </span>
-                    <span className="font-bold text-[15px]">{m.label}</span>
-                  </button>
-                ))}
+                      <span
+                        className={`flex justify-center items-center shrink-0 rounded-[12px] size-11 overflow-hidden ${m.bg ? `${m.bg} p-1.5` : ""}`}
+                      >
+                        <Image
+                          src={m.asset || m.logo!}
+                          alt={displayLabel}
+                          width={44}
+                          height={44}
+                          className="w-full h-full object-contain"
+                        />
+                      </span>
+                      <span className="font-bold text-[15px]">{displayLabel}</span>
+                    </button>
+                  );
+                })}
               </div>
             </>
           ) : method === "jawwal" ? (
@@ -299,17 +319,24 @@ export default function WalletPanel() {
                     المبلغ المدفوع
                   </label>
                   <input
+                    ref={amountInputRef}
                     type="text"
                     inputMode="decimal"
                     value={amount}
                     disabled={codeSent}
                     onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
                     placeholder="أدخل المبلغ"
-                    className="bg-white/10 disabled:opacity-60 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] px-3.5 py-2.5 w-full text-white text-[15px] placeholder:text-white/40 outline-none transition-colors"
+                    className={`bg-white/10 disabled:opacity-60 border rounded-[14px] px-3.5 py-2.5 w-full text-white text-[15px] placeholder:text-white/40 outline-none transition-colors ${
+                      amount !== "" && !amountValid
+                        ? "border-red-500 focus:border-red-500/50"
+                        : "border-white/25 focus:border-glace-yellow/50"
+                    }`}
                   />
                   {amount !== "" && !amountValid && (
-                    <p className="mt-1.5 text-[13px] text-red-300">
-                      المبلغ يجب ألا يقل عن 1 ₪
+                    <p className="mt-2 text-[13px] text-red-300">
+                      {amountValue > MAX_TOP_UP
+                        ? `الحد الأقصى المسموح ${MAX_TOP_UP} ₪`
+                        : "المبلغ يجب ألا يقل عن 1 ₪"}
                     </p>
                   )}
                 </div>
@@ -384,7 +411,7 @@ export default function WalletPanel() {
             <>
               <div className="flex justify-between items-center mb-4">
                 <p className="text-[14px] text-white/70">
-                  {TOP_UP_METHOD_LABELS[method]}
+                  {method && getDisplayLabel(method)}
                 </p>
                 <button
                   type="button"
@@ -404,7 +431,7 @@ export default function WalletPanel() {
               <>
                 <div className="flex justify-between items-center mb-4">
                   <p className="text-[14px] text-white/70">
-                    {TOP_UP_METHOD_LABELS[method!]}
+                    {getDisplayLabel(method!)}
                   </p>
                   <button
                     type="button"
@@ -529,18 +556,25 @@ export default function WalletPanel() {
                     المبلغ المدفوع <span className="text-red-300">*</span>
                   </label>
                   <input
+                    ref={amountInputRef}
                     type="text"
                     inputMode="decimal"
                     value={amount}
                     onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
                     placeholder="أدخل المبلغ"
-                    className="bg-white/10 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] px-3.5 py-2.5 w-full text-white text-[15px] placeholder:text-white/40 outline-none transition-colors"
+                    className={`bg-white/10 border rounded-[14px] px-3.5 py-2.5 w-full text-white text-[15px] placeholder:text-white/40 outline-none transition-colors ${
+                      amount !== "" && !amountValid
+                        ? "border-red-500 focus:border-red-500/50"
+                        : "border-white/25 focus:border-glace-yellow/50"
+                    }`}
                   />
                   {!amountValid && (
-                    <p className="mt-1.5 text-[13px] text-red-300">
+                    <p className="mt-2 text-[13px] text-red-300">
                       {amount === ""
                         ? "أدخل المبلغ الذي حوّلته لتفعيل زر تأكيد الشحن"
-                        : "المبلغ يجب ألا يقل عن 1 ₪"}
+                        : amountValue > MAX_TOP_UP
+                          ? `الحد الأقصى المسموح ${MAX_TOP_UP} ₪`
+                          : "المبلغ يجب ألا يقل عن 1 ₪"}
                     </p>
                   )}
                 </div>
@@ -548,10 +582,17 @@ export default function WalletPanel() {
                 <p className="mb-3 text-[14px] text-white/80">
                   ارفع صورة وصل التحويل
                 </p>
+                {amount !== "" && !amountValid && (
+                  <div className="mb-3 bg-red-500/20 border border-red-500/40 rounded-[16px] px-4 py-3 text-[13px] text-red-200">
+                    {amountValue > MAX_TOP_UP
+                      ? `الحد الأقصى المسموح ${MAX_TOP_UP} ₪`
+                      : "المبلغ يجب ألا يقل عن 1 ₪"}
+                  </div>
+                )}
                 <ReceiptUploadForm
                   onSubmit={handleReceiptSubmit}
                   submitLabel="تأكيد الشحن"
-                  submitDisabled={!amountValid}
+                  submitDisabled={false}
                   submitting={submitTopUpRequestMutation.isPending}
                 />
                 {receiptError && (
@@ -622,7 +663,7 @@ export default function WalletPanel() {
                         <div className="flex justify-between text-[14px]">
                           <span className="text-white/70">طريقة الدفع</span>
                           <span className="font-bold">
-                            {TOP_UP_METHOD_LABELS[req.method]}
+                            {getDisplayLabel(req.method)}
                           </span>
                         </div>
                         {req.phone && (
