@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import EventsBackground from "@/components/Events/EventsBackground";
@@ -179,15 +179,14 @@ export default function OrderBuilderTemplate({
     extraBiscuitAddon.available !== false;
   const extraBiscuitPrice = extraBiscuitAddon?.price ?? 0;
 
-  const firstAvailableContainer =
-    product.containerOptions?.find((c) => c.available)?.id ??
-    product.containerOptions?.[0]?.id ??
-    "";
+  // No container is pre-selected — the user must actively pick one, so the
+  // total stays 0 until then. A container passed via the URL is still
+  // honored as a starting point since that reflects an explicit prior choice.
   const [containerId, setContainerId] = useState(
-    (requestedContainer &&
-    product.containerOptions?.some((c) => c.id === requestedContainer)
+    requestedContainer &&
+      product.containerOptions?.some((c) => c.id === requestedContainer)
       ? requestedContainer
-      : firstAvailableContainer) || "",
+      : "",
   );
 
   const availableSizes = useMemo(
@@ -197,16 +196,12 @@ export default function OrderBuilderTemplate({
       ),
     [product.sizes, containerId],
   );
-  const firstOrderableSize =
-    availableSizes.find((s) => s.available !== false) ?? availableSizes[0];
-  const [sizeId, setSizeId] = useState(firstOrderableSize?.id ?? "");
-  const selectedSize =
-    availableSizes.find((s) => s.id === sizeId) ?? availableSizes[0];
+  // No size is pre-selected either, for the same reason.
+  const [sizeId, setSizeId] = useState("");
+  const selectedSize = availableSizes.find((s) => s.id === sizeId);
 
   const hasFlavorStep = !!product.flavorFamilies?.length;
-  const [flavorFamily, setFlavorFamily] = useState<FlavorFamily | "">(
-    product.flavorFamilies?.[0] ?? "",
-  );
+  const [flavorFamily, setFlavorFamily] = useState<FlavorFamily | "">("");
   const [selectedFlavorIds, setSelectedFlavorIds] = useState<string[]>([]);
   const [extraBiscuitCount, setExtraBiscuitCount] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -219,6 +214,28 @@ export default function OrderBuilderTemplate({
     toastMsg,
     dismissToast,
   } = useAddToCartFeedback();
+
+  // Whichever step failed validation on the last add-to-cart attempt — its
+  // card gets a red border + an inline hint, and the page auto-scrolls to it.
+  type StepKey = "typeSize" | "flavorFamily" | "flavorPicks";
+  const [invalidStep, setInvalidStep] = useState<StepKey | null>(null);
+  const typeSizeStepRef = useRef<HTMLDivElement>(null);
+  const flavorFamilyStepRef = useRef<HTMLDivElement>(null);
+  const flavorPicksStepRef = useRef<HTMLDivElement>(null);
+  const stepRefs = useRef<Record<StepKey, React.RefObject<HTMLDivElement | null>>>({
+    typeSize: typeSizeStepRef,
+    flavorFamily: flavorFamilyStepRef,
+    flavorPicks: flavorPicksStepRef,
+  });
+
+  const flagInvalidStep = useCallback((step: StepKey, msg: string) => {
+    setInvalidStep(step);
+    showValidation(msg);
+    stepRefs.current[step].current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [showValidation]);
 
   const selectedContainer = product.containerOptions?.find(
     (c) => c.id === containerId,
@@ -263,30 +280,23 @@ export default function OrderBuilderTemplate({
   );
 
   const hasPendingSelections =
-    (product.containerOptions
-      ? containerId !== firstAvailableContainer
-      : false) ||
-    sizeId !== (availableSizes[0]?.id ?? "") ||
+    (product.containerOptions ? !!containerId : false) ||
+    !!sizeId ||
     selectedFlavorIds.length > 0 ||
     extraBiscuitCount > 0 ||
     quantity !== 1;
 
+  // Reset back to the same "nothing selected" baseline the page loads with —
+  // not any default container/size/family, since those are no longer
+  // auto-picked.
   const clearSelections = useCallback(() => {
-    // Compute the reset size against the DEFAULT container's sizes directly —
-    // not the `availableSizes` closure, which is still keyed to whichever
-    // container was selected when the user filled the form. Using that stale
-    // list here left `sizeId` mismatched against the post-reset container,
-    // so `hasPendingSelections` never returned to false after add-to-cart.
-    const defaultSizes = product.sizes.filter(
-      (s) => !s.containerId || s.containerId === firstAvailableContainer,
-    );
-    setContainerId(firstAvailableContainer);
-    setSizeId(defaultSizes[0]?.id ?? "");
-    setFlavorFamily(product.flavorFamilies?.[0] ?? "");
+    setContainerId("");
+    setSizeId("");
+    setFlavorFamily("");
     setSelectedFlavorIds([]);
     setExtraBiscuitCount(0);
     setQuantity(1);
-  }, [firstAvailableContainer, product]);
+  }, []);
 
   const { showCloseConfirm, handleCancelLeave, handleConfirmLeave } =
     useLeavePageGuard(hasPendingSelections, clearSelections);
@@ -364,13 +374,17 @@ export default function OrderBuilderTemplate({
     });
   }
 
-  const unitBasePrice = selectedSize
-    ? resolveBuilderPrice(
-        product,
-        selectedSize,
-        (flavorFamily || "classic") as FlavorFamily,
-      )
-    : 0;
+  // Price stays 0 until the user has actually picked a size (and, when the
+  // product has a flavor step, a flavor family too) — nothing is
+  // pre-selected, so nothing should be priced by default.
+  const unitBasePrice =
+    selectedSize && (!hasFlavorStep || flavorFamily)
+      ? resolveBuilderPrice(
+          product,
+          selectedSize,
+          (flavorFamily || "classic") as FlavorFamily,
+        )
+      : 0;
   // Extra biscuit is priced once for the whole line — it does NOT scale with
   // quantity (4 بسكوت stays 4 regardless of how many units are ordered).
   const flatAddonSum = showExtraBiscuit
@@ -380,14 +394,20 @@ export default function OrderBuilderTemplate({
 
   function handleAddToCart() {
     if (containerSizesList.length > 0) {
-      if (!containerId || !sizeId) return showValidation("اختر النوع و الحجم");
+      if (!containerId || !sizeId)
+        return flagInvalidStep("typeSize", "اختر النوع و الحجم");
     } else {
       if (product.containerOptions && !containerId)
-        return showValidation("اختر النوع");
-      if (!selectedSize) return showValidation("اختر الحجم");
+        return flagInvalidStep("typeSize", "اختر النوع");
     }
+    if (!selectedSize) return flagInvalidStep("typeSize", "اختر الحجم");
+    if (hasFlavorStep && !flavorFamily)
+      return flagInvalidStep("flavorFamily", "اختر نوع الأطعمة");
     if (hasFlavorStep && selectedFlavorIds.length === 0)
-      return showValidation("اختر الأطعمة");
+      return flagInvalidStep(
+        "flavorPicks",
+        "اضغط على كرات الأطعمة للاختيار",
+      );
     if (flavorFamily === "mix") {
       const classicCount = selectedFlavorIds.filter((id) =>
         mixClassicIds.has(id),
@@ -397,14 +417,20 @@ export default function OrderBuilderTemplate({
       ).length;
       if (equalMixSplit) {
         if (classicCount !== mixHalf || specialCount !== mixHalf) {
-          return showValidation(
+          return flagInvalidStep(
+            "flavorPicks",
             `اختر ${mixHalf} كرات كلاسيك و ${mixHalf} كرات سبيشل`,
           );
         }
       } else if (classicCount === 0 || specialCount === 0) {
-        return showValidation("اختر نكهة كلاسيك ونكهة سبيشل على الأقل");
+        return flagInvalidStep(
+          "flavorPicks",
+          "اختر نكهة كلاسيك ونكهة سبيشل على الأقل",
+        );
       }
     }
+
+    setInvalidStep(null);
 
     const flavorCounts = new Map<string, number>();
     for (const id of selectedFlavorIds)
@@ -505,6 +531,35 @@ export default function OrderBuilderTemplate({
     }
     return composite;
   }, [product, isFamilyProduct]);
+
+  // Steps must be completed in order — each step is locked until every step
+  // before it is done, so e.g. "نوع الأطعمة" can't be touched before a
+  // size is picked.
+  const typeAndSizeDone =
+    containerSizesList.length > 0
+      ? !!containerId && !!sizeId
+      : (!product.containerOptions || !!containerId) && !!sizeId;
+  const flavorFamilyDone = !hasFlavorStep || !!flavorFamily;
+  const flavorPicksLocked = !typeAndSizeDone || !flavorFamilyDone;
+  const flavorPicksDone = !hasFlavorStep || selectedFlavorIds.length > 0;
+
+  // Mirrors handleAddToCart's mix validation, so the red border on "اختر
+  // الأطعمة" clears live as soon as the user actually satisfies it, rather
+  // than only after another add-to-cart attempt.
+  const flavorPicksSatisfied = (() => {
+    if (!hasFlavorStep || selectedFlavorIds.length === 0) return false;
+    if (flavorFamily !== "mix") return true;
+    const classicCount = selectedFlavorIds.filter((id) =>
+      mixClassicIds.has(id),
+    ).length;
+    const specialCount = selectedFlavorIds.filter((id) =>
+      mixSpecialIds.has(id),
+    ).length;
+    return equalMixSplit
+      ? classicCount === mixHalf && specialCount === mixHalf
+      : classicCount > 0 && specialCount > 0;
+  })();
+  const extrasLocked = flavorPicksLocked || !flavorPicksDone;
 
   const priceGroups = useMemo(() => {
     const byContainer = new Map<string | undefined, typeof product.sizes>();
@@ -627,9 +682,12 @@ export default function OrderBuilderTemplate({
 
         {containerSizesList.length > 0 ? (
           <StepCard
+            ref={typeSizeStepRef}
             step={stepNumber++}
             title="اختر النوع و الحجم"
             done={!!containerId && !!sizeId}
+            error={invalidStep === "typeSize" && !(containerId && sizeId)}
+            errorMsg="اختر النوع و الحجم"
           >
             <div className="flex flex-col gap-3">
               {containerSizesList.map((option) => (
@@ -717,9 +775,12 @@ export default function OrderBuilderTemplate({
             {product.containerOptions &&
               product.containerOptions.length > 0 && (
                 <StepCard
+                  ref={typeSizeStepRef}
                   step={stepNumber++}
                   title="اختر النوع"
                   done={!!containerId}
+                  error={invalidStep === "typeSize" && !containerId}
+                  errorMsg="اختر النوع"
                 >
                   <div className="flex flex-wrap gap-2.5">
                     {product.containerOptions.map((c) => (
@@ -729,13 +790,28 @@ export default function OrderBuilderTemplate({
                         active={containerId === c.id}
                         unavailable={!c.available}
                         onClick={() => c.available && selectContainer(c.id)}
+                        image={
+                          c.image ? resolveMenuImageSrc(c.image) : undefined
+                        }
                       />
                     ))}
                   </div>
                 </StepCard>
               )}
 
-            <StepCard step={stepNumber++} title="اختر الحجم" done={!!sizeId}>
+            <StepCard
+              ref={
+                !product.containerOptions || product.containerOptions.length === 0
+                  ? typeSizeStepRef
+                  : undefined
+              }
+              step={stepNumber++}
+              title="اختر الحجم"
+              done={!!sizeId}
+              locked={!!product.containerOptions && !containerId}
+              error={invalidStep === "typeSize" && !!containerId && !sizeId}
+              errorMsg="اختر الحجم"
+            >
               <div className="flex flex-wrap gap-2.5">
                 {availableSizes.map((s) => (
                   <Pill
@@ -745,6 +821,7 @@ export default function OrderBuilderTemplate({
                     unavailable={s.available === false}
                     onClick={() => selectSize(s.id)}
                     subtitle={sizePillSubtitle(s)}
+                    image={s.image ? resolveMenuImageSrc(s.image) : undefined}
                   />
                 ))}
               </div>
@@ -755,9 +832,13 @@ export default function OrderBuilderTemplate({
         {hasFlavorStep && (
           <>
             <StepCard
+              ref={flavorFamilyStepRef}
               step={stepNumber++}
               title={product.includesIceCreamStep ? "أضف بوظة" : "نوع الأطعمة"}
               done={!!flavorFamily}
+              locked={!typeAndSizeDone}
+              error={invalidStep === "flavorFamily" && !flavorFamily}
+              errorMsg="اختر نوع الأطعمة"
             >
               <div className="flex flex-wrap gap-2.5">
                 {availableFlavorFamilies.map((f) => (
@@ -772,6 +853,7 @@ export default function OrderBuilderTemplate({
             </StepCard>
 
             <StepCard
+              ref={flavorPicksStepRef}
               step={stepNumber++}
               title="اختر الأطعمة"
               subtitle={
@@ -782,6 +864,9 @@ export default function OrderBuilderTemplate({
                   : undefined
               }
               done={selectedFlavorIds.length > 0}
+              locked={flavorPicksLocked}
+              error={invalidStep === "flavorPicks" && !flavorPicksSatisfied}
+              errorMsg={validationMsg || "اضغط على كرات الأطعمة للاختيار"}
             >
               {catalog.length === 0 ? (
                 <p className="bg-white/8 py-6 border border-white/15 rounded-[16px] text-[14px] text-white/60 text-center">
@@ -923,7 +1008,7 @@ export default function OrderBuilderTemplate({
         )}
 
         {showExtraBiscuit && (
-          <StepCard step={stepNumber++} title="إضافات">
+          <StepCard step={stepNumber++} title="إضافات" locked={extrasLocked}>
             <ExtraBiscuitCounter
               count={extraBiscuitCount}
               unitPrice={extraBiscuitPrice}
