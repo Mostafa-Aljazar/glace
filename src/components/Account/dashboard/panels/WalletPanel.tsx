@@ -661,10 +661,12 @@ export default function WalletPanel() {
                       <div className="flex flex-col gap-3 px-4 pt-3 pb-4 border-white/10 border-t">
                         {req.status === "مرفوض" && (
                           <div className="bg-red-500/15 px-3 py-2.5 rounded-[12px] text-[13px] text-red-200">
-                            {/* Backend doesn't send a rejection reason (confirmed
-                                against the live API 2026-09-19) — only the status
-                                itself, so this can't say why, only that it happened. */}
-                            تم رفض طلب الشحن هذا. تواصل معنا لمعرفة السبب.
+                            {/* Backend doesn't send a rejection reason yet
+                                (confirmed against the live API 2026-09-19) —
+                                see docs/22-9-2026/22-9-2026-topup-rejection-reason.md.
+                                Falls back to a generic message until it does. */}
+                            {req.rejectionReason?.trim() ||
+                              "تم رفض طلب الشحن هذا. تواصل معنا لمعرفة السبب."}
                           </div>
                         )}
                         <div className="flex justify-between text-[14px]">

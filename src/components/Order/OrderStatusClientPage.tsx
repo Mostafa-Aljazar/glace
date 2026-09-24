@@ -250,6 +250,13 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
               </p>
             )}
           </div>
+        ) : order.status === "قيد المراجعة" && order.adminNotes ? (
+          <div className={`mb-6 rounded-[30px] px-6 py-5 text-[16px] font-bold text-center ${ORDER_STATUS_COLORS[order.status]}`}>
+            <p>الطلب قيد المراجعة</p>
+            <p className="mt-2 font-normal text-[14px] text-red-200">
+              ملاحظات الإدارة: {order.adminNotes}
+            </p>
+          </div>
         ) : (
           <div className="bg-white/[.17] backdrop-blur-[15px] mb-6 p-6 rounded-[30px]">
             <div className="relative flex justify-between items-center">

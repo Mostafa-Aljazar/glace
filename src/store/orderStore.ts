@@ -127,6 +127,8 @@ export interface Order {
   senderAccountName?: string;
   /** Set when the order is cancelled by the customer. */
   cancelReason?: string;
+  /** Admin notes/rejection reason set by staff when reviewing the order. */
+  adminNotes?: string;
   /** Driver info for delivery orders. */
   driver?: Driver;
   /** Timestamp when driver was assigned (for delivery orders). */

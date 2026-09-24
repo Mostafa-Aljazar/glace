@@ -42,6 +42,10 @@ export interface TopUpRequest {
   senderAccountName?: string;
   /** Only set for "jawwal" (auto) — the number the customer paid from. */
   phone?: string;
+  /** Set by the admin dashboard when rejecting a request — explains why to
+   *  the customer instead of a generic "تواصل معنا" message. Not sent by
+   *  the backend yet (see docs/22-9-2026/22-9-2026-topup-rejection-reason.md). */
+  rejectionReason?: string;
 }
 
 /** Backend's id for بال باي is `palpay`, not the frontend's `paypal` —
