@@ -61,6 +61,9 @@ export default function LogoNav() {
   // never sees a badge for data that belongs to no session.
   const walletBalance = useWalletStore((s) => (isLoggedIn ? s.balance : 0));
   const logout = useLogout();
+  // The menu has its own sticky category bar pinned to the top, so the
+  // header scrolls away there instead of staying fixed over it.
+  const isMenuPage = pathname === "/menu";
   // Keeps the wallet balance badge live from the real API without a
   // dedicated fetch here — react-query dedupes this against WalletPanel's
   // own useWallet() call by queryKey.
@@ -262,7 +265,7 @@ export default function LogoNav() {
 
       {/* ── Main header bar ──────────────────────────────────────── */}
       <header
-        className="top-[calc(1.75rem+env(safe-area-inset-top,0px))] sm:top-[calc(0.75rem+env(safe-area-inset-top,0px))] z-[9999999] fixed inset-x-0 px-3 lg:px-5 w-full"
+        className={`${isMenuPage ? "absolute" : "fixed"} top-[calc(1.75rem+env(safe-area-inset-top,0px))] sm:top-[calc(0.75rem+env(safe-area-inset-top,0px))] z-[9999999] inset-x-0 px-3 lg:px-5 w-full`}
       >
         <div className="mx-auto max-w-[1180px]">
           <div className="flex items-center gap-2 bg-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-xl px-3 lg:px-3.5 py-1.5 lg:py-2 border border-white/25 rounded-[22px] transition-all duration-200">
