@@ -408,6 +408,18 @@ paths:
                       label: بندق مبشور
                       price: 4
                       available: true
+                    - id: extra-ice-cream-classic
+                      label: آيس كريم إضافي - كلاسيك
+                      price: 5
+                      available: true
+                      type: counter
+                      maxQty: 3
+                    - id: extra-ice-cream-special
+                      label: آيس كريم إضافي - سبيشل
+                      price: 8
+                      available: true
+                      type: counter
+                      maxQty: 3
                   items:
                     - id: nutella
                       label: نوتيلا

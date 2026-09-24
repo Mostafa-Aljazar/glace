@@ -499,6 +499,15 @@ Same 6 flavors as kunafa with "لقيمة" prefix; identical prices/availability
 
 All **inStoreOnly: true**, favorites ✓, notes ✓.
 
+**Addons (planned):** each of these 4 products should ship its own `addons[]`
+with two "extra ice cream" options — classic and special flavor families,
+each its own price (`type: "counter"`, so the customer can add more than one
+scoop). Example ids/prices (placeholder — confirm real prices with backend):
+`extra-ice-cream-classic` (5₪), `extra-ice-cream-special` (8₪). See the
+`addons` example on the `IProduct` schema in `swagger.yaml`. Once a product's
+API payload carries this `addons[]`, the cart's "تخصيص الإضافات" button
+appears for that line automatically — no frontend change needed per product.
+
 #### 12. بان كيك (`pancake`)
 
 | Item | ₪ |

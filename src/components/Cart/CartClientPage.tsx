@@ -602,10 +602,9 @@ export default function CartClientPage() {
     (products ?? []).map((p) => [p.id, p.slug]),
   );
 
-  // "تخصيص الإضافات" is only offered for cup ice cream in a "كاسة"/"بسكوت"
-  // container, or the family-size product — regardless of category or
-  // whether the product ships its own addons catalog. Every other line
-  // (pancake, milkshake, ...) never gets this button.
+  // "تخصيص الإضافات" is offered for cup ice cream in a "كاسة"/"بسكوت"
+  // container, the family-size product, or any product that ships its own
+  // addons catalog (e.g. waffle/crepe/pancake/pizza's extra-ice-cream addons).
   const CUP_CONTAINERS = ["كاسة", "بسكوت"];
 
   function resolveAddons(item: CartItem): IAddonOption[] {
@@ -613,10 +612,11 @@ export default function CartClientPage() {
     const isFamilyProduct = slugByProductId.get(productId) === "family";
     const isCupContainer =
       !!item.container && CUP_CONTAINERS.includes(item.container);
-    if (!isFamilyProduct && !isCupContainer) return [];
     // A product's own catalog overrides the shared one; both come from the API.
     const productSpecific = addonsByProductId.get(productId);
-    if (productSpecific && productSpecific.length > 0) return productSpecific;
+    const hasProductAddons = !!productSpecific && productSpecific.length > 0;
+    if (!isFamilyProduct && !isCupContainer && !hasProductAddons) return [];
+    if (hasProductAddons) return productSpecific!;
     return sharedAddons ?? [];
   }
 

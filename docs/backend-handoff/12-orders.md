@@ -48,6 +48,8 @@ jawwalPhone: (omitted — only for paymentMethod=jawwal)
 jawwalCode: (omitted — only for paymentMethod=jawwal)
 ```
 
+> **آيس كريم إضافي لـ waffle/crepe/pancake/pizza:** نفس النمط بالضبط — addon عادي جوا `selections[]` بـ`kind: "addon"` (مثلاً `id: "extra-ice-cream-classic"` أو `"extra-ice-cream-special"`، كل وحدة بسعرها). ما في حقل أو شكل payload جديد؛ الفرق الوحيد إنه هاد الأصناف الأربعة لازم تحمل `addons[]` خاصة فيها بـ`GET /menu/products` (شوف `swagger.yaml` ومثال `IAddonOption` تحت `MENU_CATALOG.md`).
+
 ```json
 // 201
 {
