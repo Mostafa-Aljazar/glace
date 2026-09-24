@@ -17,13 +17,17 @@ export function useMe() {
     queryFn: () =>
       withQueryFallback(
         () => userApi.get<{ user: AuthUser }>("/auth/me").then((r) => r.data.user),
-        // Fallback to cached user from store if API fails or offline
-        () => user as AuthUser,
+        // Fallback to cached user from store if API fails or offline. Read
+        // at call time so the fallback never returns a stale closure value.
+        () => useAuthStore.getState().user as AuthUser,
       ),
     enabled: !!token,
     staleTime: 1000 * 60 * 10,
-    // Use cached user as initial data if available
+    // Render the cached user immediately, but mark it as stale (updated at
+    // epoch 0) so /auth/me is still fetched on mount instead of trusting
+    // the cache for the full staleTime.
     initialData: user ?? undefined,
+    initialDataUpdatedAt: 0,
   });
 
   useEffect(() => {
