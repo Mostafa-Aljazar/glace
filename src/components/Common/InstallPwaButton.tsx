@@ -52,26 +52,27 @@ export default function InstallPwaButton() {
     // and know the real user agent.
     if (isIos()) setIosMode(true);
 
-    let modalFrame: number | undefined;
-    const hasSeenInstallPrompt =
-      localStorage.getItem("glace-install-prompt-seen") === "true";
-    if (!hasSeenInstallPrompt) {
-      modalFrame = window.requestAnimationFrame(() => setModalOpen(true));
-      localStorage.setItem("glace-install-prompt-seen", "true");
-    }
-
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
+      // Only show modal if user hasn't dismissed it before
+      const hasDismissedInstallPrompt =
+        localStorage.getItem("glace-install-prompt-dismissed") === "true";
       setDeferredPrompt(event as BeforeInstallPromptEvent);
+      if (!hasDismissedInstallPrompt) {
+        // Wait for splash screen to finish (1.5 seconds), then show modal
+        const timer = setTimeout(() => setModalOpen(true), 1500);
+        return () => clearTimeout(timer);
+      }
     };
     const handleAppInstalled = () => {
       setDeferredPrompt(null);
+      setModalOpen(false);
+      localStorage.setItem("glace-install-prompt-dismissed", "true");
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
     return () => {
-      if (modalFrame !== undefined) window.cancelAnimationFrame(modalFrame);
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt,
@@ -91,9 +92,15 @@ export default function InstallPwaButton() {
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === "accepted") {
+      localStorage.setItem("glace-install-prompt-dismissed", "true");
       setModalOpen(false);
     }
     setDeferredPrompt(null);
+    setModalOpen(false);
+  };
+
+  const handleDismiss = () => {
+    localStorage.setItem("glace-install-prompt-dismissed", "true");
     setModalOpen(false);
   };
 
@@ -183,7 +190,7 @@ export default function InstallPwaButton() {
               </div>
               <button
                 type="button"
-                onClick={() => setModalOpen(false)}
+                onClick={handleDismiss}
                 className="bg-glace-yellow hover:bg-white shadow-[0_10px_24px_rgba(244,228,81,0.35)] mt-1 py-2.5 rounded-full w-full font-bold text-[#1a4a5a] text-[15px] transition-colors cursor-pointer"
               >
                 حسناً، فهمت
@@ -205,7 +212,7 @@ export default function InstallPwaButton() {
               </button>
               <button
                 type="button"
-                onClick={() => setModalOpen(false)}
+                onClick={handleDismiss}
                 className="py-1 w-full text-[14px] text-white/70 hover:text-white transition-colors cursor-pointer"
               >
                 ليس الآن

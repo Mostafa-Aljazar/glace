@@ -12,6 +12,15 @@
   }
 }
 
+/* Reserve the device status-bar / notch area so page content never renders
+   underneath it — needed on top of each page's own top padding because
+   that padding is a fixed value tuned for a "typical" inset, not the
+   actual per-device safe area (this is what was overlapping the status
+   bar in standalone PWA mode on Android). */
+body {
+  padding-top: env(safe-area-inset-top);
+}
+
 @font-face {
   font-family: "Zain";
   src: url("/fonts/Zain-ExtraLight.ttf") format("truetype");
