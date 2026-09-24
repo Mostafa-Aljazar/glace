@@ -20,7 +20,12 @@ export default function UnifiedAuthForm() {
     );
   }, [hasHydrated, isLoggedIn, router, searchParams]);
 
-  if (!hasHydrated || isLoggedIn) return null;
+  // While hydrating, show nothing (loading state)
+  // This prevents the form from flickering when token is loaded from storage
+  if (!hasHydrated) return null;
+
+  // If already logged in after hydration, redirect
+  if (isLoggedIn) return null;
 
   return (
     <AuthLayout

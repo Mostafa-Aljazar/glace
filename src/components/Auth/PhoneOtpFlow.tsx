@@ -58,6 +58,7 @@ export default function PhoneOtpFlow({ onSuccess }: PhoneOtpFlowProps = {}) {
   const [userExists, setUserExists] = useState(false);
   const [code, setCode] = useState("");
   const [fullName, setFullName] = useState("");
+  const [nameTouched, setNameTouched] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
 
   const sendOtp = useSendOtp();
@@ -147,7 +148,9 @@ export default function PhoneOtpFlow({ onSuccess }: PhoneOtpFlowProps = {}) {
 
         {!userExists && (
           <div>
-            <label className={labelClass}>الاسم الكامل</label>
+            <label className={labelClass}>
+              الاسم الكامل <span className="text-rose-300">*</span>
+            </label>
             <div className="relative mt-2">
               <User size={18} className={fieldIconClass} />
               <Input
@@ -156,9 +159,19 @@ export default function PhoneOtpFlow({ onSuccess }: PhoneOtpFlowProps = {}) {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 disabled={verifyOtp.isPending}
-                className={`peer ${inputClass}`}
+                className={`peer ${inputClass} ${
+                  nameTouched && !fullName.trim()
+                    ? "border-rose-400 focus-visible:border-rose-400 focus-visible:ring-rose-400/20"
+                    : ""
+                }`}
+                onBlur={() => setNameTouched(true)}
               />
             </div>
+            {nameTouched && !fullName.trim() && (
+              <p className="mt-1.5 text-[12.5px] text-rose-300">
+                لازم تكتب اسمك الكامل قبل تأكيد الرمز
+              </p>
+            )}
           </div>
         )}
 
@@ -170,6 +183,7 @@ export default function PhoneOtpFlow({ onSuccess }: PhoneOtpFlowProps = {}) {
               onChange={(newCode) => {
                 setCode(newCode);
                 verifyOtp.reset();
+                if (newCode.length === 6 && !userExists) setNameTouched(true);
               }}
               disabled={verifyOtp.isPending}
             />
