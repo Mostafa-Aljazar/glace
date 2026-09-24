@@ -30,7 +30,11 @@ import {
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { useAddressStore } from "@/store/addressStore";
-import { useAddresses, useAddAddress, useDeleteAddress } from "@/hooks/addresses";
+import {
+  useAddresses,
+  useAddAddress,
+  useDeleteAddress,
+} from "@/hooks/addresses";
 import { useCheckoutDraftStore } from "@/store/checkoutDraftStore";
 import ScheduleTimePicker from "@/components/Checkout/ScheduleTimePicker";
 import AddressForm from "@/components/Checkout/AddressForm";
@@ -65,17 +69,26 @@ export default function CheckoutClientPage() {
   // Use real API data for store/delivery status
   const storeOpen = storeStatus?.storeOpen ?? true;
   const deliveryOpen = storeStatus?.deliveryOpen ?? true;
-  const closedMessage = storeStatus?.closedMessage ?? "المتجر مغلق حالياً";
-  const deliveryClosedMessage = storeStatus?.deliveryClosedMessage
-    ?? "خدمة التوصيل غير متاحة حالياً";
+  const closedMessage =
+    storeStatus?.closedMessage ?? "نستقبل طلباتكم غداً خلال ساعات العمل";
+  const deliveryClosedMessage =
+    storeStatus?.deliveryClosedMessage ??
+    "خدمة التوصيل غير متاحة حالياً، تحقق من ساعات العمل";
   const autoConfirmMinutes = storeStatus?.autoConfirmMinutes ?? 25;
   const timezone = storeStatus?.timezone ?? "Asia/Gaza";
   const serverTime = storeStatus?.serverTime;
 
   // Generate schedule from API data or fallback to hardcoded
   const scheduleDays = useMemo(() => {
-    if (storeStatus?.schedule?.delivery && storeStatus.schedule.delivery.length > 0) {
-      return generateScheduleSlotsFromAPI(storeStatus.schedule.delivery, 3, serverTime ? new Date(serverTime) : undefined);
+    if (
+      storeStatus?.schedule?.delivery &&
+      storeStatus.schedule.delivery.length > 0
+    ) {
+      return generateScheduleSlotsFromAPI(
+        storeStatus.schedule.delivery,
+        3,
+        serverTime ? new Date(serverTime) : undefined,
+      );
     }
     return getScheduleDays();
   }, [storeStatus?.schedule?.delivery, serverTime]);
@@ -83,7 +96,10 @@ export default function CheckoutClientPage() {
   // Starts unchecked/off — scheduling is optional ("اختياري"), so the
   // picker shouldn't look pre-selected until the customer opts in via its
   // checkbox (ScheduleTimePicker fills in the earliest slot once checked).
-  const [schedule, setSchedule] = useState<{ date: string; time: string } | null>(null);
+  const [schedule, setSchedule] = useState<{
+    date: string;
+    time: string;
+  } | null>(null);
   const scheduleLabel = schedule
     ? `${scheduleDays.find((d) => d.date === schedule.date)?.label ?? schedule.date} · ${formatTime12h(schedule.time)}`
     : undefined;
@@ -211,23 +227,23 @@ export default function CheckoutClientPage() {
       <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
         <EventsBackground />
         <div className="z-90 relative flex flex-col justify-center items-center mx-auto px-4 pt-24 lg:pt-28 pb-12 max-w-300 min-h-screen">
-          <div className="relative w-full max-w-md overflow-hidden rounded-[32px] border border-white/15 bg-white/12 backdrop-blur-xl px-6 py-16 sm:py-20 text-center">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(244,228,81,0.12),transparent_55%)]" />
-            <div className="relative flex flex-col items-center gap-5 animate-in fade-in zoom-in-95 duration-500">
-              <div className="flex items-center justify-center size-24 rounded-full bg-white/10 border border-white/15 text-glace-yellow shadow-[0_0_40px_rgba(244,228,81,0.15)]">
+          <div className="relative bg-white/12 backdrop-blur-xl px-6 py-16 sm:py-20 border border-white/15 rounded-[32px] w-full max-w-md overflow-hidden text-center">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(244,228,81,0.12),transparent_55%)] pointer-events-none" />
+            <div className="relative flex flex-col items-center gap-5 animate-in duration-500 fade-in zoom-in-95">
+              <div className="flex justify-center items-center bg-white/10 shadow-[0_0_40px_rgba(244,228,81,0.15)] border border-white/15 rounded-full size-24 text-glace-yellow">
                 <ShoppingCart size={40} strokeWidth={1.5} />
               </div>
               <div>
-                <h2 className="text-white text-[26px] sm:text-[28px] font-bold mb-2">
+                <h2 className="mb-2 font-bold text-[26px] text-white sm:text-[28px]">
                   لا يوجد منتجات في السلة
                 </h2>
-                <p className="text-white/60 text-[15px] max-w-xs mx-auto">
+                <p className="mx-auto max-w-xs text-[15px] text-white/60">
                   اختَر من منيو Glace وابدأ طلبك بخطوة واحدة
                 </p>
               </div>
               <Link
                 href="/menu"
-                className="inline-flex items-center gap-2 bg-glace-yellow hover:bg-yellow-300 text-[#1e6a7f] font-bold text-[15px] px-8 py-3.5 rounded-full transition-all shadow-[0_8px_28px_rgba(244,228,81,0.3)] hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 bg-glace-yellow hover:bg-yellow-300 shadow-[0_8px_28px_rgba(244,228,81,0.3)] px-8 py-3.5 rounded-full font-bold text-[#1e6a7f] text-[15px] transition-all hover:-translate-y-0.5"
               >
                 <ShoppingCart size={16} />
                 تصفح المنيو
@@ -239,58 +255,68 @@ export default function CheckoutClientPage() {
     );
   }
 
-
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
 
       <div className="z-90 relative mx-auto px-2 sm:px-4 pt-22.5 lg:pt-26.5 pb-40 lg:pb-12 max-w-300">
-        <h1 className="mb-6 text-white text-[40px] sm:text-[50px] text-center">
+        <h1 className="mb-6 text-[40px] text-white sm:text-[50px] text-center">
           إتمام الطلب
         </h1>
 
         <Dialog open={storeClosedOpen} onOpenChange={setStoreClosedOpen}>
           <DialogContent
             showCloseButton={false}
-            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] text-center text-white ring-0"
+            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
           >
             <DialogHeader className="items-center gap-3">
               <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
                 <Clock className="size-8 text-white" strokeWidth={2.5} />
               </div>
-              <DialogTitle className="text-2xl text-white">
+              <DialogTitle className="text-white text-2xl">
                 المتجر مغلق حالياً
               </DialogTitle>
-              <DialogDescription className="text-base text-white/90">
+              <DialogDescription className="text-white/90 text-base">
                 {closedMessage}
               </DialogDescription>
             </DialogHeader>
-            <DialogClose
-              render={
-                <button
-                  type="button"
-                  className="bg-glace-yellow hover:bg-yellow-300 mt-4 px-6 py-2.5 rounded-[30px] w-full text-[#1e6a7f] font-bold text-lg transition-colors cursor-pointer"
-                />
-              }
-            >
-              إغلاق
-            </DialogClose>
+            <div className="flex items-center gap-2.5 mt-4">
+              <Link
+                href="/#location"
+                className="flex-1 bg-white/12 hover:bg-white/18 px-6 py-2.5 rounded-[30px] font-bold text-white text-lg text-center transition-colors"
+              >
+                ساعات العمل
+              </Link>
+              <DialogClose
+                render={
+                  <button
+                    type="button"
+                    className="flex-1 bg-glace-yellow hover:bg-yellow-300 px-6 py-2.5 rounded-[30px] font-bold text-[#1e6a7f] text-lg transition-colors cursor-pointer"
+                  />
+                }
+              >
+                حسناً
+              </DialogClose>
+            </div>
           </DialogContent>
         </Dialog>
 
         <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
           <DialogContent
             showCloseButton={false}
-            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] text-center text-white ring-0"
+            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
           >
             <DialogHeader className="items-center gap-3">
               <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
-                <TriangleAlert className="size-8 text-white" strokeWidth={2.5} />
+                <TriangleAlert
+                  className="size-8 text-white"
+                  strokeWidth={2.5}
+                />
               </div>
-              <DialogTitle className="text-2xl text-white">
+              <DialogTitle className="text-white text-2xl">
                 إلغاء الطلب؟
               </DialogTitle>
-              <DialogDescription className="text-base text-white/90">
+              <DialogDescription className="text-white/90 text-base">
                 رح يتم إفراغ السلة والرجوع للمنيو. ما بتقدر تراجع هالخطوة.
               </DialogDescription>
             </DialogHeader>
@@ -298,7 +324,7 @@ export default function CheckoutClientPage() {
               <Button
                 type="button"
                 onClick={handleCancelOrder}
-                className="bg-rose-500 hover:bg-rose-400 border-0 rounded-[30px] w-full text-white font-bold text-lg h-auto py-2.5"
+                className="bg-rose-500 hover:bg-rose-400 py-2.5 border-0 rounded-[30px] w-full h-auto font-bold text-white text-lg"
               >
                 نعم، إلغاء الطلب
               </Button>
@@ -306,7 +332,7 @@ export default function CheckoutClientPage() {
                 render={
                   <button
                     type="button"
-                    className="bg-white/12 hover:bg-white/18 rounded-[30px] w-full text-white text-lg py-2.5 transition-colors cursor-pointer"
+                    className="bg-white/12 hover:bg-white/18 py-2.5 rounded-[30px] w-full text-white text-lg transition-colors cursor-pointer"
                   />
                 }
               >
@@ -322,45 +348,59 @@ export default function CheckoutClientPage() {
         >
           <DialogContent
             showCloseButton={false}
-            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] text-center text-white ring-0"
+            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
           >
             <DialogHeader className="items-center gap-3">
               <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
                 <Truck className="size-8 text-white" strokeWidth={2.5} />
               </div>
-              <DialogTitle className="text-2xl text-white">
+              <DialogTitle className="text-white text-2xl">
                 التوصيل غير متاح
               </DialogTitle>
-              <DialogDescription className="text-base text-white/90">
+              <DialogDescription className="text-white/90 text-base">
                 {deliveryClosedMessage}
               </DialogDescription>
             </DialogHeader>
-            <DialogClose
-              render={
-                <button
-                  type="button"
-                  className="bg-glace-yellow hover:bg-yellow-300 mt-4 px-6 py-2.5 rounded-[30px] w-full text-[#1e6a7f] font-bold text-lg transition-colors cursor-pointer"
-                />
-              }
-            >
-              إغلاق
-            </DialogClose>
+            <div className="flex items-center gap-2.5 mt-4">
+              <Link
+                href="/#location"
+                className="flex-1 bg-white/12 hover:bg-white/18 px-6 py-2.5 rounded-[30px] font-bold text-white text-lg text-center transition-colors"
+              >
+                ساعات العمل
+              </Link>
+              <DialogClose
+                render={
+                  <button
+                    type="button"
+                    className="flex-1 bg-glace-yellow hover:bg-yellow-300 px-6 py-2.5 rounded-[30px] font-bold text-[#1e6a7f] text-lg transition-colors cursor-pointer"
+                  />
+                }
+              >
+                حسناً
+              </DialogClose>
+            </div>
           </DialogContent>
         </Dialog>
 
-        <Dialog open={deliveryBlockedOpen} onOpenChange={setDeliveryBlockedOpen}>
+        <Dialog
+          open={deliveryBlockedOpen}
+          onOpenChange={setDeliveryBlockedOpen}
+        >
           <DialogContent
             showCloseButton={false}
-            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] text-center text-white ring-0"
+            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
           >
             <DialogHeader className="items-center gap-3">
               <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
-                <TriangleAlert className="size-8 text-white" strokeWidth={2.5} />
+                <TriangleAlert
+                  className="size-8 text-white"
+                  strokeWidth={2.5}
+                />
               </div>
-              <DialogTitle className="text-2xl text-white">
+              <DialogTitle className="text-white text-2xl">
                 هذا الصنف غير مناسب للتوصيل أو الاستلام
               </DialogTitle>
-              <DialogDescription className="text-base text-white/90">
+              <DialogDescription className="text-white/90 text-base">
                 {deliveryBlockingItem?.reason === "category"
                   ? `صنف "${deliveryBlockingItem.item.name}" (جيلاتو دوم) غير مناسب. الرجاء اختيار صنف آخر أو إزالته من السلة.`
                   : deliveryBlockingItem?.reason === "in-store-only"
@@ -371,7 +411,7 @@ export default function CheckoutClientPage() {
             <div className="flex flex-col gap-2.5 mt-4">
               <Link
                 href="/cart"
-                className="bg-glace-yellow hover:bg-yellow-300 px-6 py-2.5 rounded-[30px] w-full text-[#1e6a7f] font-bold text-lg transition-colors"
+                className="bg-glace-yellow hover:bg-yellow-300 px-6 py-2.5 rounded-[30px] w-full font-bold text-[#1e6a7f] text-lg transition-colors"
               >
                 الرجوع للسلة
               </Link>
@@ -379,7 +419,7 @@ export default function CheckoutClientPage() {
                 render={
                   <button
                     type="button"
-                    className="bg-white/12 hover:bg-white/18 rounded-[30px] w-full text-white text-lg py-2.5 transition-colors cursor-pointer"
+                    className="bg-white/12 hover:bg-white/18 py-2.5 rounded-[30px] w-full text-white text-lg transition-colors cursor-pointer"
                   />
                 }
               >
@@ -391,224 +431,266 @@ export default function CheckoutClientPage() {
 
         <div className="flex flex-col gap-6">
           {/* Left: form */}
-          <div className="order-2 flex-1">
-            <div className="bg-white/[.17] backdrop-blur-[15px] rounded-[30px] p-4 sm:p-6">
-              <h2 className="mb-1 text-white text-[22px] font-bold">
+          <div className="flex-1 order-2">
+            <div className="bg-white/[.17] backdrop-blur-[15px] p-4 sm:p-6 rounded-[30px]">
+              <h2 className="mb-1 font-bold text-[22px] text-white">
                 طريقة الاستلام
               </h2>
-              <p className="mb-4 text-white/55 text-[14px]">
+              <p className="mb-4 text-[14px] text-white/55">
                 اختر الطريقة المناسبة لاستلام طلبك
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                {(
+
+              {(() => {
+                const options = [
                   [
-                    [
-                      "delivery",
-                      Truck,
-                      "توصيل خارجي",
-                      "ديليفري",
-                      "col-span-2 sm:col-span-1",
-                    ],
-                    [
-                      "pickup",
-                      Store,
-                      "استلام من المطعم",
-                      "تاك اواي",
-                      "",
-                    ],
-                    [
-                      "dine-in",
-                      Utensils,
-                      "تناول الآن",
-                      "في المطعم",
-                      "",
-                    ],
-                  ] as const
-                ).map(([val, Icon, label, hint, span]) => {
-                  const active = delivery === val;
-                  return (
+                    "dine-in",
+                    Utensils,
+                    "تناول الآن",
+                    "تجهيزه لتناول الطلب داخل المطعم",
+                  ],
+                  ["delivery", Truck, "توصيل خارجي", "ديليفري من طرف المطعم"],
+                  [
+                    "pickup",
+                    Store,
+                    "استلام من المطعم",
+                    "تجهيز الطلب تيك اواي وسأقوم أنا باستلامه",
+                  ],
+                ] as const;
+
+                function handleSelect(val: (typeof options)[number][0]) {
+                  if (!storeOpen) {
+                    setStoreClosedOpen(true);
+                    return;
+                  }
+                  if (val === "delivery" && !deliveryOpen) {
+                    setDeliveryUnavailableOpen(true);
+                    return;
+                  }
+                  if (
+                    (val === "delivery" || val === "pickup") &&
+                    deliveryBlockingItem
+                  ) {
+                    setDeliveryBlockedOpen(true);
+                    return;
+                  }
+                  setDelivery(val);
+                }
+
+                const [dineIn, ...rest] = options;
+                const [dineInVal, DineInIcon, dineInLabel, dineInHint] = dineIn;
+                const dineInActive = delivery === dineInVal;
+
+                return (
+                  <div className="flex flex-col gap-3 mb-6">
                     <button
-                      key={val}
                       type="button"
-                      onClick={() => {
-                        // Check if store is closed (applies to all methods)
-                        if (!storeOpen && (val === "delivery" || val === "pickup" || val === "dine-in")) {
-                          setStoreClosedOpen(true);
-                          return;
-                        }
-
-                        // Check if delivery is closed (applies to delivery and pickup)
-                        if (val === "delivery" && !deliveryOpen) {
-                          setDeliveryUnavailableOpen(true);
-                          return;
-                        }
-
-                        // Check for blocking items
-                        if (
-                          (val === "delivery" || val === "pickup") &&
-                          deliveryBlockingItem
-                        ) {
-                          setDeliveryBlockedOpen(true);
-                          return;
-                        }
-                        setDelivery(val);
-                      }}
-                      aria-pressed={active}
-                      className={`group relative flex flex-col items-center gap-1 sm:gap-1.5 rounded-[16px] sm:rounded-[20px] border px-2.5 py-2.5 sm:px-4 sm:py-4 text-center cursor-pointer transition-all duration-200 ${span} ${
-                        active
+                      onClick={() => handleSelect(dineInVal)}
+                      aria-pressed={dineInActive}
+                      className={`group relative flex flex-col items-center gap-2 rounded-[20px] border px-4 py-5 sm:py-6 text-center cursor-pointer transition-all duration-200 ${
+                        dineInActive
                           ? "bg-glace-yellow border-glace-yellow shadow-[0_8px_24px_rgba(244,228,81,0.3)]"
                           : "bg-white/8 border-white/20 hover:border-white/40 hover:bg-white/12"
                       }`}
                     >
                       <span
-                        className={`flex items-center justify-center size-8 sm:size-11 rounded-full transition-colors ${
-                          active
+                        className={`flex items-center justify-center size-12 sm:size-14 rounded-full transition-colors ${
+                          dineInActive
                             ? "bg-[#1e6a7f]/12 text-[#1e6a7f]"
                             : "bg-white/10 text-white"
                         }`}
                       >
-                        <Icon size={18} className="sm:hidden" strokeWidth={2} />
-                        <Icon size={22} className="hidden sm:block" strokeWidth={2} />
+                        <DineInIcon size={26} strokeWidth={2} />
                       </span>
                       <span
-                        className={`text-[13px] sm:text-[16px] font-bold ${
-                          active ? "text-[#1e6a7f]" : "text-white"
+                        className={`text-[17px] sm:text-[19px] font-bold ${
+                          dineInActive ? "text-[#1e6a7f]" : "text-white"
                         }`}
                       >
-                        {label}
+                        {dineInLabel}
                       </span>
                       <span
-                        className={`text-[11px] sm:text-[13px] ${
-                          active ? "text-[#1e6a7f]/70" : "text-white/50"
+                        className={`text-[13px] sm:text-[14px] font-semibold ${
+                          dineInActive ? "text-[#1e6a7f]/80" : "text-white/70"
                         }`}
                       >
-                        {hint}
+                        {dineInHint}
                       </span>
                     </button>
-                  );
-                })}
-              </div>
 
-              {delivery === "delivery" && !isAddingNewAddress && (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className={sectionLabelClass}>
-                        عنوان التوصيل
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => setShowNewAddressForm(true)}
-                        className="flex items-center gap-1 text-glace-yellow text-[14px] font-bold cursor-pointer hover:text-yellow-300"
-                      >
-                        <Plus size={16} />
-                        إضافة عنوان جديد
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col gap-3 mb-6">
-                      {addresses.map((address) => {
-                        const active = address.id === selectedId;
+                    <div className="gap-3 grid grid-cols-2">
+                      {rest.map(([val, Icon, label, hint]) => {
+                        const active = delivery === val;
                         return (
                           <button
-                            key={address.id}
+                            key={val}
                             type="button"
-                            onClick={() => selectAddress(address.id)}
-                            className={`relative flex flex-col gap-1.5 rounded-[18px] border px-4 py-3.5 text-start cursor-pointer transition-colors ${
+                            onClick={() => handleSelect(val)}
+                            aria-pressed={active}
+                            className={`group relative flex flex-col items-center gap-1.5 rounded-[16px] sm:rounded-[20px] border px-2.5 py-3 sm:px-4 sm:py-4 text-center cursor-pointer transition-all duration-200 ${
                               active
-                                ? "bg-glace-yellow/12 border-glace-yellow"
-                                : "bg-white/6 border-white/15 hover:border-white/30"
+                                ? "bg-glace-yellow border-glace-yellow shadow-[0_8px_24px_rgba(244,228,81,0.3)]"
+                                : "bg-white/8 border-white/20 hover:border-white/40 hover:bg-white/12"
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <span
-                                className={`flex items-center gap-1.5 text-[16px] font-bold ${
-                                  active ? "text-glace-yellow" : "text-white"
-                                }`}
-                              >
-                                <MapPin size={16} />
-                                {address.label}
-                              </span>
-                              <span
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removeAddressMutation.mutate(address.id);
-                                }}
-                                role="button"
-                                aria-label="حذف العنوان"
-                                className="text-white/40 hover:text-rose-300 transition-colors cursor-pointer p-1"
-                              >
-                                <Trash2 size={16} />
-                              </span>
-                            </div>
-                            <p className="text-white/60 text-[14px] leading-relaxed">
-                              {address.city} · {address.area} ·{" "}
-                              {address.street}
-                              {address.landmark ? ` · ${address.landmark}` : ""}
-                            </p>
-                            <p className="text-white/45 text-[13px]">
-                              {address.name} · {address.phone}
-                            </p>
+                            <span
+                              className={`flex items-center justify-center size-8 sm:size-11 rounded-full transition-colors ${
+                                active
+                                  ? "bg-[#1e6a7f]/12 text-[#1e6a7f]"
+                                  : "bg-white/10 text-white"
+                              }`}
+                            >
+                              <Icon
+                                size={18}
+                                className="sm:hidden"
+                                strokeWidth={2}
+                              />
+                              <Icon
+                                size={22}
+                                className="hidden sm:block"
+                                strokeWidth={2}
+                              />
+                            </span>
+                            <span
+                              className={`text-[13px] sm:text-[16px] font-bold ${
+                                active ? "text-[#1e6a7f]" : "text-white"
+                              }`}
+                            >
+                              {label}
+                            </span>
+                            <span
+                              className={`text-[11px] sm:text-[12.5px] font-semibold leading-snug ${
+                                active ? "text-[#1e6a7f]/80" : "text-white/70"
+                              }`}
+                            >
+                              {hint}
+                            </span>
                           </button>
                         );
                       })}
                     </div>
-
-                    <div className="mb-6">
-                      <label className={labelClass}>
-                        هل تريد جدولة وقت التوصيل؟{" "}
-                        <span className="text-white/35 font-normal">
-                          (اختياري)
-                        </span>
-                      </label>
-                      <ScheduleTimePicker
-                        days={scheduleDays}
-                        value={schedule}
-                        onChange={setSchedule}
-                      />
-                    </div>
-
-                    <div className="mb-6">
-                      <label className={labelClass}>
-                        ملاحظة للكابتن{" "}
-                        <span className="text-white/35 font-normal">
-                          (اختياري)
-                        </span>
-                      </label>
-                      <textarea
-                        value={captainNote}
-                        onChange={(e) => setCaptainNote(e.target.value)}
-                        placeholder="مثال: الطابق الثاني، جرس معطل..."
-                        rows={2}
-                        className="w-full resize-none bg-white/8 border border-white/20 text-white placeholder:text-white/40 rounded-[16px] px-3.5 py-3 text-[15px] focus-visible:border-glace-yellow/60 focus-visible:ring-3 focus-visible:ring-glace-yellow/20 outline-none transition-colors"
-                      />
-                    </div>
-
-                    {isLoggedIn && (
-                      <div className="flex items-center gap-2.5">
-                        <Button
-                          type="button"
-                          onClick={() => setCancelOpen(true)}
-                          className="shrink-0 rounded-[18px] bg-rose-600 hover:bg-rose-500 border-0 text-white text-[14px] font-bold h-auto px-4 py-3.5 transition-colors cursor-pointer"
-                        >
-                          إلغاء الطلب
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={onConfirmSavedAddress}
-                          disabled={!selectedAddress}
-                          className="bg-glace-yellow hover:bg-yellow-300 border-0 rounded-[18px] flex-1 text-[#1e6a7f] text-[17px] font-bold h-auto py-3.5 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] hover:-translate-y-0.5 transition-all cursor-pointer disabled:opacity-60 disabled:pointer-events-none"
-                        >
-                          تأكيد وانتقل للدفع
-                        </Button>
-                      </div>
-                    )}
                   </div>
-                )}
+                );
+              })()}
+
+              {delivery === "delivery" && !isAddingNewAddress && (
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className={sectionLabelClass}>عنوان التوصيل</h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewAddressForm(true)}
+                      className="flex items-center gap-1 font-bold text-[14px] text-glace-yellow hover:text-yellow-300 cursor-pointer"
+                    >
+                      <Plus size={16} />
+                      إضافة عنوان جديد
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-3 mb-6">
+                    {addresses.map((address) => {
+                      const active = address.id === selectedId;
+                      return (
+                        <button
+                          key={address.id}
+                          type="button"
+                          onClick={() => selectAddress(address.id)}
+                          className={`relative flex flex-col gap-1.5 rounded-[18px] border px-4 py-3.5 text-start cursor-pointer transition-colors ${
+                            active
+                              ? "bg-glace-yellow/12 border-glace-yellow"
+                              : "bg-white/6 border-white/15 hover:border-white/30"
+                          }`}
+                        >
+                          <div className="flex justify-between items-center gap-2">
+                            <span
+                              className={`flex items-center gap-1.5 text-[16px] font-bold ${
+                                active ? "text-glace-yellow" : "text-white"
+                              }`}
+                            >
+                              <MapPin size={16} />
+                              {address.label}
+                            </span>
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeAddressMutation.mutate(address.id);
+                              }}
+                              role="button"
+                              aria-label="حذف العنوان"
+                              className="p-1 text-white/40 hover:text-rose-300 transition-colors cursor-pointer"
+                            >
+                              <Trash2 size={16} />
+                            </span>
+                          </div>
+                          <p className="text-[14px] text-white/60 leading-relaxed">
+                            {address.city} · {address.area} · {address.street}
+                            {address.landmark ? ` · ${address.landmark}` : ""}
+                          </p>
+                          <p className="text-[13px] text-white/45">
+                            {address.name} · {address.phone}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mb-6">
+                    <label className={labelClass}>
+                      هل تريد جدولة وقت التوصيل؟{" "}
+                      <span className="font-normal text-white/35">
+                        (اختياري)
+                      </span>
+                    </label>
+                    <ScheduleTimePicker
+                      days={scheduleDays}
+                      value={schedule}
+                      onChange={setSchedule}
+                    />
+                  </div>
+
+                  <div className="mb-6">
+                    <label className={labelClass}>
+                      ملاحظة للكابتن{" "}
+                      <span className="font-normal text-white/35">
+                        (اختياري)
+                      </span>
+                    </label>
+                    <textarea
+                      value={captainNote}
+                      onChange={(e) => setCaptainNote(e.target.value)}
+                      placeholder="مثال: الطابق الثاني، جرس معطل..."
+                      rows={2}
+                      className="bg-white/8 px-3.5 py-3 border border-white/20 focus-visible:border-glace-yellow/60 rounded-[16px] outline-none focus-visible:ring-3 focus-visible:ring-glace-yellow/20 w-full text-[15px] text-white placeholder:text-white/40 transition-colors resize-none"
+                    />
+                  </div>
+
+                  {isLoggedIn && (
+                    <div className="flex items-center gap-2.5">
+                      <Button
+                        type="button"
+                        onClick={() => setCancelOpen(true)}
+                        className="bg-rose-600 hover:bg-rose-500 px-4 py-3.5 border-0 rounded-[18px] h-auto font-bold text-[14px] text-white transition-colors cursor-pointer shrink-0"
+                      >
+                        إلغاء الطلب
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={onConfirmSavedAddress}
+                        disabled={!selectedAddress}
+                        className="flex-1 bg-glace-yellow hover:bg-yellow-300 disabled:opacity-60 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] py-3.5 border-0 rounded-[18px] h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 cursor-pointer disabled:pointer-events-none"
+                      >
+                        تأكيد وانتقل للدفع
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {delivery === "delivery" && isAddingNewAddress && (
                 <AddressForm
                   defaultName={orderingForSomeoneElse ? "" : (user?.name ?? "")}
-                  defaultPhone={orderingForSomeoneElse ? "" : (user?.phone ?? "")}
+                  defaultPhone={
+                    orderingForSomeoneElse ? "" : (user?.phone ?? "")
+                  }
                   submitLabel="حفظ العنوان"
                   hideSubmit={!isLoggedIn}
                   submitting={confirmingNewAddress}
@@ -625,19 +707,19 @@ export default function CheckoutClientPage() {
                         <button
                           type="button"
                           onClick={() => setShowNewAddressForm(false)}
-                          className="mb-4 self-start flex items-center gap-1.5 rounded-full border border-glace-yellow/40 bg-glace-yellow/10 px-3.5 py-1.5 text-glace-yellow text-[13.5px] font-bold hover:bg-glace-yellow/20 hover:border-glace-yellow/60 transition-colors cursor-pointer"
+                          className="flex items-center self-start gap-1.5 bg-glace-yellow/10 hover:bg-glace-yellow/20 mb-4 px-3.5 py-1.5 border border-glace-yellow/40 hover:border-glace-yellow/60 rounded-full font-bold text-[13.5px] text-glace-yellow transition-colors cursor-pointer"
                         >
                           <Pencil size={14} />
                           العودة للعناوين المحفوظة
                         </button>
                       )}
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex justify-between items-center mb-1">
                         <button
                           type="button"
                           onClick={() =>
                             handleToggleForSomeoneElse(!orderingForSomeoneElse)
                           }
-                          className="flex items-center gap-1.5 text-[13px] font-semibold cursor-pointer"
+                          className="flex items-center gap-1.5 font-semibold text-[13px] cursor-pointer"
                         >
                           <Users
                             size={14}
@@ -674,7 +756,7 @@ export default function CheckoutClientPage() {
                         </button>
                       </div>
                       {orderingForSomeoneElse && (
-                        <p className="mb-1 text-white/45 text-[12.5px]">
+                        <p className="mb-1 text-[12.5px] text-white/45">
                           الاسم ورقم الهاتف تبع الشخص المستلم، مش بياناتك
                         </p>
                       )}
@@ -685,7 +767,7 @@ export default function CheckoutClientPage() {
                       <div>
                         <label className={labelClass}>
                           هل تريد جدولة وقت التوصيل؟{" "}
-                          <span className="text-white/35 font-normal">
+                          <span className="font-normal text-white/35">
                             (اختياري)
                           </span>
                         </label>
@@ -699,7 +781,7 @@ export default function CheckoutClientPage() {
                       <div>
                         <label className={labelClass}>
                           ملاحظة للكابتن{" "}
-                          <span className="text-white/35 font-normal">
+                          <span className="font-normal text-white/35">
                             (اختياري)
                           </span>
                         </label>
@@ -708,7 +790,7 @@ export default function CheckoutClientPage() {
                           onChange={(e) => setCaptainNote(e.target.value)}
                           placeholder="مثال: الطابق الثاني، جرس معطل..."
                           rows={2}
-                          className="w-full resize-none bg-white/8 border border-white/20 text-white placeholder:text-white/40 rounded-[16px] px-3.5 py-3 text-[15px] focus-visible:border-glace-yellow/60 focus-visible:ring-3 focus-visible:ring-glace-yellow/20 outline-none transition-colors"
+                          className="bg-white/8 px-3.5 py-3 border border-white/20 focus-visible:border-glace-yellow/60 rounded-[16px] outline-none focus-visible:ring-3 focus-visible:ring-glace-yellow/20 w-full text-[15px] text-white placeholder:text-white/40 transition-colors resize-none"
                         />
                       </div>
 
@@ -716,7 +798,7 @@ export default function CheckoutClientPage() {
                         <Button
                           type="button"
                           onClick={() => setCancelOpen(true)}
-                          className="rounded-[18px] bg-rose-600 hover:bg-rose-500 border-0 text-white text-[14px] font-bold h-auto py-3.5 transition-colors cursor-pointer"
+                          className="bg-rose-600 hover:bg-rose-500 py-3.5 border-0 rounded-[18px] h-auto font-bold text-[14px] text-white transition-colors cursor-pointer"
                         >
                           إلغاء الطلب
                         </Button>
@@ -728,20 +810,20 @@ export default function CheckoutClientPage() {
 
               {delivery === "pickup" && (
                 <div>
-                  <div className="flex items-start gap-3 mb-6 bg-white/8 border border-white/15 rounded-[16px] p-4">
-                    <span className="flex items-center justify-center bg-glace-yellow/15 text-glace-yellow rounded-full size-10 shrink-0">
+                  <div className="flex items-start gap-3 bg-white/8 mb-6 p-4 border border-white/15 rounded-[16px]">
+                    <span className="flex justify-center items-center bg-glace-yellow/15 rounded-full size-10 text-glace-yellow shrink-0">
                       <Store size={20} />
                     </span>
-                    <p className="text-white/80 text-[14px] leading-relaxed pt-1.5">
-                      سيتم تجهيز طلبك واستلامه من المحل مباشرة، بدون رسوم
-                      توصيل.
+                    <p className="pt-1.5 text-[14px] text-white/80 leading-relaxed">
+                      سيتم تجهيز الطلب تيك اواي وستقوم أنت باستلامه من المحل
+                      مباشرة، بدون رسوم توصيل.
                     </p>
                   </div>
 
                   <div className="mb-6">
                     <label className={`${labelClass} mb-2.5`}>
                       هل تريد جدولة وقت الاستلام؟{" "}
-                      <span className="text-white/35 font-normal">
+                      <span className="font-normal text-white/35">
                         (اختياري)
                       </span>
                     </label>
@@ -757,7 +839,7 @@ export default function CheckoutClientPage() {
                       <Button
                         type="button"
                         onClick={() => setCancelOpen(true)}
-                        className="shrink-0 rounded-[18px] bg-rose-600 hover:bg-rose-500 border-0 text-white text-[14px] font-bold h-auto px-4 py-3.5 transition-colors cursor-pointer"
+                        className="bg-rose-600 hover:bg-rose-500 px-4 py-3.5 border-0 rounded-[18px] h-auto font-bold text-[14px] text-white transition-colors cursor-pointer shrink-0"
                       >
                         إلغاء الطلب
                       </Button>
@@ -776,7 +858,7 @@ export default function CheckoutClientPage() {
                           });
                           router.push("/payment");
                         }}
-                        className="bg-glace-yellow hover:bg-yellow-300 border-0 rounded-[18px] flex-1 text-[#1e6a7f] text-[17px] font-bold h-auto py-3.5 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] hover:-translate-y-0.5 transition-all cursor-pointer"
+                        className="flex-1 bg-glace-yellow hover:bg-yellow-300 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] py-3.5 border-0 rounded-[18px] h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 cursor-pointer"
                       >
                         تأكيد وانتقل للدفع
                       </Button>
@@ -787,12 +869,13 @@ export default function CheckoutClientPage() {
 
               {delivery === "dine-in" && (
                 <div>
-                  <div className="flex items-start gap-3 mb-6 bg-white/8 border border-white/15 rounded-[16px] p-4">
-                    <span className="flex items-center justify-center bg-glace-yellow/15 text-glace-yellow rounded-full size-10 shrink-0">
+                  <div className="flex items-start gap-3 bg-white/8 mb-6 p-4 border border-white/15 rounded-[16px]">
+                    <span className="flex justify-center items-center bg-glace-yellow/15 rounded-full size-10 text-glace-yellow shrink-0">
                       <Utensils size={20} />
                     </span>
-                    <p className="text-white/80 text-[14px] leading-relaxed pt-1.5">
-                      سيتم تجهيز طلبك لتناوله داخل المطعم، بدون رسوم توصيل.
+                    <p className="pt-1.5 text-[14px] text-white/80 leading-relaxed">
+                      سيتم تجهيز طلبك لتناوله داخل المطعم مباشرة، بدون رسوم
+                      توصيل.
                     </p>
                   </div>
 
@@ -801,7 +884,7 @@ export default function CheckoutClientPage() {
                       <Button
                         type="button"
                         onClick={() => setCancelOpen(true)}
-                        className="shrink-0 rounded-[18px] bg-rose-600 hover:bg-rose-500 border-0 text-white text-[14px] font-bold h-auto px-4 py-3.5 transition-colors cursor-pointer"
+                        className="bg-rose-600 hover:bg-rose-500 px-4 py-3.5 border-0 rounded-[18px] h-auto font-bold text-[14px] text-white transition-colors cursor-pointer shrink-0"
                       >
                         إلغاء الطلب
                       </Button>
@@ -815,7 +898,7 @@ export default function CheckoutClientPage() {
                           });
                           router.push("/payment");
                         }}
-                        className="bg-glace-yellow hover:bg-yellow-300 border-0 rounded-[18px] flex-1 text-[#1e6a7f] text-[17px] font-bold h-auto py-3.5 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] hover:-translate-y-0.5 transition-all cursor-pointer"
+                        className="flex-1 bg-glace-yellow hover:bg-yellow-300 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] py-3.5 border-0 rounded-[18px] h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 cursor-pointer"
                       >
                         تأكيد وانتقل للدفع
                       </Button>
@@ -841,7 +924,7 @@ export default function CheckoutClientPage() {
                 <button
                   type="button"
                   onClick={() => setLoginSheetOpen(true)}
-                  className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-glace-yellow hover:bg-yellow-300 border-0 rounded-[16px] px-6 py-3 text-[#1e6a7f] text-[15px] font-bold shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] transition-all cursor-pointer"
+                  className="flex flex-1 sm:flex-none justify-center items-center gap-2 bg-glace-yellow hover:bg-yellow-300 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] px-6 py-3 border-0 rounded-[16px] font-bold text-[#1e6a7f] text-[15px] transition-all cursor-pointer"
                 >
                   <LogIn size={16} />
                   سجّل دخولك للمتابعة
