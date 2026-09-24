@@ -13,6 +13,10 @@ interface Props {
   initialNote?: string;
   /** Existing sender account name, for re-upload/edit flows. */
   initialSenderAccountName?: string;
+  /** The logged-in customer's registered account name — offered as a
+   *  one-tap pick so they don't have to retype it when the transfer came
+   *  from their own account. */
+  registeredAccountName?: string;
   onSubmit: (
     receiptImage: File | undefined,
     note: string | undefined,
@@ -37,6 +41,7 @@ export default function ReceiptUploadForm({
   initialImage,
   initialNote,
   initialSenderAccountName,
+  registeredAccountName,
   onSubmit,
   submitLabel,
   submitDisabled,
@@ -46,8 +51,15 @@ export default function ReceiptUploadForm({
   const [preview, setPreview] = useState<string | undefined>(initialImage);
   const [troubleUploading, setTroubleUploading] = useState(false);
   const [note, setNote] = useState(initialNote ?? "");
+  const hasRegisteredName = !!registeredAccountName?.trim();
+  /** Defaults to the registered-name option when one exists and no prior
+   *  value was passed in (e.g. re-upload flows keep whatever was saved). */
+  const [useRegisteredName, setUseRegisteredName] = useState(
+    hasRegisteredName && !initialSenderAccountName,
+  );
   const [senderAccountName, setSenderAccountName] = useState(
-    initialSenderAccountName ?? "",
+    initialSenderAccountName ??
+      (hasRegisteredName ? registeredAccountName! : ""),
   );
   const [showValidation, setShowValidation] = useState(false);
 
@@ -134,16 +146,80 @@ export default function ReceiptUploadForm({
         <label className="block mb-2 text-[14px] text-white/80">
           اسم صاحب الحساب اللي حوّلت منه <span className="text-red-300">*</span>
         </label>
-        <Input
-          value={senderAccountName}
-          onChange={(e) => setSenderAccountName(e.target.value)}
-          placeholder="مثال: مصطفى الجزار"
-          className={`bg-white/10 h-11 px-3.5 text-white text-[15px] placeholder:text-white/40 rounded-[14px] focus-visible:ring-glace-yellow/20 ${
-            showValidation && missingSenderName
-              ? "border-red-400 focus-visible:border-red-400"
-              : "border-white/25 focus-visible:border-glace-yellow/50"
-          }`}
-        />
+
+        {hasRegisteredName && (
+          <div className="flex flex-col gap-2 mb-3">
+            <button
+              type="button"
+              onClick={() => {
+                setUseRegisteredName(true);
+                setSenderAccountName(registeredAccountName!);
+              }}
+              aria-pressed={useRegisteredName}
+              className={`flex items-center gap-3 rounded-[14px] border p-3 min-h-11 w-full text-start transition ${
+                useRegisteredName
+                  ? "cursor-pointer border-glace-yellow/60 bg-glace-yellow/10"
+                  : "cursor-pointer border-white/15 bg-white/5 hover:border-white/30"
+              }`}
+            >
+              <span
+                className={`flex justify-center items-center rounded-full size-5 shrink-0 border-2 transition ${
+                  useRegisteredName ? "border-glace-yellow" : "border-white/40"
+                }`}
+              >
+                {useRegisteredName && (
+                  <span className="bg-glace-yellow rounded-full size-2.5" />
+                )}
+              </span>
+              <span className="flex-1 min-w-0 text-[14px] text-white">
+                نفس اسم الحساب المسجل{" "}
+                <span className="font-bold text-glace-yellow">
+                  ({registeredAccountName})
+                </span>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUseRegisteredName(false);
+                setSenderAccountName("");
+              }}
+              aria-pressed={!useRegisteredName}
+              className={`flex items-center gap-3 rounded-[14px] border p-3 min-h-11 w-full text-start transition ${
+                !useRegisteredName
+                  ? "cursor-pointer border-glace-yellow/60 bg-glace-yellow/10"
+                  : "cursor-pointer border-white/15 bg-white/5 hover:border-white/30"
+              }`}
+            >
+              <span
+                className={`flex justify-center items-center rounded-full size-5 shrink-0 border-2 transition ${
+                  !useRegisteredName ? "border-glace-yellow" : "border-white/40"
+                }`}
+              >
+                {!useRegisteredName && (
+                  <span className="bg-glace-yellow rounded-full size-2.5" />
+                )}
+              </span>
+              <span className="flex-1 min-w-0 text-[14px] text-white">
+                اسم حساب آخر
+              </span>
+            </button>
+          </div>
+        )}
+
+        {(!hasRegisteredName || !useRegisteredName) && (
+          <Input
+            value={senderAccountName}
+            onChange={(e) => setSenderAccountName(e.target.value)}
+            placeholder="مثال: مصطفى الجزار"
+            className={`bg-white/10 h-11 px-3.5 text-white text-[15px] placeholder:text-white/40 rounded-[14px] focus-visible:ring-glace-yellow/20 ${
+              showValidation && missingSenderName
+                ? "border-red-400 focus-visible:border-red-400"
+                : "border-white/25 focus-visible:border-glace-yellow/50"
+            }`}
+          />
+        )}
         {showValidation && missingSenderName && (
           <p className="mt-1.5 text-[12.5px] text-red-300">
             الرجاء إدخال اسم صاحب الحساب اللي حوّلت منه

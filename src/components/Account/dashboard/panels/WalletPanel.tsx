@@ -26,6 +26,7 @@ import {
 import { usePaymentAccounts } from "@/hooks/payments/usePaymentAccounts";
 import type { TransferPaymentAccount } from "@/lib/merchantPaymentAccounts";
 import { visaCard, cashIcon } from "@/assets/images";
+import { useAuthStore } from "@/store/authStore";
 import ReceiptUploadForm from "@/components/Payment/ReceiptUploadForm";
 import DashboardCard from "../shared/DashboardCard";
 import EmptyState from "../shared/EmptyState";
@@ -78,6 +79,7 @@ type Step = "method" | "details";
 
 export default function WalletPanel() {
   const amountInputRef = useRef<HTMLInputElement>(null);
+  const user = useAuthStore((s) => s.user);
   const { data: wallet } = useWallet();
   const balance = wallet?.balance ?? 0;
   const [txPage, setTxPage] = useState(1);
@@ -598,6 +600,7 @@ export default function WalletPanel() {
                   submitLabel="تأكيد الشحن"
                   submitDisabled={false}
                   submitting={submitTopUpRequestMutation.isPending}
+                  registeredAccountName={user?.name}
                 />
                 {receiptError && (
                   <p className="mt-3 text-[13px] text-red-300 text-center">

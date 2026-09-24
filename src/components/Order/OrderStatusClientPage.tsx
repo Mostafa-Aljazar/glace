@@ -50,6 +50,7 @@ import { getLineItemTotal, useCartStore } from "@/store/cartStore";
 import { getStatusSteps, PAYMENT_STATUS_DISPLAY } from "@/lib/orderStatusSteps";
 import { formatScheduledDateTime } from "@/lib/scheduling";
 import { getApiErrorMessage } from "@/lib/apiWithFallback";
+import { useAuthStore } from "@/store/authStore";
 import ReceiptUploadForm from "@/components/Payment/ReceiptUploadForm";
 
 const CANCEL_REASONS = [
@@ -62,6 +63,7 @@ const CANCEL_REASONS = [
 
 export default function OrderStatusClientPage({ id }: { id: string }) {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const { data: order, isLoading } = useOrder(id);
   const updateReceiptMutation = useUpdateReceipt();
   const cancelOrderMutation = useCancelOrder();
@@ -725,6 +727,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
             initialImage={order.receiptImage}
             initialNote={order.receiptNote}
             initialSenderAccountName={order.senderAccountName}
+            registeredAccountName={user?.name}
             onSubmit={handleReuploadSubmit}
             submitLabel="حفظ"
             submitting={updateReceiptMutation.isPending}
