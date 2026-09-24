@@ -259,7 +259,11 @@ export default function WalletPanel() {
                 اختر طريقة التحويل
               </p>
               <div className="flex flex-col gap-3">
-                {TOP_UP_METHODS.map((m) => {
+                {TOP_UP_METHODS.filter(
+                  (m) =>
+                    !paymentAccounts.length ||
+                    paymentAccounts.some((a) => a.method === m.id),
+                ).map((m) => {
                   const displayLabel = getDisplayLabel(m.id);
                   return (
                     <button

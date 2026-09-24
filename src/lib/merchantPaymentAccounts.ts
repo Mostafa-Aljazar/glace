@@ -7,6 +7,8 @@ import type { PaymentMethod } from "@/store/orderStore";
  *  proof of transfer. */
 export interface MerchantPaymentAccount {
   method: PaymentMethod;
+  /** Display name for this payment method from the admin dashboard. */
+  displayName?: string;
   /** True only for `visa` — no online transfer account exists, it can only
    *  be paid on the in-store card terminal. When set, every field below is
    *  absent and the UI shows "pay in-store" copy instead of an account. */
@@ -95,6 +97,7 @@ export function findMerchantPaymentAccount(
  *  the frontend doesn't track as a transferable method. */
 interface PaymentAccountDto {
   method: PaymentMethod | "palpay" | "cash";
+  displayName?: string;
   qrImage?: string;
   holderName?: string;
   bankName?: string;
@@ -109,6 +112,7 @@ function normalizePaymentAccount(dto: PaymentAccountDto): MerchantPaymentAccount
   const method = dto.method === "palpay" ? "paypal" : dto.method;
   return {
     method,
+    displayName: dto.displayName,
     qrImage: dto.qrImage,
     holderName: dto.holderName,
     bankName: dto.bankName,
