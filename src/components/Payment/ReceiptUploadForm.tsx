@@ -52,15 +52,25 @@ export default function ReceiptUploadForm({
   const [troubleUploading, setTroubleUploading] = useState(false);
   const [note, setNote] = useState(initialNote ?? "");
   const hasRegisteredName = !!registeredAccountName?.trim();
+  /** null until the customer picks an option. Until then the choice is
+   *  derived from props, so a registered name that arrives after mount
+   *  (auth user still loading) still shows up and gets pre-selected. */
+  const [nameChoice, setNameChoice] = useState<"registered" | "other" | null>(
+    null,
+  );
   /** Defaults to the registered-name option when one exists and no prior
    *  value was passed in (e.g. re-upload flows keep whatever was saved). */
-  const [useRegisteredName, setUseRegisteredName] = useState(
-    hasRegisteredName && !initialSenderAccountName,
+  const useRegisteredName =
+    hasRegisteredName &&
+    (nameChoice === null
+      ? !initialSenderAccountName
+      : nameChoice === "registered");
+  const [typedSenderName, setTypedSenderName] = useState(
+    initialSenderAccountName ?? "",
   );
-  const [senderAccountName, setSenderAccountName] = useState(
-    initialSenderAccountName ??
-      (hasRegisteredName ? registeredAccountName! : ""),
-  );
+  const senderAccountName = useRegisteredName
+    ? registeredAccountName!
+    : typedSenderName;
   const [showValidation, setShowValidation] = useState(false);
 
   useEffect(() => {
@@ -151,10 +161,7 @@ export default function ReceiptUploadForm({
           <div className="flex flex-col gap-2 mb-3">
             <button
               type="button"
-              onClick={() => {
-                setUseRegisteredName(true);
-                setSenderAccountName(registeredAccountName!);
-              }}
+              onClick={() => setNameChoice("registered")}
               aria-pressed={useRegisteredName}
               className={`flex items-center gap-3 rounded-[14px] border p-3 min-h-11 w-full text-start transition ${
                 useRegisteredName
@@ -181,10 +188,7 @@ export default function ReceiptUploadForm({
 
             <button
               type="button"
-              onClick={() => {
-                setUseRegisteredName(false);
-                setSenderAccountName("");
-              }}
+              onClick={() => setNameChoice("other")}
               aria-pressed={!useRegisteredName}
               className={`flex items-center gap-3 rounded-[14px] border p-3 min-h-11 w-full text-start transition ${
                 !useRegisteredName
@@ -208,10 +212,10 @@ export default function ReceiptUploadForm({
           </div>
         )}
 
-        {(!hasRegisteredName || !useRegisteredName) && (
+        {!useRegisteredName && (
           <Input
-            value={senderAccountName}
-            onChange={(e) => setSenderAccountName(e.target.value)}
+            value={typedSenderName}
+            onChange={(e) => setTypedSenderName(e.target.value)}
             placeholder="مثال: مصطفى الجزار"
             className={`bg-white/10 h-11 px-3.5 text-white text-[15px] placeholder:text-white/40 rounded-[14px] focus-visible:ring-glace-yellow/20 ${
               showValidation && missingSenderName
