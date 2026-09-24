@@ -21,6 +21,21 @@ body {
   padding-top: env(safe-area-inset-top);
 }
 
+/* Solid, fixed backdrop behind the status bar. With the iOS
+   "black-translucent" status bar the page draws underneath it, so without
+   this the padding above scrolls away and content shows behind the clock
+   and battery icons. Matches the theme color; zero height when there is
+   no inset (desktop, regular browser tabs). Sits just above the header. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  background-color: #1c6b88;
+  z-index: 10000000;
+  pointer-events: none;
+}
+
 @font-face {
   font-family: "Zain";
   src: url("/fonts/Zain-ExtraLight.ttf") format("truetype");
