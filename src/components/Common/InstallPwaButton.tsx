@@ -48,21 +48,31 @@ export default function InstallPwaButton() {
 
   useEffect(() => {
     if (isStandalone()) return;
-    // SSR renders with iosMode=false; correct it once we're on the client
-    // and know the real user agent.
-    if (isIos()) setIosMode(true);
+    const ios = isIos();
+
+    let modalTimer: ReturnType<typeof setTimeout> | undefined;
+    // Only show the modal if the user hasn't dismissed it before, and wait
+    // for the splash screen to finish (1.5 seconds) first.
+    const scheduleModal = () => {
+      if (localStorage.getItem("glace-install-prompt-dismissed") === "true")
+        return;
+      clearTimeout(modalTimer);
+      modalTimer = setTimeout(() => {
+        // SSR renders with iosMode=false; iosMode only affects the modal's
+        // content, so correct it right as the modal opens.
+        if (ios) setIosMode(true);
+        setModalOpen(true);
+      }, 1500);
+    };
+
+    // iOS Safari never fires beforeinstallprompt, so show the manual
+    // "Add to Home Screen" instructions without waiting for it.
+    if (ios) scheduleModal();
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
-      // Only show modal if user hasn't dismissed it before
-      const hasDismissedInstallPrompt =
-        localStorage.getItem("glace-install-prompt-dismissed") === "true";
       setDeferredPrompt(event as BeforeInstallPromptEvent);
-      if (!hasDismissedInstallPrompt) {
-        // Wait for splash screen to finish (1.5 seconds), then show modal
-        const timer = setTimeout(() => setModalOpen(true), 1500);
-        return () => clearTimeout(timer);
-      }
+      scheduleModal();
     };
     const handleAppInstalled = () => {
       setDeferredPrompt(null);
@@ -73,6 +83,7 @@ export default function InstallPwaButton() {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
     return () => {
+      clearTimeout(modalTimer);
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt,
