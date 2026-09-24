@@ -399,7 +399,7 @@ function OrderSummary() {
   const { data: storeStatus } = useStoreStatus();
 
   const storeOpen = storeStatus?.storeOpen ?? true;
-  const closedMessage = storeStatus?.closedMessage ?? "المتجر مغلق حالياً";
+  const closedMessage = storeStatus?.closedMessage ?? "نستقبل طلباتكم غداً خلال ساعات العمل";
   const [storeClosedDialogOpen, setStoreClosedDialogOpen] = useState(false);
 
   return (
@@ -492,6 +492,7 @@ function CheckoutButton() {
   const subtotal = useCartStore((s) => s.subtotal);
   const { data: storeStatus } = useStoreStatus();
   const storeOpen = storeStatus?.storeOpen ?? true;
+  const closedMessage = storeStatus?.closedMessage ?? "نستقبل طلباتكم غداً خلال ساعات العمل";
   const [storeClosedDialogOpen, setStoreClosedDialogOpen] = useState(false);
 
   return (
@@ -512,19 +513,27 @@ function CheckoutButton() {
               المتجر مغلق حالياً
             </DialogTitle>
             <DialogDescription className="text-white/90 text-base">
-              المتجر مغلق حالياً
+              {closedMessage}
             </DialogDescription>
           </DialogHeader>
-          <DialogClose
-            render={
-              <button
-                type="button"
-                className="bg-glace-yellow hover:bg-yellow-300 mt-4 px-6 py-2.5 rounded-[30px] w-full font-bold text-[#1e6a7f] text-lg transition-colors cursor-pointer"
-              />
-            }
-          >
-            حسناً
-          </DialogClose>
+          <div className="flex items-center gap-2.5 mt-4">
+            <Link
+              href="/#location"
+              className="flex-1 bg-white/12 hover:bg-white/18 px-6 py-2.5 rounded-[30px] text-white font-bold text-lg transition-colors text-center"
+            >
+              ساعات العمل
+            </Link>
+            <DialogClose
+              render={
+                <button
+                  type="button"
+                  className="flex-1 bg-glace-yellow hover:bg-yellow-300 px-6 py-2.5 rounded-[30px] font-bold text-[#1e6a7f] text-lg transition-colors cursor-pointer"
+                />
+              }
+            >
+              حسناً
+            </DialogClose>
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -150,7 +150,7 @@ export default function MenuClientPage() {
 
   // Use real API data for store status
   const storeOpen = storeStatus?.storeOpen ?? true;
-  const closedMessage = storeStatus?.closedMessage ?? "المتجر مغلق حالياً";
+  const closedMessage = storeStatus?.closedMessage ?? "نستقبل طلباتكم غداً خلال ساعات العمل";
 
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const categoryButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
@@ -162,9 +162,7 @@ export default function MenuClientPage() {
   const [activeCategory, setActiveCategory] = useState(
     queryCategory ?? "ice-cream",
   );
-  const [closedDialogOpen, setClosedDialogOpen] = useState(
-    () => !storeOpen,
-  );
+  const [closedDialogOpen, setClosedDialogOpen] = useState(() => !storeOpen);
 
   useEffect(() => {
     if (!queryCategory) return;
@@ -275,16 +273,24 @@ export default function MenuClientPage() {
               {closedMessage}
             </DialogDescription>
           </DialogHeader>
-          <DialogClose
-            render={
-              <button
-                type="button"
-                className="bg-glace-yellow hover:bg-yellow-300 mt-4 px-6 py-2.5 rounded-[30px] w-full font-bold text-[#1e6a7f] text-lg transition-colors cursor-pointer"
-              />
-            }
-          >
-            رجوع
-          </DialogClose>
+          <div className="flex items-center gap-2.5 mt-4">
+            <Link
+              href="/#location"
+              className="flex-1 bg-white/12 hover:bg-white/18 px-6 py-2.5 rounded-[30px] text-white font-bold text-lg transition-colors text-center"
+            >
+              ساعات العمل
+            </Link>
+            <DialogClose
+              render={
+                <button
+                  type="button"
+                  className="flex-1 bg-glace-yellow hover:bg-yellow-300 px-6 py-2.5 rounded-[30px] font-bold text-[#1e6a7f] text-lg transition-colors cursor-pointer"
+                />
+              }
+            >
+              حسناً
+            </DialogClose>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -349,7 +355,7 @@ export default function MenuClientPage() {
           </div>
 
           <div className="z-10 relative">
-            <h1 className="drop-shadow-lg font-bold text-[36px] text-white sm:text-[46px] leading-tight">
+            <h1 className="drop-shadow-lg font-bold text-[24px] text-white sm:text-[36px] leading-tight">
               منيو جلاسيه الأمير - غزة
             </h1>
           </div>
