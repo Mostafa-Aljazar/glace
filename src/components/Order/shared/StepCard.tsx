@@ -1,4 +1,5 @@
 import { forwardRef, type ReactNode } from "react";
+import { Pencil } from "lucide-react";
 
 export const StepCard = forwardRef<
   HTMLDivElement,
@@ -15,16 +16,57 @@ export const StepCard = forwardRef<
      *  user knows exactly what's missing after being scrolled here. */
     error?: boolean;
     errorMsg?: string;
+    /** Completed step folded down to one line showing `summary` (the pick,
+     *  e.g. "كاسة"); tapping it calls `onExpand` to reopen it for editing. */
+    collapsed?: boolean;
+    summary?: string;
+    onExpand?: () => void;
     children: ReactNode;
   }
 >(function StepCard(
-  { step, title, subtitle, done, locked, error, errorMsg, children },
+  {
+    step,
+    title,
+    subtitle,
+    done,
+    locked,
+    error,
+    errorMsg,
+    collapsed,
+    summary,
+    onExpand,
+    children,
+  },
   ref,
 ) {
+  if (collapsed) {
+    return (
+      <div ref={ref} className="mb-3 scroll-mt-28">
+        <button
+          type="button"
+          onClick={onExpand}
+          className="flex items-center gap-3 bg-white/12 hover:bg-white/17 backdrop-blur-[15px] px-4 py-3 border border-white/15 rounded-[22px] w-full text-start transition-colors cursor-pointer"
+        >
+          <span className="flex justify-center items-center bg-green-500/25 rounded-full w-7 h-7 font-bold text-[13px] text-green-300 shrink-0">
+            {step}
+          </span>
+          <span className="flex-1 min-w-0 text-[14px] text-white/70 truncate">
+            {title}:{" "}
+            <span className="font-bold text-white">{summary}</span>
+          </span>
+          <span className="flex items-center gap-1 text-[12px] text-glace-yellow shrink-0">
+            <Pencil size={13} />
+            تعديل
+          </span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={ref}
-      className={`bg-white/17 backdrop-blur-[15px] mb-4 rounded-[28px] overflow-hidden transition-all border-2 ${
+      className={`bg-white/17 backdrop-blur-[15px] mb-4 rounded-[28px] overflow-hidden transition-all border-2 scroll-mt-28 ${
         error ? "border-red-500" : "border-transparent"
       } ${locked ? "opacity-50" : ""}`}
     >
@@ -41,7 +83,7 @@ export const StepCard = forwardRef<
             <h2 className="font-bold text-[15px] text-white">{title}</h2>
             {subtitle && <p className="text-[12px] text-white/55">{subtitle}</p>}
             {error && errorMsg && (
-              <p className="mt-0.5 text-[12px] text-red-300">{errorMsg}</p>
+              <p className="mt-0.5 font-bold text-[12px] text-red-500">{errorMsg}</p>
             )}
           </div>
         </div>

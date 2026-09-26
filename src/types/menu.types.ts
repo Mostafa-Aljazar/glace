@@ -199,10 +199,26 @@ export interface IBuilderProduct extends IProductBase {
  * pancake/waffle/crepe/pizza/molten, cold-drinks, juices, brownie, cookies,
  * cheesecake, hot-drinks, corn.
  */
+/** One ice-cream scoop flavor offered as an extra on a flat-list item. */
+export interface IExtraScoopOption {
+  id: string; // admin-managed, stable — sent back as the addon selection id
+  label: string;
+  price: number; // this flavor's own price (₪) — not flat per section
+  available: boolean;
+}
+
+/** "أضف بوظة" — one optional scoop per unit, picked from either family.
+ *  Absent on products that don't offer it; either family may be absent too. */
+export interface IExtraScoop {
+  classic?: IExtraScoopOption[];
+  special?: IExtraScoopOption[];
+}
+
 export interface IFlatListProduct extends IProductBase {
   kind: "flat-list";
   items: IProductVariant[];
   mixes?: IMixRule[];
+  extraScoop?: IExtraScoop;
 }
 
 export type IProduct = IBuilderProduct | IFlatListProduct;

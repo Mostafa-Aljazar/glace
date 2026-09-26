@@ -10,6 +10,7 @@ import {
   CalendarDays,
   User,
 } from "lucide-react";
+import { useCartHydrated } from "@/hooks/cart/useCartHydrated";
 import { useCartStore } from "@/store/cartStore";
 
 const LEFT_NAV = [
@@ -83,7 +84,11 @@ function isNavItemActive(href: string, pathname: string) {
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const cartCount = useCartStore((s) => s.items.length);
+  // Persisted cart — read as empty until it hydrates so the badge matches
+  // the server-rendered HTML.
+  const cartHydrated = useCartHydrated();
+  const storedCartCount = useCartStore((s) => s.itemCount());
+  const cartCount = cartHydrated ? storedCartCount : 0;
 
   const cartActive = pathname === "/cart";
 

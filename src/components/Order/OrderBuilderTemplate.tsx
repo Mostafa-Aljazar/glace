@@ -1,16 +1,17 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import EventsBackground from "@/components/Events/EventsBackground";
-import AddToCartButton from "@/components/Order/AddToCartButton";
-import AddToCartToast from "@/components/Order/AddToCartToast";
+import CartBar from "@/components/Order/CartBar";
 import FlavorBall from "@/components/Order/FlavorBall";
+import InCartLines from "@/components/Order/InCartLines";
 import OrderLeaveConfirmationDialog from "@/components/Order/OrderLeaveConfirmationDialog";
 import { ExtraBiscuitCounter } from "@/components/Order/BiscuitAddons";
 import StepCard from "@/components/Order/shared/StepCard";
 import Pill from "@/components/Order/shared/Pill";
+import { useCartHydrated } from "@/hooks/cart/useCartHydrated";
 import { useLeavePageGuard, useAddToCartFeedback } from "@/hooks/order";
 import { useMenuAddons } from "@/hooks/menu";
 import { useCartStore, type CartSelection } from "@/store/cartStore";
@@ -19,10 +20,33 @@ import {
   pickPriceCell,
   resolveBuilderPrice,
   resolveMenuImageSrc,
+  type IAddonOption,
   type IBuilderProduct,
   type IFlavorOption,
   type ISizeOption,
 } from "@/types/menu.types";
+
+/** Containers whose units can take per-unit additions — same rule the cart
+ *  page's "تخصيص الإضافات" uses (`CartClientPage.resolveAddons`). */
+const CUP_CONTAINERS = ["كاسة", "بسكوت"];
+
+/** The single orderable option's id when there is exactly one — such a step
+ *  is picked automatically instead of making the user tap the only choice. */
+function soleId<T extends { id: string }>(options: T[]): string {
+  return options.length === 1 ? options[0].id : "";
+}
+
+/** Collapse repeated flavor ids into {id, qty} pairs, keeping pick order. */
+function countFlavorPicks(ids: string[]): Array<{ id: string; qty: number }> {
+  const counts = new Map<string, number>();
+  for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return Array.from(counts, ([id, qty]) => ({ id, qty }));
+}
+
+/** Clamp an addon qty to its kind: toggle → 0/1, counter → 0..maxQty. */
+function addonMaxQty(addon: IAddonOption): number {
+  return addon.type === "counter" ? (addon.maxQty ?? 99) : 1;
+}
 
 /** Size-pill caption: ball count when the size holds flavors, otherwise the
  *  size's own price (برادة has no balls, so each pill shows e.g. "3 ₪"). */
@@ -179,15 +203,20 @@ export default function OrderBuilderTemplate({
     extraBiscuitAddon.available !== false;
   const extraBiscuitPrice = extraBiscuitAddon?.price ?? 0;
 
-  // No container is pre-selected — the user must actively pick one, so the
-  // total stays 0 until then. A container passed via the URL is still
+  // Nothing with a real choice is pre-selected — the user must actively pick
+  // it, so the total stays 0 until then. A step with exactly one orderable
+  // option is the exception: it's derived as picked (never stored, so a reset
+  // or container switch re-derives it). A container passed via the URL is
   // honored as a starting point since that reflects an explicit prior choice.
-  const [containerId, setContainerId] = useState(
+  const [pickedContainerId, setContainerId] = useState(
     requestedContainer &&
       product.containerOptions?.some((c) => c.id === requestedContainer)
       ? requestedContainer
       : "",
   );
+  const containerId =
+    pickedContainerId ||
+    soleId((product.containerOptions ?? []).filter((c) => c.available));
 
   const availableSizes = useMemo(
     () =>
@@ -196,36 +225,48 @@ export default function OrderBuilderTemplate({
       ),
     [product.sizes, containerId],
   );
-  // No size is pre-selected either, for the same reason.
-  const [sizeId, setSizeId] = useState("");
+  const [pickedSizeId, setSizeId] = useState("");
+  // Sizes only become auto-pickable once the container is known.
+  const sizeId =
+    pickedSizeId ||
+    (!product.containerOptions?.length || containerId
+      ? soleId(availableSizes.filter((s) => s.available !== false))
+      : "");
   const selectedSize = availableSizes.find((s) => s.id === sizeId);
 
   const hasFlavorStep = !!product.flavorFamilies?.length;
-  const [flavorFamily, setFlavorFamily] = useState<FlavorFamily | "">("");
+  const [pickedFlavorFamily, setFlavorFamily] = useState<FlavorFamily | "">(
+    "",
+  );
   const [selectedFlavorIds, setSelectedFlavorIds] = useState<string[]>([]);
   const [extraBiscuitCount, setExtraBiscuitCount] = useState(0);
-  const [quantity, setQuantity] = useState(1);
+  // Per-unit additions picked on this page (addon id → qty per unit).
+  const [addonQty, setAddonQty] = useState<Record<string, number>>({});
 
-  const {
-    addedToCart,
-    validationMsg,
-    showValidation,
-    markAdded,
-    toastMsg,
-    dismissToast,
-  } = useAddToCartFeedback();
+  const { validationMsg, showValidation } = useAddToCartFeedback();
 
   // Whichever step failed validation on the last add-to-cart attempt — its
   // card gets a red border + an inline hint, and the page auto-scrolls to it.
-  type StepKey = "typeSize" | "flavorFamily" | "flavorPicks";
+  type StepKey = "typeSize" | "flavorFamily" | "flavorPicks" | "extras";
   const [invalidStep, setInvalidStep] = useState<StepKey | null>(null);
+  // A completed step folds down to one line; the one the user reopened to
+  // edit stays expanded until they pick something in it.
+  const [editingStep, setEditingStep] = useState<
+    "container" | "size" | "family" | "picks" | null
+  >(null);
   const typeSizeStepRef = useRef<HTMLDivElement>(null);
   const flavorFamilyStepRef = useRef<HTMLDivElement>(null);
   const flavorPicksStepRef = useRef<HTMLDivElement>(null);
+  const extrasStepRef = useRef<HTMLDivElement>(null);
+  // The size card when it's separate from the container card — its own
+  // auto-scroll target once a container is picked.
+  const sizeStepRef = useRef<HTMLDivElement>(null);
+  const inCartRef = useRef<HTMLDivElement>(null);
   const stepRefs = useRef<Record<StepKey, React.RefObject<HTMLDivElement | null>>>({
     typeSize: typeSizeStepRef,
     flavorFamily: flavorFamilyStepRef,
     flavorPicks: flavorPicksStepRef,
+    extras: extrasStepRef,
   });
 
   const flagInvalidStep = useCallback((step: StepKey, msg: string) => {
@@ -237,9 +278,6 @@ export default function OrderBuilderTemplate({
     });
   }, [showValidation]);
 
-  const selectedContainer = product.containerOptions?.find(
-    (c) => c.id === containerId,
-  );
   const maxBalls = selectedSize?.maxBalls ?? 0;
   const isFamilyProduct = product.slug === "family";
   // Family mix is always an even split of whatever maxBalls the size
@@ -252,16 +290,21 @@ export default function OrderBuilderTemplate({
   // each product can offer its own set.
   const catalog = useMemo(() => product.flavors ?? [], [product.flavors]);
 
-  const flavorPool =
-    hasFlavorStep && flavorFamily ? flavorPoolFor(catalog, flavorFamily) : [];
-  const isRepeatable = product.selectionMode === "repeatable";
-
   // A مكس only makes sense when the size allows more than one ball — a
   // 1-ball size can only ever hold a single flavor, so it can't be split
   // between classic and special.
   const availableFlavorFamilies = (product.flavorFamilies ?? []).filter(
     (f) => f !== "mix" || maxBalls > 1,
   );
+  const flavorFamily: FlavorFamily | "" =
+    pickedFlavorFamily ||
+    (selectedSize && availableFlavorFamilies.length === 1
+      ? availableFlavorFamilies[0]
+      : "");
+
+  const flavorPool =
+    hasFlavorStep && flavorFamily ? flavorPoolFor(catalog, flavorFamily) : [];
+  const isRepeatable = product.selectionMode === "repeatable";
   const mixClassicPool = useMemo(
     () => flavorPoolFor(catalog, "classic"),
     [catalog],
@@ -279,56 +322,66 @@ export default function OrderBuilderTemplate({
     [mixSpecialPool],
   );
 
+  // Only what the user actually picked counts — auto-derived single options
+  // aren't "unsaved work" worth a leave confirmation.
   const hasPendingSelections =
-    (product.containerOptions ? !!containerId : false) ||
-    !!sizeId ||
+    !!pickedContainerId ||
+    !!pickedSizeId ||
+    !!pickedFlavorFamily ||
     selectedFlavorIds.length > 0 ||
     extraBiscuitCount > 0 ||
-    quantity !== 1;
+    Object.keys(addonQty).length > 0;
 
-  // Reset back to the same "nothing selected" baseline the page loads with —
-  // not any default container/size/family, since those are no longer
-  // auto-picked.
+  // Reset back to the same baseline the page loads with (single-option steps
+  // re-derive themselves).
   const clearSelections = useCallback(() => {
     setContainerId("");
     setSizeId("");
     setFlavorFamily("");
     setSelectedFlavorIds([]);
     setExtraBiscuitCount(0);
-    setQuantity(1);
+    setAddonQty({});
+    setEditingStep(null);
+    setInvalidStep(null);
   }, []);
 
   const { showCloseConfirm, handleCancelLeave, handleConfirmLeave } =
     useLeavePageGuard(hasPendingSelections, clearSelections);
 
+  const hydrated = useCartHydrated();
   const addItem = useCartStore((s) => s.addItem);
-  const cartItems = useCartStore((s) => s.items);
-  const productCartQuantity = cartItems
-    .filter((i) => i.productId === product.id)
-    .reduce((sum, i) => sum + i.quantity, 0);
+  const allCartItems = useCartStore((s) => s.items);
+  const productLines = useMemo(
+    () =>
+      hydrated ? allCartItems.filter((i) => i.productId === product.id) : [],
+    [hydrated, allCartItems, product.id],
+  );
 
   function selectContainer(id: string) {
     setContainerId(id);
-    const nextSizes = product.sizes.filter(
-      (s) => !s.containerId || s.containerId === id,
-    );
-    setSizeId(nextSizes[0]?.id ?? "");
+    // No size carries over — a different container has its own sizes, and
+    // the only one auto-picked is a container's sole size.
+    setSizeId("");
     setSelectedFlavorIds([]);
+    setEditingStep(null);
   }
 
   function selectContainerAndSize(cId: string, sId: string) {
     setContainerId(cId);
     setSizeId(sId);
     setSelectedFlavorIds([]);
+    setEditingStep(null);
   }
 
   function selectFlavorFamily(family: FlavorFamily) {
     setFlavorFamily(family);
     setSelectedFlavorIds([]);
+    setEditingStep(null);
   }
 
   function selectSize(id: string) {
     setSizeId(id);
+    setEditingStep(null);
     const newSize = availableSizes.find((s) => s.id === id);
     if (newSize && newSize.maxBalls <= 1 && flavorFamily === "mix") {
       setFlavorFamily(product.flavorFamilies?.find((f) => f !== "mix") ?? "");
@@ -336,7 +389,55 @@ export default function OrderBuilderTemplate({
     }
   }
 
+  // Per-unit additions offered on this page — the same catalog and rules the
+  // cart's "تخصيص الإضافات" uses, minus the extra biscuit (a flat, whole-line
+  // extra with its own counter below).
+  const selectedContainer = product.containerOptions?.find(
+    (c) => c.id === containerId,
+  );
+  const unitAddons = useMemo(() => {
+    const own = product.addons ?? [];
+    const eligible =
+      own.length > 0 ||
+      product.slug === "family" ||
+      (!!selectedContainer && CUP_CONTAINERS.includes(selectedContainer.label));
+    const source = own.length > 0 ? own : eligible ? (sharedAddons ?? []) : [];
+    return source.filter(
+      (a) => a.available !== false && a.id !== EXTRA_BISCUIT_ADDON_ID,
+    );
+  }, [product.addons, product.slug, selectedContainer, sharedAddons]);
+
+  function setUnitAddonQty(addon: IAddonOption, qty: number) {
+    setAddonQty((prev) => {
+      const next = { ...prev };
+      const v = Math.max(0, Math.min(qty, addonMaxQty(addon)));
+      if (v <= 0) delete next[addon.id];
+      else next[addon.id] = v;
+      return next;
+    });
+  }
+
+  const addonSelections: CartSelection[] = unitAddons.flatMap((addon) => {
+    const qty = addonQty[addon.id] ?? 0;
+    if (qty <= 0) return [];
+    return [
+      {
+        kind: "addon" as const,
+        id: addon.id,
+        label: addon.label,
+        qty,
+        unitPrice: addon.price,
+      },
+    ];
+  });
+  const addonUnitTotal = addonSelections.reduce(
+    (sum, s) => sum + s.unitPrice * s.qty,
+    0,
+  );
+
   function addFlavor(flavorId: string) {
+    // Filling the last slot folds a reopened picks step back down.
+    if (selectedFlavorIds.length + 1 >= maxBalls) setEditingStep(null);
     setSelectedFlavorIds((prev) => {
       if (!isRepeatable && prev.includes(flavorId)) return prev;
       // maxBalls caps the total picks in both modes — toggle mode only
@@ -390,7 +491,9 @@ export default function OrderBuilderTemplate({
   const flatAddonSum = showExtraBiscuit
     ? extraBiscuitCount * extraBiscuitPrice
     : 0;
-  const totalPrice = unitBasePrice * quantity + flatAddonSum;
+  // What one tap of "أضف" puts in the cart: one unit with its per-unit
+  // additions, plus the whole-line flat extras.
+  const addPrice = unitBasePrice + addonUnitTotal + flatAddonSum;
 
   function handleAddToCart() {
     if (containerSizesList.length > 0) {
@@ -432,12 +535,8 @@ export default function OrderBuilderTemplate({
 
     setInvalidStep(null);
 
-    const flavorCounts = new Map<string, number>();
-    for (const id of selectedFlavorIds)
-      flavorCounts.set(id, (flavorCounts.get(id) ?? 0) + 1);
-
-    const selections: CartSelection[] = Array.from(flavorCounts.entries()).map(
-      ([id, qty]) => ({
+    const selections: CartSelection[] = countFlavorPicks(selectedFlavorIds).map(
+      ({ id, qty }) => ({
         kind: "flavor",
         id,
         label: flavorPool.find((f) => f.id === id)?.nameAr ?? id,
@@ -464,7 +563,11 @@ export default function OrderBuilderTemplate({
     addItem({
       productId: product.id,
       name: cartName,
-      image: resolveMenuImageSrc(selectedContainer?.image ?? product.image),
+      // Most specific picture first: the chosen size's own image (it shows
+      // the actual cup/cone with its scoop count), then the container's.
+      image: resolveMenuImageSrc(
+        selectedSize.image ?? selectedContainer?.image ?? product.image,
+      ),
       size: selectedSize.label,
       sizeId: selectedSize.id,
       container: product.containerOptions
@@ -477,17 +580,27 @@ export default function OrderBuilderTemplate({
       type: hasFlavorStep
         ? FAMILY_LABELS[flavorFamily as FlavorFamily]
         : selectedContainer?.label,
-      selections,
-      addonTotal: 0,
+      selections: [...selections, ...addonSelections],
+      addonTotal: addonUnitTotal,
       flatSelections,
       flatAddonTotal: flatAddonSum,
       unitPrice: unitBasePrice,
-      quantity,
+      // Always one — more of the same configuration is stepped from "في
+      // سلتك" (an identical re-add merges into the same line anyway).
+      quantity: 1,
     });
 
-    markAdded(`تمت إضافة ${cartName} ×${quantity} إلى السلة`);
-    window.scrollTo({ top: 0, behavior: "smooth" });
     clearSelections();
+    // Bring "في سلتك" into view, where the new line now sits with its
+    // stepper; the cart bar's count/total pulse confirms the add. Deferred a
+    // frame so the section has rendered the new line (or mounted at all).
+    window.requestAnimationFrame(() => {
+      const el = inCartRef.current;
+      window.scrollTo({
+        top: el ? el.getBoundingClientRect().top + window.scrollY - 112 : 0,
+        behavior: "smooth",
+      });
+    });
   }
 
   let stepNumber = 1;
@@ -560,6 +673,90 @@ export default function OrderBuilderTemplate({
       : classicCount > 0 && specialCount > 0;
   })();
   const extrasLocked = flavorPicksLocked || !flavorPicksDone;
+  const hasExtrasStep = showExtraBiscuit || unitAddons.length > 0;
+
+  // Picks only count as finished (fold + move on) once every ball slot is
+  // used — fewer balls is still orderable, but the user may be mid-pick.
+  const flavorPicksComplete =
+    flavorPicksSatisfied && selectedFlavorIds.length >= maxBalls;
+  const canAdd =
+    typeAndSizeDone &&
+    flavorFamilyDone &&
+    (!hasFlavorStep || flavorPicksSatisfied);
+
+  // The first step still waiting on the user. When it moves forward, the page
+  // scrolls to it so the user never has to hunt for what comes next.
+  type ProgressStep = StepKey | "size" | "done";
+  const currentStep: ProgressStep = !typeAndSizeDone
+    ? product.containerOptions?.length &&
+      containerSizesList.length === 0 &&
+      containerId
+      ? "size"
+      : "typeSize"
+    : !flavorFamilyDone
+      ? "flavorFamily"
+      : hasFlavorStep && !flavorPicksComplete
+        ? "flavorPicks"
+        : hasExtrasStep
+          ? "extras"
+          : "done";
+  const prevStepRef = useRef(currentStep);
+  useEffect(() => {
+    const order: ProgressStep[] = [
+      "typeSize",
+      "size",
+      "flavorFamily",
+      "flavorPicks",
+      "extras",
+      "done",
+    ];
+    const prev = prevStepRef.current;
+    prevStepRef.current = currentStep;
+    // Only on forward progress — a reset after adding, or reopening an
+    // earlier step, must not yank the page around.
+    if (currentStep === "done" || order.indexOf(currentStep) <= order.indexOf(prev))
+      return;
+    const el = (
+      currentStep === "size" ? sizeStepRef : stepRefs.current[currentStep]
+    ).current;
+    if (!el) return;
+    // Explicit offset rather than scrollIntoView + scroll-margin, which lands
+    // the card under the fixed header on mobile Chrome.
+    window.scrollTo({
+      top: el.getBoundingClientRect().top + window.scrollY - 112,
+      behavior: "smooth",
+    });
+  }, [currentStep]);
+
+  const flavorPicksSummary = countFlavorPicks(selectedFlavorIds)
+    .map(({ id, qty }) => {
+      const name = catalog.find((f) => f.id === id)?.nameAr ?? id;
+      return qty > 1 ? `${name} ×${qty}` : name;
+    })
+    .join("، ");
+
+  // Live one-line recap for the bottom bar, e.g. "كاسة · وسط · 2/3 كورة".
+  const progressSummary = [
+    selectedContainer?.label,
+    selectedSize?.label,
+    hasFlavorStep && flavorFamily ? FAMILY_LABELS[flavorFamily] : undefined,
+    hasFlavorStep && flavorFamily && maxBalls > 0
+      ? `${selectedFlavorIds.length}/${maxBalls} كورة`
+      : undefined,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const nextHint = !typeAndSizeDone
+    ? product.containerOptions?.length && !containerId
+      ? "اختر النوع"
+      : "اختر الحجم"
+    : !flavorFamilyDone
+      ? "اختر نوع الأطعمة"
+      : hasFlavorStep && !flavorPicksSatisfied
+        ? "اختر الأطعمة"
+        : hasFlavorStep && !flavorPicksComplete
+          ? `باقي ${maxBalls - selectedFlavorIds.length} كورة`
+          : "";
 
   const priceGroups = useMemo(() => {
     const byContainer = new Map<string | undefined, typeof product.sizes>();
@@ -602,7 +799,7 @@ export default function OrderBuilderTemplate({
   return (
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
-      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-52 lg:pb-36 max-w-3xl">
+      <div className="z-90 relative mx-auto px-4 pt-22.5 lg:pt-26.5 pb-72 lg:pb-52 max-w-3xl">
         <div className="bg-white/17 backdrop-blur-[15px] mb-6 rounded-[28px] overflow-hidden">
           <div className="flex md:flex-row flex-col gap-4 p-5">
             {/* Hero (right side in RTL) */}
@@ -680,12 +877,19 @@ export default function OrderBuilderTemplate({
           </div>
         </div>
 
+        <div ref={inCartRef}>
+          <InCartLines lines={productLines} />
+        </div>
+
         {containerSizesList.length > 0 ? (
           <StepCard
             ref={typeSizeStepRef}
             step={stepNumber++}
             title="اختر النوع و الحجم"
             done={!!containerId && !!sizeId}
+            collapsed={!!selectedSize && editingStep !== "size"}
+            summary={`${selectedSize?.label ?? ""} ${selectedContainer?.label ?? ""}`}
+            onExpand={() => setEditingStep("size")}
             error={invalidStep === "typeSize" && !(containerId && sizeId)}
             errorMsg="اختر النوع و الحجم"
           >
@@ -779,6 +983,9 @@ export default function OrderBuilderTemplate({
                   step={stepNumber++}
                   title="اختر النوع"
                   done={!!containerId}
+                  collapsed={!!selectedContainer && editingStep !== "container"}
+                  summary={selectedContainer?.label}
+                  onExpand={() => setEditingStep("container")}
                   error={invalidStep === "typeSize" && !containerId}
                   errorMsg="اختر النوع"
                 >
@@ -803,11 +1010,14 @@ export default function OrderBuilderTemplate({
               ref={
                 !product.containerOptions || product.containerOptions.length === 0
                   ? typeSizeStepRef
-                  : undefined
+                  : sizeStepRef
               }
               step={stepNumber++}
               title="اختر الحجم"
               done={!!sizeId}
+              collapsed={!!selectedSize && editingStep !== "size"}
+              summary={selectedSize?.label}
+              onExpand={() => setEditingStep("size")}
               locked={!!product.containerOptions && !containerId}
               error={invalidStep === "typeSize" && !!containerId && !sizeId}
               errorMsg="اختر الحجم"
@@ -836,6 +1046,9 @@ export default function OrderBuilderTemplate({
               step={stepNumber++}
               title={product.includesIceCreamStep ? "أضف بوظة" : "نوع الأطعمة"}
               done={!!flavorFamily}
+              collapsed={!!flavorFamily && editingStep !== "family"}
+              summary={flavorFamily ? FAMILY_LABELS[flavorFamily] : undefined}
+              onExpand={() => setEditingStep("family")}
               locked={!typeAndSizeDone}
               error={invalidStep === "flavorFamily" && !flavorFamily}
               errorMsg="اختر نوع الأطعمة"
@@ -864,6 +1077,9 @@ export default function OrderBuilderTemplate({
                   : undefined
               }
               done={selectedFlavorIds.length > 0}
+              collapsed={flavorPicksComplete && editingStep !== "picks"}
+              summary={flavorPicksSummary}
+              onExpand={() => setEditingStep("picks")}
               locked={flavorPicksLocked}
               error={invalidStep === "flavorPicks" && !flavorPicksSatisfied}
               errorMsg={validationMsg || "اضغط على كرات الأطعمة للاختيار"}
@@ -1007,65 +1223,73 @@ export default function OrderBuilderTemplate({
           </>
         )}
 
-        {showExtraBiscuit && (
-          <StepCard step={stepNumber++} title="إضافات" locked={extrasLocked}>
-            <ExtraBiscuitCounter
-              count={extraBiscuitCount}
-              unitPrice={extraBiscuitPrice}
-              label={extraBiscuitAddon?.label}
-              maxQty={extraBiscuitAddon?.maxQty}
-              onChange={setExtraBiscuitCount}
-            />
+        {hasExtrasStep && (
+          <StepCard
+            ref={extrasStepRef}
+            step={stepNumber++}
+            title="إضافات"
+            subtitle="اختياري"
+            locked={extrasLocked}
+          >
+            <div className="flex flex-col gap-2.5">
+              {unitAddons.map((addon) => (
+                <ExtraBiscuitCounter
+                  key={addon.id}
+                  count={addonQty[addon.id] ?? 0}
+                  unitPrice={addon.price}
+                  label={addon.label}
+                  maxQty={addonMaxQty(addon)}
+                  onChange={(qty) => setUnitAddonQty(addon, qty)}
+                />
+              ))}
+              {showExtraBiscuit && (
+                <ExtraBiscuitCounter
+                  count={extraBiscuitCount}
+                  unitPrice={extraBiscuitPrice}
+                  label={extraBiscuitAddon?.label}
+                  maxQty={extraBiscuitAddon?.maxQty}
+                  onChange={setExtraBiscuitCount}
+                />
+              )}
+            </div>
           </StepCard>
         )}
       </div>
 
       <div className="bottom-28 lg:bottom-0 z-9999997 fixed inset-x-0 px-3 sm:px-4 pt-6 pb-4 pointer-events-none">
-        <div className="flex items-center gap-2 sm:gap-4 bg-[#2d8aaa]/92 shadow-[0_8px_28px_rgba(0,0,0,0.22)] backdrop-blur-md mx-auto px-3 sm:px-5 py-3 sm:py-4 border border-white/35 rounded-[24px] max-w-3xl pointer-events-auto">
-          <div className="flex items-center gap-1.5 bg-white/25 px-1.5 sm:px-2 py-1 border border-white/35 rounded-full shrink-0">
+        <div className="flex flex-col gap-2 mx-auto max-w-3xl">
+          <CartBar floating={false} />
+
+          <div className="flex items-center gap-3 sm:gap-4 bg-[#2d8aaa]/92 shadow-[0_8px_28px_rgba(0,0,0,0.22)] backdrop-blur-md px-4 sm:px-5 py-3 sm:py-4 border border-white/35 rounded-[24px] pointer-events-auto">
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] text-white/75 truncate">
+                {progressSummary || product.name}
+              </p>
+              <p
+                className={`font-bold text-[14px] sm:text-[15px] truncate ${
+                  canAdd ? "text-glace-yellow" : "text-white"
+                }`}
+              >
+                {nextHint || (canAdd ? "جاهز للإضافة" : "")}
+              </p>
+            </div>
+
+            {/* Still clickable before the required steps are done — the tap
+                flags and scrolls to whichever step is missing. */}
             <button
               type="button"
-              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              className="flex justify-center items-center hover:bg-white/25 rounded-full w-7 h-7 text-white transition-colors cursor-pointer"
-            >
-              −
-            </button>
-            <span className="min-w-5 font-bold text-[15px] text-white text-center">
-              {quantity}
-            </span>
-            <button
-              type="button"
-              onClick={() => setQuantity((q) => q + 1)}
-              className="flex justify-center items-center hover:bg-white/25 rounded-full w-7 h-7 text-white transition-colors cursor-pointer"
-            >
-              +
-            </button>
-          </div>
-
-          <div className="shrink-0">
-            <p className="text-[11px] text-white/75 sm:text-[12px]">الإجمالي</p>
-            <p className="font-bold tabular-nums text-[18px] text-glace-yellow sm:text-[22px] leading-none">
-              {totalPrice.toFixed(2)} ₪
-            </p>
-          </div>
-
-          {/* Spacer - only visible on tablet+ */}
-          <div className="hidden md:block flex-1" />
-
-          <div className="w-full sm:w-auto">
-            <AddToCartButton
               onClick={handleAddToCart}
-              canAdd={!!selectedSize}
-              addedToCart={addedToCart}
-              validationMsg={validationMsg}
-              hasSelections={hasPendingSelections}
-              cartQuantity={productCartQuantity}
-            />
+              className={`shrink-0 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full font-bold text-[14px] sm:text-[16px] whitespace-nowrap tabular-nums transition-all cursor-pointer ${
+                canAdd
+                  ? "bg-glace-yellow hover:bg-yellow-300 text-[#1e6a7f] shadow-[0_4px_20px_rgba(244,228,81,0.4)] hover:-translate-y-0.5"
+                  : "bg-white/30 text-white/70"
+              }`}
+            >
+              {canAdd ? `أضف · ${addPrice.toFixed(2)} ₪` : "أضف"}
+            </button>
           </div>
         </div>
       </div>
-
-      <AddToCartToast message={toastMsg} onClose={dismissToast} />
 
       <OrderLeaveConfirmationDialog
         open={showCloseConfirm}

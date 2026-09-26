@@ -1,20 +1,11 @@
 "use client";
 
-import { useState, type Dispatch, type SetStateAction } from "react";
-import { Minus, Plus, Sparkles, X } from "lucide-react";
+import { useState } from "react";
+import { Sparkles, X } from "lucide-react";
+import CartLineStepper from "@/components/Order/CartLineStepper";
 import MixFlavorModal from "@/components/Order/MixFlavorModal";
+import { useCartStore, type CartItem } from "@/store/cartStore";
 import type { IMixRule, IProductVariant } from "@/types/menu.types";
-
-export interface MixSelection {
-  /** Unique id of THIS added instance (a product can hold several mixes). */
-  id: string;
-  /** `IMixRule.id` of the rule this instance was built from. */
-  mixId: string;
-  count: number;
-  /** `IProductVariant.id` per picked ball — repeats allowed. */
-  selectedItemIds: string[];
-  unitPrice: number;
-}
 
 /** Collapse a possibly-repeated array of item ids into {id, qty} pairs. */
 export function countFlavorOccurrences(
@@ -37,52 +28,25 @@ function flavorFrequencyLabels(itemIds: string[], items: IProductVariant[]) {
 interface MixOrderSectionProps {
   mixes: IMixRule[];
   items: IProductVariant[];
-  mixSelections: MixSelection[];
-  setMixSelections: Dispatch<SetStateAction<MixSelection[]>>;
+  /** This product's mix lines already in the cart — each one is shown with
+   *  its picks and a stepper bound to the cart. */
+  lines: CartItem[];
+  /** Confirming the flavor modal adds the mix straight to the cart. */
+  onAddMix: (mix: IMixRule, itemIds: string[], unitPrice: number) => void;
 }
 
 export default function MixOrderSection({
   mixes,
   items,
-  mixSelections,
-  setMixSelections,
+  lines,
+  onAddMix,
 }: MixOrderSectionProps) {
   const [activeMix, setActiveMix] = useState<IMixRule | null>(null);
-
-  function incrementMix(mixId: string) {
-    setMixSelections((prev) =>
-      prev.map((m) => (m.id === mixId ? { ...m, count: m.count + 1 } : m)),
-    );
-  }
-
-  function decrementMix(mixId: string) {
-    setMixSelections((prev) => {
-      const mix = prev.find((m) => m.id === mixId);
-      if (!mix) return prev;
-      if (mix.count <= 1) return prev.filter((m) => m.id !== mixId);
-      return prev.map((m) =>
-        m.id === mixId ? { ...m, count: m.count - 1 } : m,
-      );
-    });
-  }
-
-  function removeMixSelection(mixId: string) {
-    setMixSelections((prev) => prev.filter((m) => m.id !== mixId));
-  }
+  const removeItem = useCartStore((s) => s.removeItem);
 
   function handleConfirm(itemIds: string[], unitPrice: number) {
     if (!activeMix) return;
-    const newId = `${activeMix.id}_${Date.now()}_${Math.random()}`;
-    setMixSelections((prev) => [
-      ...prev,
-      {
-        id: newId,
-        mixId: activeMix.id,
-        count: 1,
-        selectedItemIds: itemIds,
-        unitPrice,
-      },
-    ]);
+    onAddMix(activeMix, itemIds, unitPrice);
     setActiveMix(null);
   }
 
@@ -99,9 +63,7 @@ export default function MixOrderSection({
 
       <div className="space-y-5">
         {mixes.map((mixConfig) => {
-          const mixInstances = mixSelections.filter(
-            (m) => m.mixId === mixConfig.id && m.count > 0,
-          );
+          const mixInstances = lines.filter((l) => l.mixId === mixConfig.id);
 
           return (
             <div key={mixConfig.id}>
@@ -145,7 +107,7 @@ export default function MixOrderSection({
                           </p>
                           <div className="flex flex-wrap gap-1.5">
                             {flavorFrequencyLabels(
-                              mix.selectedItemIds,
+                              mix.mixItemIds ?? [],
                               items,
                             ).map((label) => (
                               <span
@@ -159,7 +121,7 @@ export default function MixOrderSection({
                         </div>
                         <button
                           type="button"
-                          onClick={() => removeMixSelection(mix.id)}
+                          onClick={() => removeItem(mix.id)}
                           className="flex justify-center items-center shrink-0 rounded-full w-7 h-7 border border-rose-400/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/30 hover:border-rose-400/60 hover:text-rose-100 transition"
                           aria-label="حذف"
                         >
@@ -171,25 +133,7 @@ export default function MixOrderSection({
                         <p className="font-bold text-[14px] text-glace-yellow tabular-nums">
                           {mix.unitPrice} ₪
                         </p>
-                        <div className="flex items-center gap-1.5 bg-white/10 px-2 py-1 border border-white/15 rounded-full">
-                          <button
-                            type="button"
-                            onClick={() => decrementMix(mix.id)}
-                            className="flex justify-center items-center hover:bg-white/20 rounded-full w-6 h-6 text-white transition"
-                          >
-                            <Minus size={11} />
-                          </button>
-                          <span className="min-w-5 font-bold text-[13px] text-white text-center">
-                            {mix.count}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => incrementMix(mix.id)}
-                            className="flex justify-center items-center hover:bg-white/20 rounded-full w-6 h-6 text-white transition"
-                          >
-                            <Plus size={11} />
-                          </button>
-                        </div>
+                        <CartLineStepper lines={[mix]} />
                       </div>
                     </div>
                   ))}

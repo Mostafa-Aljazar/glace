@@ -117,6 +117,19 @@ export function getLineItemTotal(item: CartItem): number {
   return item.unitPrice * item.quantity + addonCost + (item.flatAddonTotal ?? 0);
 }
 
+/** Full line title — product name plus size/container/type, e.g. "بوظة كاسة
+ *  وسط سبيشل". Parts the name already carries are skipped: flat-list names
+ *  embed the variant ("لقيمات — نوتيلا" + type "نوتيلا"), builder names often
+ *  embed the container ("بوظة كاسة" + container "كاسة"). */
+export function getLineItemTitle(item: CartItem): string {
+  const parts = [item.name];
+  for (const part of [item.size, item.container, item.type]) {
+    if (!part || parts.some((p) => p.includes(part))) continue;
+    parts.push(part);
+  }
+  return parts.join(" ");
+}
+
 function labelWithQty(s: CartSelection): string {
   return s.qty > 1 ? `${s.label} ×${s.qty}` : s.label;
 }
@@ -274,6 +287,8 @@ interface CartState {
    *  resolves, rather than computed here. */
   setCoupon: (code: string, discount: number) => void;
   clearCart: () => void;
+  /** Total pieces across every line (sum of `quantity`), not line count. */
+  itemCount: () => number;
   itemsSubtotal: () => number;
   subtotal: () => number;
   total: () => number;
@@ -661,6 +676,8 @@ export const useCartStore = create<CartState>()(
           coupon: "",
           discount: 0,
         }),
+
+      itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
 
       itemsSubtotal: () => {
         const { items } = get();

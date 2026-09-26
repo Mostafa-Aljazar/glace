@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import EventsBackground from "@/components/Events/EventsBackground";
+import CartBar from "@/components/Order/CartBar";
 import DataError from "@/components/Common/DataError";
 import { MenuIcon } from "@/components/Menu/MenuIcon";
 import {
@@ -319,7 +320,7 @@ export default function MenuClientPage() {
         className="hidden lg:block top-27.5 left-16 absolute opacity-60 w-20 object-contain pointer-events-none"
       />
 
-      <div className="z-90 relative mx-auto px-3 sm:px-6 lg:px-8 pt-28 lg:pt-26.5 pb-28 lg:pb-8 max-w-screen-2xl">
+      <div className="z-90 relative mx-auto px-3 sm:px-6 lg:px-8 pt-28 lg:pt-26.5 pb-48 lg:pb-28 max-w-screen-2xl">
         <div className="relative flex flex-col items-center pt-8 pb-10 sm:pb-14 text-center">
           <div className="hidden top-0 left-0 absolute sm:flex gap-3 opacity-80 pointer-events-none">
             <Image
@@ -443,20 +444,9 @@ export default function MenuClientPage() {
             ))}
           </div>
         )}
-
-        <div className="flex flex-col items-center gap-4 mt-14 pt-10 border-white/15 border-t">
-          <p className="text-[17px] text-white/70 text-center">
-            جاهز تطلب؟ أضف منتجاتك للسلة وأتمم طلبك
-          </p>
-          <Link
-            href="/cart"
-            className="flex items-center gap-2 bg-glace-yellow hover:bg-yellow-300 shadow-[0_4px_20px_rgba(244,228,81,0.4)] hover:shadow-[0_6px_28px_rgba(244,228,81,0.5)] px-8 py-3.5 rounded-full font-bold text-[#1e6a7f] text-[18px] transition-all hover:-translate-y-0.5 duration-200"
-          >
-            <ShoppingCart size={20} />
-            عرض السلة
-          </Link>
-        </div>
       </div>
+
+      <CartBar />
     </div>
   );
 }

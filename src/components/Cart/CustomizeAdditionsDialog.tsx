@@ -59,6 +59,20 @@ export default function CustomizeAdditionsDialog({
     [addons],
   );
   const flatAddon = addonById.get(EXTRA_BISCUIT_ADDON_ID);
+  // Addons picked on the order page that this dialog doesn't offer (e.g. a
+  // flat-list item's "أضف بوظة" scoop) — carried through every save untouched
+  // instead of being wiped for not being in `addons`.
+  const fixedSelections = useMemo(
+    () =>
+      (item.units?.[0]?.selections ?? item.selections).filter(
+        (s) => s.kind === "addon" && !addonById.has(s.id),
+      ),
+    [item, addonById],
+  );
+  const fixedTotal = fixedSelections.reduce(
+    (sum, s) => sum + s.unitPrice * s.qty,
+    0,
+  );
   const flatAddonAvailable = !!flatAddon && flatAddon.available !== false;
 
   const [mounted, setMounted] = useState(false);
@@ -196,14 +210,20 @@ export default function CustomizeAdditionsDialog({
     (mode === "all"
       ? (item.unitPrice + sharedAddonTotal) * item.quantity
       : item.unitPrice * item.quantity +
-        unitQty.reduce((sum, q) => sum + qtyTotal(q), 0)) + flatAddonTotal;
+        unitQty.reduce((sum, q) => sum + qtyTotal(q), 0)) +
+    fixedTotal * item.quantity +
+    flatAddonTotal;
 
   function handleSave() {
     if (mode === "all") {
-      setItemSharedAddons(item.id, qtyToSelections(sharedQty), sharedAddonTotal);
+      setItemSharedAddons(
+        item.id,
+        [...qtyToSelections(sharedQty), ...fixedSelections],
+        sharedAddonTotal + fixedTotal,
+      );
     } else {
       const units: CartUnit[] = unitQty.map((q) => ({
-        selections: qtyToSelections(q),
+        selections: [...qtyToSelections(q), ...fixedSelections],
       }));
       setItemUnits(item.id, units);
     }

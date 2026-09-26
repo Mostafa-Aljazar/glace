@@ -21,6 +21,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { logo } from "@/assets/images";
+import { useCartHydrated } from "@/hooks/cart/useCartHydrated";
 import { useCartStore } from "@/store/cartStore";
 import { useWalletStore } from "@/store/walletStore";
 import { useAuthStore } from "@/store/authStore";
@@ -54,7 +55,11 @@ export default function LogoNav() {
   const pathname = usePathname();
   const showBack = pathname !== "/";
 
-  const cartCount = useCartStore((s) => s.items.length);
+  // Persisted cart — read as empty until it hydrates so the badge matches
+  // the server-rendered HTML.
+  const cartHydrated = useCartHydrated();
+  const storedCartCount = useCartStore((s) => s.itemCount());
+  const cartCount = cartHydrated ? storedCartCount : 0;
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
   const favoriteCount = useFavoritesStore((s) => s.ids.length);
   // Wallet is per-account — hide its balance while logged out so a guest
