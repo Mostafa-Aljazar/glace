@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import HideOnErrorImage from "@/components/Common/HideOnErrorImage";
 import Link from "next/link";
 import { useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight, IceCreamCone } from "lucide-react";
@@ -166,7 +167,7 @@ export default function HeroSection({
 
                   {/* character */}
                   {slide.manImg && (
-                    <Image
+                    <HideOnErrorImage
                       src={resolveHomeImageSrc(slide.manImg)}
                       alt=""
                       width={260}
@@ -207,7 +208,7 @@ export default function HeroSection({
 
                   {/* piece ice — desktop/tablet only (avoids overlapping the CTA on mobile) */}
                   {slide.pieceImg && (
-                    <Image
+                    <HideOnErrorImage
                       src={resolveHomeImageSrc(slide.pieceImg)}
                       alt=""
                       width={155}
