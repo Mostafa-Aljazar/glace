@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Upload, X } from "lucide-react";
+import { AlertCircle, HelpCircle, Store, Upload, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,15 @@ interface Props {
    *  button and swaps its label so a slow request can't be double-submitted
    *  and doesn't look stuck/frozen while it settles. */
   submitting?: boolean;
+  /** Dine-in: the customer is at the counter, so staff can verify the
+   *  transfer on the spot — the receipt photo becomes optional and the
+   *  "trouble uploading" note is replaced by an "I'm in the store" opt-out. */
+  inStore?: boolean;
 }
+
+/** Sent as the order's receipt note when a dine-in customer skips the photo,
+ *  so staff know to check the transfer at the counter. */
+const IN_STORE_RECEIPT_NOTE = "الزبون داخل المحل — سيتم التأكد من التحويل عند الكاشير";
 
 /** Shared receipt-upload UI — used both on the initial payment confirm step
  *  and on the order-status "بانتظار الدفع" banner's re-upload action. Lets
@@ -46,6 +54,7 @@ export default function ReceiptUploadForm({
   submitLabel,
   submitDisabled,
   submitting,
+  inStore = false,
 }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | undefined>(initialImage);
@@ -88,7 +97,11 @@ export default function ReceiptUploadForm({
   }
 
   const missingSenderName = senderAccountName.trim().length === 0;
-  const missingReceipt = troubleUploading ? note.trim().length === 0 : !file;
+  const missingReceipt = inStore
+    ? false
+    : troubleUploading
+      ? note.trim().length === 0
+      : !file;
 
   const canSubmit =
     !missingReceipt && !missingSenderName && !submitDisabled && !submitting;
@@ -98,6 +111,15 @@ export default function ReceiptUploadForm({
       setShowValidation(true);
       return;
     }
+    if (inStore) {
+      const photo = troubleUploading ? undefined : (file ?? undefined);
+      onSubmit(
+        photo,
+        photo ? undefined : IN_STORE_RECEIPT_NOTE,
+        senderAccountName.trim(),
+      );
+      return;
+    }
     onSubmit(
       troubleUploading ? undefined : (file ?? undefined),
       troubleUploading ? note.trim() : undefined,
@@ -105,8 +127,50 @@ export default function ReceiptUploadForm({
     );
   }
 
+  // Opt-out card — dine-in: "I'm in the store, skip the photo" (shown first,
+  // it's the likely path); otherwise: "trouble uploading? describe the
+  // transfer instead" (shown under the upload, as the fallback it is).
+  const optOutCard = (
+    <label
+      className={`flex items-center gap-3 p-3.5 border rounded-[16px] transition cursor-pointer ${
+        troubleUploading
+          ? "border-glace-yellow bg-glace-yellow/15"
+          : "border-white/20 bg-white/8 hover:border-white/35"
+      }`}
+    >
+      <Checkbox
+        checked={troubleUploading}
+        onCheckedChange={(checked) => setTroubleUploading(checked === true)}
+        className="data-[state=checked]:bg-glace-yellow border-white/40 data-[state=checked]:border-glace-yellow data-[state=checked]:text-[#1e6a7f] size-5 shrink-0"
+      />
+      <span
+        className={`flex justify-center items-center rounded-full size-10 shrink-0 transition ${
+          troubleUploading
+            ? "bg-glace-yellow text-[#1e6a7f]"
+            : "bg-white/12 text-glace-yellow"
+        }`}
+      >
+        {inStore ? <Store size={20} /> : <HelpCircle size={20} />}
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className="block font-bold text-[14px] text-white">
+          {inStore
+            ? "أنا داخل المحل، سأُكمل بدون رفع الإشعار"
+            : "هل تواجه مشكلة في رفع الوصل؟"}
+        </span>
+        <span className="block mt-0.5 text-[12px] text-white/65 leading-snug">
+          {inStore
+            ? "اعرض إشعار التحويل من جوالك على الكاشير عند استلام طلبك."
+            : "اكتب بيانات التحويل بدل الصورة وسنتأكد منه يدوياً."}
+        </span>
+      </span>
+    </label>
+  );
+
   return (
     <div className="flex flex-col gap-4">
+      {inStore && optOutCard}
+
       {!troubleUploading &&
         (preview ? (
           <div className="relative border border-white/25 rounded-[20px] overflow-hidden">
@@ -151,6 +215,33 @@ export default function ReceiptUploadForm({
             )}
           </div>
         ))}
+
+      {!inStore && optOutCard}
+
+      {!inStore && troubleUploading && (
+        <div>
+          <Textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="رجاءً اكتب اسم الحساب واسم البنك/المحفظة اللي تم التحويل منه، حتى نتطابق مع الإشعار الواصل لنا"
+            className={`bg-white/10 text-white placeholder:text-white/40 focus-visible:ring-glace-yellow/20 ${
+              showValidation && missingReceipt
+                ? "border-red-400 focus-visible:border-red-400"
+                : "border-white/25 focus-visible:border-glace-yellow/50"
+            }`}
+          />
+          {showValidation && missingReceipt ? (
+            <p className="mt-1.5 text-[12.5px] text-red-300">
+              الرجاء كتابة اسم الحساب والبنك/المحفظة اللي حوّلت منها
+            </p>
+          ) : (
+            <p className="mt-2 text-[12px] text-white/60">
+              سيصل طلبك بحالة &quot;قيد المراجعة&quot; وسيتواصل معك فريق الدعم
+              للتأكد من التحويل قبل تحويل الطلب للمطعم.
+            </p>
+          )}
+        </div>
+      )}
 
       <div>
         <label className="block mb-2 text-[14px] text-white/80">
@@ -216,7 +307,7 @@ export default function ReceiptUploadForm({
           <Input
             value={typedSenderName}
             onChange={(e) => setTypedSenderName(e.target.value)}
-            placeholder="مثال: مصطفى الجزار"
+            placeholder="مثال: أحمد محمد"
             className={`bg-white/10 h-11 px-3.5 text-white text-[15px] placeholder:text-white/40 rounded-[14px] focus-visible:ring-glace-yellow/20 ${
               showValidation && missingSenderName
                 ? "border-red-400 focus-visible:border-red-400"
@@ -230,42 +321,6 @@ export default function ReceiptUploadForm({
           </p>
         )}
       </div>
-
-      <label className="flex items-start gap-2.5 cursor-pointer">
-        <Checkbox
-          checked={troubleUploading}
-          onCheckedChange={(checked) => setTroubleUploading(checked === true)}
-          className="data-[state=checked]:bg-glace-yellow mt-0.5 border-white/40 data-[state=checked]:border-glace-yellow data-[state=checked]:text-[#1e6a7f]"
-        />
-        <span className="text-[14px] text-white/80">
-          هل تواجه مشكلة في رفع الوصل؟
-        </span>
-      </label>
-
-      {troubleUploading && (
-        <div>
-          <Textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="رجاءً اكتب اسم الحساب واسم البنك/المحفظة اللي تم التحويل منه، حتى نتطابق مع الإشعار الواصل لنا"
-            className={`bg-white/10 text-white placeholder:text-white/40 focus-visible:ring-glace-yellow/20 ${
-              showValidation && missingReceipt
-                ? "border-red-400 focus-visible:border-red-400"
-                : "border-white/25 focus-visible:border-glace-yellow/50"
-            }`}
-          />
-          {showValidation && missingReceipt ? (
-            <p className="mt-1.5 text-[12.5px] text-red-300">
-              الرجاء كتابة اسم الحساب والبنك/المحفظة اللي حوّلت منها
-            </p>
-          ) : (
-            <p className="mt-2 text-[12px] text-white/60">
-              سيصل طلبك بحالة &quot;قيد المراجعة&quot; وسيتواصل معك فريق الدعم
-              للتأكد من التحويل قبل تحويل الطلب للمطعم.
-            </p>
-          )}
-        </div>
-      )}
 
       <button
         type="button"

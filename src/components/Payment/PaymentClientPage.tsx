@@ -17,6 +17,7 @@ import {
   Ticket,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
+import LineItemImage from "@/components/Cart/LineItemImage";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,8 +31,8 @@ import { useAuthStore } from "@/store/authStore";
 import {
   useCartStore,
   getLineItemRows,
+  getLineItemTitle,
   getLineItemTotal,
-  type CartItem,
 } from "@/store/cartStore";
 import { getApiErrorMessage } from "@/lib/apiWithFallback";
 import { formatScheduledDateTime } from "@/lib/scheduling";
@@ -102,12 +103,6 @@ const CASH_METHOD: {
  *  when the order is going out for delivery. */
 const IN_STORE_ONLY_METHODS: PaymentMethod[] = ["visa", "cash"];
 
-function itemFullTitle(item: CartItem): string {
-  return [item.name, item.size, item.container, item.type]
-    .filter(Boolean)
-    .join(" ");
-}
-
 function RadioDot({ selected, disabled }: { selected: boolean; disabled?: boolean }) {
   return (
     <span
@@ -146,7 +141,10 @@ export default function PaymentClientPage() {
   const user = useAuthStore((s) => s.user);
   const { data: paymentAccounts } = usePaymentAccounts();
 
-  const [method, setMethod] = useState<PaymentMethod>("jawwal");
+  // Nothing is pre-selected: a hardcoded default (it used to be "jawwal")
+  // could point at a method the backend doesn't even offer, showing its
+  // form while no option in the list looks selected.
+  const [method, setMethod] = useState<PaymentMethod | null>(null);
   const [jawwalPhone, setJawwalPhone] = useState(user?.phone ?? "");
   const [jawwalCodeSent, setJawwalCodeSent] = useState(false);
   const [jawwalCode, setJawwalCode] = useState("");
@@ -161,19 +159,20 @@ export default function PaymentClientPage() {
   const [walletDeducted, setWalletDeducted] = useState(false);
 
   useEffect(() => {
+    if (!method) return;
     if (!inStoreOnlyAvailable && IN_STORE_ONLY_METHODS.includes(method)) {
-      setMethod("jawwal");
+      setMethod(null);
       return;
     }
     // A transfer-based method (not the system wallet) the backend no longer
-    // lists as enabled — bail to "jawwal" rather than let the customer
-    // submit a method that's been turned off in the admin dashboard.
+    // lists as enabled — clear it rather than let the customer submit a
+    // method that's been turned off in the admin dashboard.
     if (
       paymentAccounts &&
       method !== "wallet" &&
       !paymentAccounts.some((a) => a.method === method)
     ) {
-      setMethod("jawwal");
+      setMethod(null);
     }
   }, [inStoreOnlyAvailable, method, paymentAccounts]);
 
@@ -269,6 +268,7 @@ export default function PaymentClientPage() {
     receiptNote?: string,
     senderAccountName?: string
   ) {
+    if (!method) return;
     setOrderError(null);
     placeOrderMutation.mutate(
       {
@@ -319,7 +319,7 @@ export default function PaymentClientPage() {
   }
 
   function handleConfirm() {
-    if (walletDeducted) return;
+    if (!method || walletDeducted) return;
     if (method === "wallet" && walletBalance < orderTotal) return;
     if (jawwalAmountInvalid) return;
 
@@ -530,23 +530,13 @@ export default function PaymentClientPage() {
                     className="flex gap-2.5 sm:gap-3 bg-white/8 p-2.5 sm:p-3 border border-white/15 rounded-[18px]"
                   >
                     <div className="relative flex justify-center items-center bg-white/15 border border-white/20 rounded-xl size-14 overflow-hidden shrink-0">
-                      {item.image ? (
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          width={56}
-                          height={56}
-                          className="p-1 size-full object-contain"
-                        />
-                      ) : (
-                        <ShoppingCart size={18} className="text-glace-yellow" />
-                      )}
+                      <LineItemImage src={item.image} alt={item.name} size={56} />
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start gap-2">
                         <span className="flex-1 min-w-0 font-bold text-[15px] leading-snug">
-                          {itemFullTitle(item)}
+                          {getLineItemTitle(item)}
                         </span>
                         <span className="font-bold tabular-nums text-[15px] text-glace-yellow shrink-0">
                           {getLineItemTotal(item).toFixed(2)} ₪
@@ -791,7 +781,8 @@ export default function PaymentClientPage() {
             </div>
           )}
 
-          {RECEIPT_METHODS.includes(method) &&
+          {method &&
+            RECEIPT_METHODS.includes(method) &&
             (() => {
               const account = paymentAccounts?.find(
                 (a): a is TransferPaymentAccount =>
@@ -931,6 +922,7 @@ export default function PaymentClientPage() {
                     submitLabel="تأكيد الدفع"
                     submitting={placeOrderMutation.isPending}
                     registeredAccountName={user?.name}
+                    inStore={deliveryMethod === "dine-in"}
                   />
                 </div>
               );
@@ -992,7 +984,8 @@ export default function PaymentClientPage() {
             </Link>
           </p>
 
-          {!RECEIPT_METHODS.includes(method) &&
+          {method &&
+            !RECEIPT_METHODS.includes(method) &&
             (method !== "jawwal" || jawwalCodeSent) && (
             <Button
               type="button"

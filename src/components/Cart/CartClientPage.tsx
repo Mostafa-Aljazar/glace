@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   Trash2,
@@ -17,6 +16,7 @@ import {
   Clock,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
+import LineItemImage from "@/components/Cart/LineItemImage";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ import { useStoreStatus } from "@/hooks/store";
 import type { IAddonOption } from "@/types/menu.types";
 import {
   useCartStore,
+  getLineItemTitle,
   getLineItemTotal,
   getLineItemRows,
   type CartItem,
@@ -71,13 +72,6 @@ function QtyControl({
   );
 }
 
-/** Full line title — product name plus size/container/type, e.g. "بوظة كاسة وسط سبيشال". */
-function itemFullTitle(item: CartItem): string {
-  return [item.name, item.size, item.container, item.type]
-    .filter(Boolean)
-    .join(" ");
-}
-
 function ItemCard({
   item,
   index,
@@ -101,26 +95,12 @@ function ItemCard({
       {/* Header row: image + title + line total */}
       <div className="flex items-start gap-3">
         <div className="relative flex justify-center items-center bg-linear-to-br from-white/20 to-white/5 border border-white/15 rounded-xl size-12 overflow-hidden shrink-0">
-          {item.image ? (
-            <Image
-              src={item.image}
-              alt={item.name}
-              width={48}
-              height={48}
-              className="p-1 size-full object-contain"
-            />
-          ) : (
-            <ShoppingCart
-              size={18}
-              strokeWidth={1.6}
-              className="text-glace-yellow"
-            />
-          )}
+          <LineItemImage src={item.image} alt={item.name} size={48} />
         </div>
 
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-[15px] text-white sm:text-[16px] leading-snug">
-            {itemFullTitle(item)}
+            {getLineItemTitle(item)}
           </h3>
         </div>
       </div>
@@ -132,9 +112,9 @@ function ItemCard({
             (s) =>
               s.kind === "flavor" || s.kind === "mix" || s.kind === "mixItem",
           ) && (
-            <div className="bg-glace-yellow/8 px-2 py-2 border border-glace-yellow/30 rounded-[12px]">
+            <div className="bg-white/12 px-2.5 py-2 border border-white/40 rounded-[12px]">
               <div className="flex flex-wrap items-center gap-1">
-                <span className="flex items-center gap-1 font-bold text-[11px] text-glace-yellow">
+                <span className="flex items-center gap-1 font-bold text-[12px] text-white">
                   <IceCreamCone size={12} />
                   النكهات:
                 </span>
@@ -148,7 +128,7 @@ function ItemCard({
                   .map((s) => (
                     <span
                       key={`${s.kind}-${s.id}`}
-                      className="bg-glace-yellow/18 px-1.5 py-0.5 rounded font-semibold text-[11px] text-glace-yellow"
+                      className="bg-white px-2 py-0.5 rounded-full font-bold text-[12px] text-[#1e6a7f]"
                     >
                       {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
                     </span>
@@ -158,9 +138,9 @@ function ItemCard({
           )}
 
           {item.selections.some((s) => s.kind === "addon") && (
-            <div className="bg-orange-400/8 px-2 py-2 border border-orange-400/30 rounded-[12px]">
+            <div className="bg-white/12 px-2.5 py-2 border border-glace-yellow/60 rounded-[12px]">
               <div className="flex flex-wrap items-center gap-1">
-                <span className="flex items-center gap-1 font-bold text-[11px] text-orange-300">
+                <span className="flex items-center gap-1 font-bold text-[12px] text-glace-yellow">
                   <Sparkles size={12} />
                   الإضافات:
                 </span>
@@ -169,7 +149,7 @@ function ItemCard({
                   .map((s) => (
                     <span
                       key={`addon-${s.id}`}
-                      className="bg-orange-400/18 px-1.5 py-0.5 rounded font-semibold text-[11px] text-orange-300"
+                      className="bg-glace-yellow px-2 py-0.5 rounded-full font-bold text-[12px] text-[#1e6a7f]"
                     >
                       {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
                     </span>
@@ -179,16 +159,16 @@ function ItemCard({
           )}
 
           {(item.flatSelections?.length ?? 0) > 0 && (
-            <div className="bg-orange-400/8 px-2 py-2 border border-orange-400/30 rounded-[12px]">
+            <div className="bg-white/12 px-2.5 py-2 border border-glace-yellow/60 rounded-[12px]">
               <div className="flex flex-wrap items-center gap-1">
-                <span className="flex items-center gap-1 font-bold text-[11px] text-orange-300">
+                <span className="flex items-center gap-1 font-bold text-[12px] text-glace-yellow">
                   <Sparkles size={12} />
                   إضافات ثابتة لكامل الطلبية:
                 </span>
                 {item.flatSelections!.map((s) => (
                   <span
                     key={`flat-addon-${s.id}`}
-                    className="bg-orange-400/18 px-1.5 py-0.5 rounded font-semibold text-[11px] text-orange-300"
+                    className="bg-glace-yellow px-2 py-0.5 rounded-full font-bold text-[12px] text-[#1e6a7f]"
                   >
                     {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
                   </span>
@@ -404,60 +384,64 @@ function OrderSummary() {
 
   return (
     <>
-      <aside className="bg-white/14 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl p-6 border border-white/15 rounded-[28px] text-white">
-        <h2 className="mb-3 font-bold text-[20px]">ملخص الطلب</h2>
+      <aside className="bg-white/14 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl p-3 sm:p-6 border border-white/15 rounded-[28px] text-white">
+        {/* Same look as the payment page's summary, always expanded. */}
+        <div className="bg-white/6 p-3 sm:p-4 border border-white/15 rounded-[18px]">
+          <div className="flex justify-between items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="flex justify-center items-center bg-white/12 rounded-[12px] size-10 shrink-0">
+                <ShoppingCart size={18} className="text-glace-yellow" />
+              </span>
+              <span className="font-bold text-[15px] text-white">
+                مجموع الطلب
+              </span>
+            </div>
+            <span className="font-bold tabular-nums text-[18px] text-glace-yellow">
+              {Math.max(0, subtotal() - discount).toFixed(2)} ₪
+            </span>
+          </div>
+        </div>
 
-        <div className="flex items-center gap-2 bg-glace-yellow/10 mb-5 px-3.5 py-2.5 border border-glace-yellow/25 rounded-[14px] text-glace-yellow">
+        <div className="flex items-center gap-2 bg-glace-yellow/10 mt-3 px-3.5 py-2.5 border border-glace-yellow/25 rounded-[14px] text-glace-yellow">
           <Clock size={16} className="shrink-0" />
           <span className="font-semibold text-[13px] leading-snug">
             مدة تحضير الطلب بالكامل تتراوح بين 5-25 دقيقة
           </span>
         </div>
 
-        <div className="flex flex-col gap-3 mb-5">
+        <div className="flex flex-col gap-2 sm:gap-3 mt-3">
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex flex-col gap-3 bg-white/8 p-3 border border-white/10 rounded-[18px]"
+              className="flex gap-2.5 sm:gap-3 bg-white/8 p-2.5 sm:p-3 border border-white/15 rounded-[18px]"
             >
-              <div className="flex justify-between items-start gap-3">
-                <span className="flex-1 min-w-0 font-bold text-[15px] leading-snug">
-                  {itemFullTitle(item)}
-                </span>
-                <span className="font-bold tabular-nums text-[15px] text-glace-yellow shrink-0">
-                  {getLineItemTotal(item).toFixed(2)} ₪
-                </span>
+              <div className="relative flex justify-center items-center bg-white/15 border border-white/20 rounded-xl size-14 overflow-hidden shrink-0">
+                <LineItemImage src={item.image} alt={item.name} size={56} />
               </div>
 
-              <div className="border border-white/10 rounded-[12px] w-full overflow-hidden text-[12.5px]">
-                <div className="grid grid-cols-[26%_26%_12%_18%_18%] bg-white/8 font-semibold text-white/60">
-                  <div className="px-2 py-2 text-start">النوع</div>
-                  <div className="px-2 py-2 text-start">الطعمة</div>
-                  <div className="px-1.5 py-2 text-center">العدد</div>
-                  <div className="px-1.5 py-2 text-center">
-                    <span className="sm:hidden">السعر</span>
-                    <span className="hidden sm:inline">سعر الوحدة</span>
-                  </div>
-                  <div className="px-2 py-2 text-end">المجموع</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start gap-2">
+                  <span className="flex-1 min-w-0 font-bold text-[15px] leading-snug">
+                    {getLineItemTitle(item)}
+                  </span>
+                  <span className="font-bold tabular-nums text-[15px] text-glace-yellow shrink-0">
+                    {getLineItemTotal(item).toFixed(2)} ₪
+                  </span>
                 </div>
-                {getLineItemRows(item).map((row, i) => (
-                  <div
-                    key={i}
-                    className="grid grid-cols-[26%_26%_12%_18%_18%] border-white/10 border-t text-white/80"
-                  >
-                    <div className="px-2 py-2 break-words">{row.addons}</div>
-                    <div className="px-2 py-2 break-words">{row.flavor}</div>
-                    <div className="px-1.5 py-2 tabular-nums text-center">
-                      {row.qty}
-                    </div>
-                    <div className="px-1.5 py-2 tabular-nums text-center">
-                      {row.unitPrice.toFixed(2)} ₪
-                    </div>
-                    <div className="px-2 py-2 font-semibold tabular-nums text-white text-end">
-                      {row.total.toFixed(2)} ₪
-                    </div>
-                  </div>
-                ))}
+
+                <div className="flex flex-col gap-0.5 mt-1.5 text-[13px] text-white/65">
+                  {getLineItemRows(item).map((row, i) => (
+                    <span key={i} className="truncate">
+                      {row.flavor && row.flavor !== "—" && (
+                        <>الطعمة: {row.flavor}</>
+                      )}
+                      {row.addons && row.addons !== "—" && (
+                        <> · إضافات: {row.addons}</>
+                      )}
+                      {" · "}العدد: {row.qty} × {row.unitPrice.toFixed(2)} ₪
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           ))}
@@ -475,7 +459,7 @@ function OrderSummary() {
         </div>
 
         {discount > 0 && (
-          <div className="bg-white/6 p-4 border border-white/10 rounded-[18px]">
+          <div className="bg-white/6 mt-3 p-4 border border-white/10 rounded-[18px]">
             <div className="flex justify-between text-[14px] text-glace-yellow">
               <span>الخصم</span>
               <span className="tabular-nums">-{discount.toFixed(2)} ₪</span>
@@ -673,7 +657,7 @@ export default function CartClientPage() {
                   <button
                     type="button"
                     onClick={clearCart}
-                    className="inline-flex items-center gap-1.5 bg-rose-500/12 hover:bg-rose-500/25 px-2 py-1 border border-rose-400/35 hover:border-rose-400/55 rounded-full font-medium text-[12px] text-rose-300 hover:text-rose-100 transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 shadow-sm px-3 py-1.5 rounded-full font-bold text-[12px] text-white transition cursor-pointer"
                   >
                     <Trash2 size={12} />
                     حذف الكل
