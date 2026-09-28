@@ -168,7 +168,7 @@ export default function PhoneOtpFlow({ onSuccess }: PhoneOtpFlowProps = {}) {
               />
             </div>
             {nameTouched && !fullName.trim() && (
-              <p className="mt-1.5 text-[12.5px] text-rose-300">
+              <p className="form-error mt-1.5">
                 لازم تكتب اسمك الكامل قبل تأكيد الرمز
               </p>
             )}
@@ -191,8 +191,8 @@ export default function PhoneOtpFlow({ onSuccess }: PhoneOtpFlowProps = {}) {
         </div>
 
         {verifyOtp.isError && (
-          <div className="bg-rose-500/15 px-3.5 py-2.5 border border-rose-400/40 rounded-[14px]">
-            <p className="font-semibold text-[13.5px] text-rose-200 text-center">
+          <div className="bg-white shadow-sm px-3.5 py-2.5 rounded-[14px]">
+            <p className="font-bold text-[13.5px] text-red-500 text-center">
               {verifyOtp.error instanceof Error
                 ? verifyOtp.error.message
                 : "حدث خطأ في التحقق"}
@@ -266,14 +266,14 @@ export default function PhoneOtpFlow({ onSuccess }: PhoneOtpFlowProps = {}) {
                   />
                 </div>
               </FormControl>
-              <FormMessage className="font-semibold text-[13px] text-rose-300" />
+              <FormMessage />
             </FormItem>
           )}
         />
 
         {sendOtp.isError && (
-          <div className="bg-rose-500/15 px-3.5 py-2.5 border border-rose-400/40 rounded-[14px]">
-            <p className="font-semibold text-[13.5px] text-rose-200 text-center">
+          <div className="bg-white shadow-sm px-3.5 py-2.5 rounded-[14px]">
+            <p className="font-bold text-[13.5px] text-red-500 text-center">
               {sendOtp.error instanceof Error
                 ? sendOtp.error.message
                 : "حدث خطأ في إرسال الرمز"}

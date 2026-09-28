@@ -209,7 +209,7 @@ export default function ReceiptUploadForm({
               />
             </label>
             {showValidation && missingReceipt && (
-              <p className="mt-1.5 text-[12.5px] text-red-300">
+              <p className="form-error mt-1.5">
                 الرجاء رفع صورة وصل التحويل
               </p>
             )}
@@ -231,7 +231,7 @@ export default function ReceiptUploadForm({
             }`}
           />
           {showValidation && missingReceipt ? (
-            <p className="mt-1.5 text-[12.5px] text-red-300">
+            <p className="form-error mt-1.5">
               الرجاء كتابة اسم الحساب والبنك/المحفظة اللي حوّلت منها
             </p>
           ) : (
@@ -316,7 +316,7 @@ export default function ReceiptUploadForm({
           />
         )}
         {showValidation && missingSenderName && (
-          <p className="mt-1.5 text-[12.5px] text-red-300">
+          <p className="form-error mt-1.5">
             الرجاء إدخال اسم صاحب الحساب اللي حوّلت منه
           </p>
         )}
@@ -332,11 +332,11 @@ export default function ReceiptUploadForm({
       </button>
 
       {showValidation && (missingSenderName || missingReceipt) && (
-        <div className="flex items-start gap-2.5 bg-red-500/10 -mt-1 p-3.5 border border-red-400/30 rounded-[16px] animate-in fade-in slide-in-from-top-1 duration-200">
-          <span className="flex justify-center items-center bg-red-400/20 rounded-full size-6 shrink-0">
-            <AlertCircle size={14} className="text-red-300" />
+        <div className="flex items-start gap-2.5 bg-white shadow-sm -mt-1 p-3.5 rounded-[16px] animate-in fade-in slide-in-from-top-1 duration-200">
+          <span className="flex justify-center items-center bg-red-500/10 rounded-full size-6 shrink-0">
+            <AlertCircle size={14} className="text-red-500" />
           </span>
-          <p className="flex-1 text-[13px] text-red-200 leading-snug">
+          <p className="flex-1 font-bold text-[13px] text-red-500 leading-snug">
             {missingSenderName && missingReceipt
               ? troubleUploading
                 ? "الرجاء إدخال اسم صاحب الحساب، وكتابة اسم الحساب والبنك/المحفظة اللي حوّلت منها"

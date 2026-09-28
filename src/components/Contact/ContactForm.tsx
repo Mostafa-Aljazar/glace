@@ -144,7 +144,7 @@ export default function ContactForm({
         {errorMessage && (
           <p
             role="alert"
-            className="mt-6 rounded-xl border border-red-400/40 bg-red-500/15 px-4 py-3 text-center text-[14px] text-red-100"
+            className="mt-6 rounded-xl bg-white shadow-sm px-4 py-3 text-center font-bold text-[14px] text-red-500"
           >
             {errorMessage}
           </p>

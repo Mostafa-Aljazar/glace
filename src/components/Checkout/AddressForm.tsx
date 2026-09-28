@@ -258,7 +258,7 @@ export default function AddressForm({
                   className={`ps-4 ${inputClass}`}
                 />
               </FormControl>
-              <FormMessage className="font-semibold text-[13px] text-rose-300" />
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -273,7 +273,7 @@ export default function AddressForm({
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="content-start">
                   <FormLabel className={labelClass}>الاسم الكامل <span className="text-rose-400">*</span></FormLabel>
                   <FormControl>
                     <div className="relative">
@@ -288,7 +288,7 @@ export default function AddressForm({
                   <p className="mt-1 text-[12px] text-white/50">
                     اكتب اسمك الثنائي بالعربي على الأقل (مثلاً: مصطفى الجزار)، وكل مقطع حرفان على الأقل
                   </p>
-                  <FormMessage className="font-semibold text-[13px] text-rose-300" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -296,7 +296,7 @@ export default function AddressForm({
               control={form.control}
               name="phone"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="content-start">
                   <FormLabel className={labelClass}>رقم الجوال <span className="text-rose-400">*</span></FormLabel>
                   <FormControl>
                     <div
@@ -322,7 +322,7 @@ export default function AddressForm({
                       />
                     </div>
                   </FormControl>
-                  <FormMessage className="font-semibold text-[13px] text-rose-300" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -333,7 +333,7 @@ export default function AddressForm({
         <div>
           <h3 className={`mb-3 ${sectionLabelClass}`}>الموقع</h3>
           <div className="gap-4 grid grid-cols-1 sm:grid-cols-2">
-            <FormItem>
+            <FormItem className="content-start">
               <FormLabel className={labelClass}>المدينة</FormLabel>
               <FormControl>
                 <div className="relative">
@@ -351,7 +351,7 @@ export default function AddressForm({
               control={form.control}
               name="zoneId"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="content-start">
                   <FormLabel className={labelClass}>المنطقة / الحي <span className="text-rose-400">*</span></FormLabel>
                   <FormControl>
                     <button
@@ -377,7 +377,7 @@ export default function AddressForm({
                         ))}
                     </button>
                   </FormControl>
-                  <FormMessage className="font-semibold text-[13px] text-rose-300" />
+                  <FormMessage />
                   {selectedZone?.description && (
                     <p className="mt-1 text-[12.5px] text-white/45 leading-relaxed">
                       {selectedZone.description}
@@ -414,7 +414,7 @@ export default function AddressForm({
                       />
                     </div>
                   </FormControl>
-                  <FormMessage className="font-semibold text-[13px] text-rose-300" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -438,7 +438,7 @@ export default function AddressForm({
                       />
                     </div>
                   </FormControl>
-                  <FormMessage className="font-semibold text-[13px] text-rose-300" />
+                  <FormMessage />
                 </FormItem>
               )}
             />

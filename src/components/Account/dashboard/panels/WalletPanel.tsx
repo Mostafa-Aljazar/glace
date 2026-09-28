@@ -339,7 +339,7 @@ export default function WalletPanel() {
                     }`}
                   />
                   {amount !== "" && !amountValid && (
-                    <p className="mt-2 text-[13px] text-red-300">
+                    <p className="form-error mt-2">
                       {amountValue > MAX_TOP_UP
                         ? `الحد الأقصى المسموح ${MAX_TOP_UP} ₪`
                         : "المبلغ يجب ألا يقل عن 1 ₪"}
@@ -392,7 +392,7 @@ export default function WalletPanel() {
                 )}
 
                 {jawwalError && (
-                  <p className="text-[13px] text-red-300 text-center">
+                  <p className="form-error mx-auto text-center">
                     {jawwalError}
                   </p>
                 )}
@@ -575,7 +575,7 @@ export default function WalletPanel() {
                     }`}
                   />
                   {!amountValid && (
-                    <p className="mt-2 text-[13px] text-red-300">
+                    <p className="form-error mt-2">
                       {amount === ""
                         ? "أدخل المبلغ الذي حوّلته لتفعيل زر تأكيد الشحن"
                         : amountValue > MAX_TOP_UP
@@ -589,7 +589,7 @@ export default function WalletPanel() {
                   ارفع صورة وصل التحويل
                 </p>
                 {amount !== "" && !amountValid && (
-                  <div className="mb-3 bg-red-500/20 border border-red-500/40 rounded-[16px] px-4 py-3 text-[13px] text-red-200">
+                  <div className="mb-3 bg-white shadow-sm rounded-[16px] px-4 py-3 font-bold text-[13px] text-red-500">
                     {amountValue > MAX_TOP_UP
                       ? `الحد الأقصى المسموح ${MAX_TOP_UP} ₪`
                       : "المبلغ يجب ألا يقل عن 1 ₪"}
@@ -603,7 +603,7 @@ export default function WalletPanel() {
                   registeredAccountName={user?.name}
                 />
                 {receiptError && (
-                  <p className="mt-3 text-[13px] text-red-300 text-center">
+                  <p className="form-error mx-auto mt-3 text-center">
                     {receiptError}
                   </p>
                 )}

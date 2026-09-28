@@ -433,3 +433,9 @@ body::before {
 .swiper-slide {
   direction: ltr;
 }
+
+/* Shared look for every inline form / validation error: a white pill with red
+   text, so it stays readable on the blue glass cards. */
+@utility form-error {
+  @apply block w-fit max-w-full bg-white shadow-sm px-3 py-1 rounded-[14px] font-bold text-[12.5px] text-red-500 leading-snug;
+}

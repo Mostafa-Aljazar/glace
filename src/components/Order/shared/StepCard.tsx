@@ -83,7 +83,9 @@ export const StepCard = forwardRef<
             <h2 className="font-bold text-[15px] text-white">{title}</h2>
             {subtitle && <p className="text-[12px] text-white/55">{subtitle}</p>}
             {error && errorMsg && (
-              <p className="mt-0.5 font-bold text-[12px] text-red-500">{errorMsg}</p>
+              <p className="form-error mt-1">
+                {errorMsg}
+              </p>
             )}
           </div>
         </div>
