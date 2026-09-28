@@ -532,6 +532,11 @@ export default function OrderBuilderTemplate({
         );
       }
     }
+    if (hasFlavorStep && selectedFlavorIds.length < maxBalls)
+      return flagInvalidStep(
+        "flavorPicks",
+        `باقي ${maxBalls - selectedFlavorIds.length} كورة`,
+      );
 
     setInvalidStep(null);
 
@@ -675,14 +680,14 @@ export default function OrderBuilderTemplate({
   const extrasLocked = flavorPicksLocked || !flavorPicksDone;
   const hasExtrasStep = showExtraBiscuit || unitAddons.length > 0;
 
-  // Picks only count as finished (fold + move on) once every ball slot is
-  // used — fewer balls is still orderable, but the user may be mid-pick.
+  // Picks only count as finished once every ball slot the size pays for is
+  // used — adding to the cart is blocked until then.
   const flavorPicksComplete =
     flavorPicksSatisfied && selectedFlavorIds.length >= maxBalls;
   const canAdd =
     typeAndSizeDone &&
     flavorFamilyDone &&
-    (!hasFlavorStep || flavorPicksSatisfied);
+    (!hasFlavorStep || flavorPicksComplete);
 
   // The first step still waiting on the user. When it moves forward, the page
   // scrolls to it so the user never has to hunt for what comes next.
@@ -1081,8 +1086,14 @@ export default function OrderBuilderTemplate({
               summary={flavorPicksSummary}
               onExpand={() => setEditingStep("picks")}
               locked={flavorPicksLocked}
-              error={invalidStep === "flavorPicks" && !flavorPicksSatisfied}
-              errorMsg={validationMsg || "اضغط على كرات الأطعمة للاختيار"}
+              error={invalidStep === "flavorPicks" && !flavorPicksComplete}
+              errorMsg={
+                validationMsg ||
+                (selectedFlavorIds.length > 0 &&
+                selectedFlavorIds.length < maxBalls
+                  ? `باقي ${maxBalls - selectedFlavorIds.length} كورة`
+                  : "اضغط على كرات الأطعمة للاختيار")
+              }
             >
               {catalog.length === 0 ? (
                 <p className="bg-white/8 py-6 border border-white/15 rounded-[16px] text-[14px] text-white/60 text-center">
