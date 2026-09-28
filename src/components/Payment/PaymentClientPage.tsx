@@ -36,10 +36,7 @@ import {
 } from "@/store/cartStore";
 import { getApiErrorMessage } from "@/lib/apiWithFallback";
 import { formatScheduledDateTime } from "@/lib/scheduling";
-import {
-  RECEIPT_METHODS,
-  PAYMENT_METHOD_LABELS,
-} from "@/store/orderStore";
+import { RECEIPT_METHODS, PAYMENT_METHOD_LABELS } from "@/store/orderStore";
 import type { PaymentMethod } from "@/store/orderStore";
 import { cashIcon, visaCard } from "@/assets/images";
 import { useCheckoutDraftStore } from "@/store/checkoutDraftStore";
@@ -103,7 +100,13 @@ const CASH_METHOD: {
  *  when the order is going out for delivery. */
 const IN_STORE_ONLY_METHODS: PaymentMethod[] = ["visa", "cash"];
 
-function RadioDot({ selected, disabled }: { selected: boolean; disabled?: boolean }) {
+function RadioDot({
+  selected,
+  disabled,
+}: {
+  selected: boolean;
+  disabled?: boolean;
+}) {
   return (
     <span
       className={`flex justify-center items-center rounded-full size-5 shrink-0 border-2 transition ${
@@ -114,9 +117,7 @@ function RadioDot({ selected, disabled }: { selected: boolean; disabled?: boolea
             : "border-white/40"
       }`}
     >
-      {selected && (
-        <span className="bg-glace-yellow rounded-full size-2.5" />
-      )}
+      {selected && <span className="bg-glace-yellow rounded-full size-2.5" />}
     </span>
   );
 }
@@ -175,7 +176,6 @@ export default function PaymentClientPage() {
       setMethod(null);
     }
   }, [inStoreOnlyAvailable, method, paymentAccounts]);
-
 
   // Scroll the method-specific detail (cash input, receipt upload, etc.)
   // into view whenever the customer picks a payment method — it renders
@@ -243,7 +243,7 @@ export default function PaymentClientPage() {
     setCopiedField(field);
     window.setTimeout(
       () => setCopiedField((current) => (current === field ? null : current)),
-      2000
+      2000,
     );
   }
 
@@ -266,7 +266,7 @@ export default function PaymentClientPage() {
   function placeConfirmedOrder(
     receiptImage?: File,
     receiptNote?: string,
-    senderAccountName?: string
+    senderAccountName?: string,
   ) {
     if (!method) return;
     setOrderError(null);
@@ -313,7 +313,7 @@ export default function PaymentClientPage() {
   function handleReceiptSubmit(
     receiptImage: File | undefined,
     receiptNote: string | undefined,
-    senderAccountName: string
+    senderAccountName: string,
   ) {
     placeConfirmedOrder(receiptImage, receiptNote, senderAccountName);
   }
@@ -353,7 +353,8 @@ export default function PaymentClientPage() {
 
   function renderListMethod(m: typeof WALLET_METHOD) {
     const Icon = m.icon;
-    const disabled = IN_STORE_ONLY_METHODS.includes(m.id) && !inStoreOnlyAvailable;
+    const disabled =
+      IN_STORE_ONLY_METHODS.includes(m.id) && !inStoreOnlyAvailable;
     return (
       <button
         key={m.id}
@@ -364,16 +365,20 @@ export default function PaymentClientPage() {
         className={`flex items-center gap-3 rounded-[18px] border p-3 min-h-11 w-full text-start transition ${
           disabled
             ? "cursor-not-allowed border-white/10 opacity-40"
-          : method === m.id
+            : method === m.id
               ? "cursor-pointer border-white/25 bg-white/12"
               : "cursor-pointer border-white/12 bg-white/5 hover:border-white/25"
         }`}
       >
         <RadioDot selected={method === m.id} disabled={disabled} />
         <div className="flex-1 min-w-0">
-          <span className="block font-bold text-[15px] text-white truncate">{m.label}</span>
+          <span className="block font-bold text-[15px] text-white truncate">
+            {m.label}
+          </span>
           {m.desc && (
-            <span className="block mt-0.5 text-[12px] text-white/70">{m.desc}</span>
+            <span className="block mt-0.5 text-[12px] text-white/70">
+              {m.desc}
+            </span>
           )}
           {IN_STORE_ONLY_METHODS.includes(m.id) && (
             <span className="block mt-0.5 text-[12px] text-white/70">
@@ -411,9 +416,12 @@ export default function PaymentClientPage() {
   }
 
   function renderCardMethod(m: (typeof CARD_METHODS_BEFORE_CASH)[number]) {
-    const disabled = IN_STORE_ONLY_METHODS.includes(m.id) && !inStoreOnlyAvailable;
+    const disabled =
+      IN_STORE_ONLY_METHODS.includes(m.id) && !inStoreOnlyAvailable;
     const isAssetMethod = m.asset;
-    const subtitle = IN_STORE_ONLY_METHODS.includes(m.id) ? inStoreOnlyLabel(m.id) : null;
+    const subtitle = IN_STORE_ONLY_METHODS.includes(m.id)
+      ? inStoreOnlyLabel(m.id)
+      : null;
     const displayLabel = getDisplayLabel(m.id);
 
     return (
@@ -426,7 +434,7 @@ export default function PaymentClientPage() {
         className={`flex items-center gap-3 rounded-[18px] border p-3 min-h-11 w-full text-start transition ${
           disabled
             ? "cursor-not-allowed border-white/10 opacity-40"
-          : method === m.id
+            : method === m.id
               ? "cursor-pointer border-white/25 bg-white/12"
               : "cursor-pointer border-white/12 bg-white/5 hover:border-white/25"
         }`}
@@ -437,7 +445,7 @@ export default function PaymentClientPage() {
             {isAssetMethod && subtitle ? subtitle : displayLabel}
           </span>
         </div>
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-[6px] overflow-hidden">
+        <span className="flex justify-center items-center rounded-[6px] size-10 overflow-hidden shrink-0">
           <Image
             src={m.asset || m.logo!}
             alt={displayLabel}
@@ -489,7 +497,7 @@ export default function PaymentClientPage() {
                 role="button"
                 aria-label="نسخ الإجمالي"
                 title="نسخ الإجمالي"
-                className="group flex items-center gap-1.5 hover:bg-white/6 px-2 py-1 rounded-[8px] font-bold text-glace-yellow text-[18px] transition"
+                className="group flex items-center gap-1.5 hover:bg-white/6 px-2 py-1 rounded-[8px] font-bold text-[18px] text-glace-yellow transition"
               >
                 {copiedField === "total" ? (
                   <Check size={16} className="text-green-300 shrink-0" />
@@ -505,7 +513,10 @@ export default function PaymentClientPage() {
 
             <div className="flex justify-between items-center gap-1 mt-0.5 pt-2 border-white/10 border-t w-full text-[13px] text-glace-yellow hover:text-yellow-300 transition">
               <span className="font-semibold">
-                عرض تفاصيل الطلب <span className="text-glace-yellow/70">({items.length} منتجات)</span>
+                عرض تفاصيل الطلب{" "}
+                <span className="text-glace-yellow/70">
+                  ({items.length} منتجات)
+                </span>
               </span>
               <ChevronDown
                 size={18}
@@ -530,7 +541,11 @@ export default function PaymentClientPage() {
                     className="flex gap-2.5 sm:gap-3 bg-white/8 p-2.5 sm:p-3 border border-white/15 rounded-[18px]"
                   >
                     <div className="relative flex justify-center items-center bg-white/15 border border-white/20 rounded-xl size-14 overflow-hidden shrink-0">
-                      <LineItemImage src={item.image} alt={item.name} size={56} />
+                      <LineItemImage
+                        src={item.image}
+                        alt={item.name}
+                        size={56}
+                      />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -547,12 +562,13 @@ export default function PaymentClientPage() {
                         {getLineItemRows(item).map((row, i) => (
                           <span key={i} className="truncate">
                             {row.flavor && row.flavor !== "—" && (
-                              <>الطعمة: {row.flavor}</>
+                              <>الأطعمة: {row.flavor}</>
                             )}
                             {row.addons && row.addons !== "—" && (
                               <> · إضافات: {row.addons}</>
                             )}
-                            {" · "}العدد: {row.qty} × {row.unitPrice.toFixed(2)} ₪
+                            {" · "}العدد: {row.qty} × {row.unitPrice.toFixed(2)}{" "}
+                            ₪
                           </span>
                         ))}
                       </div>
@@ -563,70 +579,47 @@ export default function PaymentClientPage() {
 
               {deliveryMethod === "delivery" && address && (
                 <div className="bg-[#dff7ff]/10 mt-3 sm:mt-4 mb-3 sm:mb-4 p-3 sm:p-4 border border-white/25 rounded-[18px] sm:rounded-[22px]">
-                  <p className="text-[14px] sm:text-[15px] text-white/90 mb-2 font-medium">
+                  <p className="mb-2 font-medium text-[14px] text-white/90 sm:text-[15px]">
                     عنوان التوصيل:
                   </p>
-                  <p className="text-[13px] sm:text-[14px] text-white/75 leading-relaxed">
-                    {address.street}{address.landmark ? ` · ${address.landmark}` : ""}
+                  <p className="text-[13px] text-white/75 sm:text-[14px] leading-relaxed">
+                    {address.street}
+                    {address.landmark ? ` · ${address.landmark}` : ""}
                   </p>
-                  <p className="text-[13px] sm:text-[14px] text-white/75 mt-1">
+                  <p className="mt-1 text-[13px] text-white/75 sm:text-[14px]">
                     {address.city} · {address.area || "المنطقة"}
                   </p>
-                  <p className="text-[13px] sm:text-[14px] text-white/60 mt-1">
+                  <p className="mt-1 text-[13px] text-white/60 sm:text-[14px]">
                     {address.name} · {address.phone}
                   </p>
                   {address.note && (
-                    <p className="text-[13px] sm:text-[14px] text-glace-yellow mt-2">
+                    <p className="mt-2 text-[13px] text-glace-yellow sm:text-[14px]">
                       ملاحظة للكابتن: {address.note}
                     </p>
                   )}
                 </div>
               )}
 
-              {pickupTime && (deliveryMethod === "delivery" || deliveryMethod === "pickup") && (
-                <div className="bg-[#dff7ff]/10 mb-3 sm:mb-4 p-3 sm:p-4 border border-white/25 rounded-[18px] sm:rounded-[22px]">
-                  <p className="text-[14px] sm:text-[15px] text-white/90 font-medium">
-                    {deliveryMethod === "delivery" ? "موعد التوصيل:" : "موعد الاستلام:"}
-                  </p>
-                  <p className="mt-1 text-[13px] sm:text-[14px] text-white/75">
-                    {formatScheduledDateTime(pickupTime)}
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2 text-[14px] sm:text-[15px] text-white mb-3 sm:mb-4">
-                <div className="flex justify-between items-center pb-2 border-white/10 border-b">
-                  <span className="text-white/80">المجموع الجزئي</span>
-                  <span className="font-medium">{subtotal().toFixed(2)} ₪</span>
-                </div>
-
-                {deliveryFee > 0 && (
-                  <div className="flex justify-between items-center pb-2 border-white/10 border-b">
-                    <span className="text-white/80">
-                      {deliveryMethod === "delivery" ? "رسوم التوصيل" : "رسوم الاستلام"}
-                    </span>
-                    <span className="font-medium">{deliveryFee.toFixed(2)} ₪</span>
+              {pickupTime &&
+                (deliveryMethod === "delivery" ||
+                  deliveryMethod === "pickup") && (
+                  <div className="bg-[#dff7ff]/10 mb-3 sm:mb-4 p-3 sm:p-4 border border-white/25 rounded-[18px] sm:rounded-[22px]">
+                    <p className="font-medium text-[14px] text-white/90 sm:text-[15px]">
+                      {deliveryMethod === "delivery"
+                        ? "موعد التوصيل:"
+                        : "موعد الاستلام:"}
+                    </p>
+                    <p className="mt-1 text-[13px] text-white/75 sm:text-[14px]">
+                      {formatScheduledDateTime(pickupTime)}
+                    </p>
                   </div>
                 )}
-
-                {discount > 0 && (
-                  <div className="flex justify-between items-center text-glace-yellow">
-                    <span className="text-glace-yellow/90">خصم</span>
-                    <span className="font-medium">- {discount.toFixed(2)} ₪</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center pt-2 border-white/15 border-t font-bold text-[15px] sm:text-[16px]">
-                  <span>المبلغ المطلوب</span>
-                  <span className="text-glace-yellow">{orderTotal.toFixed(2)} ₪</span>
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* Coupon code — standalone card below the order details accordion */}
+          {/* Coupon code — sits between the order details and the totals it affects */}
           <div className="bg-white/8 mt-3 sm:mt-4 p-3 sm:p-4 border border-white/15 rounded-[18px]">
-            <span className="flex items-center gap-1.5 mb-2 text-[13px] font-bold text-white">
+            <span className="flex items-center gap-1.5 mb-2 font-bold text-[13px] text-white">
               كود الخصم
               <Ticket size={15} className="text-white/60" />
             </span>
@@ -647,7 +640,7 @@ export default function PaymentClientPage() {
                   onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
                   placeholder="ادخل كود الخصم"
                   disabled={couponApplied}
-                  className="bg-white/8 disabled:opacity-60 pl-9 pr-3 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] outline-none w-full h-11 text-[13px] text-white placeholder:text-white/45 text-right transition"
+                  className="bg-white/8 disabled:opacity-60 pr-3 pl-9 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] outline-none w-full h-11 text-[13px] text-white placeholder:text-white/45 text-right transition"
                 />
               </div>
 
@@ -655,7 +648,7 @@ export default function PaymentClientPage() {
                 <button
                   type="button"
                   onClick={handleRemoveCoupon}
-                  className="bg-red-500 hover:bg-red-600 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-full font-bold text-white text-[12px] transition shrink-0 cursor-pointer"
+                  className="bg-red-500 hover:bg-red-600 px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-full font-bold text-[12px] text-white transition cursor-pointer shrink-0"
                 >
                   إزالة
                 </button>
@@ -664,7 +657,7 @@ export default function PaymentClientPage() {
                   type="button"
                   onClick={handleApplyCoupon}
                   disabled={!couponInput.trim()}
-                  className="bg-glace-yellow disabled:opacity-50 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-full font-bold text-[#1e6a7f] text-[12px] transition disabled:cursor-not-allowed shrink-0"
+                  className="bg-glace-yellow disabled:opacity-50 px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-full font-bold text-[#1e6a7f] text-[12px] transition disabled:cursor-not-allowed shrink-0"
                 >
                   تطبيق
                 </button>
@@ -672,17 +665,50 @@ export default function PaymentClientPage() {
             </div>
 
             {couponApplied && (
-              <p className="flex justify-end items-center gap-1 mt-2 text-[13px] text-glace-yellow font-medium">
+              <p className="flex justify-end items-center gap-1 mt-2 font-medium text-[13px] text-glace-yellow">
                 <CheckCircle size={15} className="shrink-0" />
                 تم تطبيق خصم {discount.toFixed(2)} ₪
               </p>
             )}
             {couponInvalid && !couponApplied && (
-              <p className="flex justify-end items-center gap-1 mt-2 text-[13px] text-red-300 font-medium">
+              <p className="flex items-center gap-1 ms-auto mt-2 form-error">
                 <XCircle size={15} className="shrink-0" />
                 كود غير صالح
               </p>
             )}
+          </div>
+
+          {/* Totals stay visible whether or not the details are expanded */}
+          <div className="space-y-2 mt-3 sm:mt-4 text-[14px] text-white sm:text-[15px]">
+            <div className="flex justify-between items-center">
+              <span className="text-white/80">مجموع المنتجات</span>
+              <span className="font-medium">{subtotal().toFixed(2)} ₪</span>
+            </div>
+
+            {deliveryFee > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-white/80">
+                  {deliveryMethod === "delivery"
+                    ? "رسوم التوصيل"
+                    : "رسوم الاستلام"}
+                </span>
+                <span className="font-medium">{deliveryFee.toFixed(2)} ₪</span>
+              </div>
+            )}
+
+            {discount > 0 && (
+              <div className="flex justify-between items-center text-glace-yellow">
+                <span className="text-glace-yellow/90">خصم</span>
+                <span className="font-medium">- {discount.toFixed(2)} ₪</span>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center pt-2 border-glace-yellow border-t font-bold text-[15px] sm:text-[16px]">
+              <span>المبلغ المطلوب</span>
+              <span className="text-glace-yellow">
+                {orderTotal.toFixed(2)} ₪
+              </span>
+            </div>
           </div>
 
           <div className="mt-3 sm:mt-4 text-white">
@@ -692,359 +718,370 @@ export default function PaymentClientPage() {
 
             <div className="flex flex-col gap-2 mb-3 sm:mb-4">
               {renderListMethod(WALLET_METHOD)}
-              {CARD_METHODS_BEFORE_CASH.filter(isMethodEnabled).map(renderCardMethod)}
-              {inStoreOnlyAvailable && isMethodEnabled(CASH_METHOD) && renderCardMethod(CASH_METHOD)}
+              {CARD_METHODS_BEFORE_CASH.filter(isMethodEnabled).map(
+                renderCardMethod,
+              )}
               {inStoreOnlyAvailable &&
-                CARD_METHODS_AFTER_CASH.filter(isMethodEnabled).map(renderCardMethod)}
+                isMethodEnabled(CASH_METHOD) &&
+                renderCardMethod(CASH_METHOD)}
+              {inStoreOnlyAvailable &&
+                CARD_METHODS_AFTER_CASH.filter(isMethodEnabled).map(
+                  renderCardMethod,
+                )}
             </div>
 
             {/* Method-specific inputs */}
-          <div ref={methodDetailsRef} />
-          {method === "jawwal" && (
-            <div className="flex flex-col gap-2.5 sm:gap-3 bg-white/10 mb-3 sm:mb-4 p-3 sm:p-4 border border-white/25 rounded-[18px]">
-              <div>
-                <label className="block mb-1.5 text-[14px] text-white/80">
-                  رقم جوال باي
-                </label>
-                <Input
-                  value={jawwalPhone}
-                  disabled={jawwalCodeSent}
-                  onChange={(e) => {
-                    setJawwalPhone(e.target.value);
-                    setJawwalCodeSent(false);
-                    setJawwalCode("");
-                    setJawwalError(null);
-                  }}
-                  placeholder="05XXXXXXXX"
-                  className={inputClass}
-                />
-              </div>
-              <p className="text-[13px] text-white/70">
-                سيتم خصم{" "}
-                <span className="font-bold text-glace-yellow">
-                  {orderTotal.toFixed(2)} ₪
-                </span>{" "}
-                من رصيدك — المبلغ مذكور في رسالة رمز التأكيد
-              </p>
-
-              {!jawwalCodeSent ? (
-                <button
-                  type="button"
-                  onClick={handleSendJawwalCode}
-                  disabled={!jawwalPhone.trim() || sendJawwalOrderCodeMutation.isPending}
-                  className="bg-glace-yellow hover:bg-yellow-300 disabled:opacity-50 py-3 border-0 rounded-full font-bold text-[#1e6a7f] text-[14px] transition cursor-pointer disabled:cursor-not-allowed"
-                >
-                  {sendJawwalOrderCodeMutation.isPending
-                    ? "جارٍ الإرسال..."
-                    : "إرسال رمز التأكيد"}
-                </button>
-              ) : (
-                <>
-                  <p className="text-[13px] text-white/70">
-                    تم إرسال رمز التأكيد إلى{" "}
-                    <span className="font-bold text-glace-yellow" dir="ltr">
-                      {jawwalPhone}
-                    </span>
-                  </p>
-                  <div>
-                    <label className="block mb-1.5 text-[14px] text-white/80">
-                      رمز التأكيد
-                    </label>
-                    <Input
-                      value={jawwalCode}
-                      onChange={(e) => setJawwalCode(e.target.value)}
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="أدخل الرمز المرسل"
-                      className={inputClass}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
+            <div ref={methodDetailsRef} />
+            {method === "jawwal" && (
+              <div className="flex flex-col gap-2.5 sm:gap-3 bg-white/10 mb-3 sm:mb-4 p-3 sm:p-4 border border-white/25 rounded-[18px]">
+                <div>
+                  <label className="block mb-1.5 text-[14px] text-white/80">
+                    رقم جوال باي
+                  </label>
+                  <Input
+                    value={jawwalPhone}
+                    disabled={jawwalCodeSent}
+                    onChange={(e) => {
+                      setJawwalPhone(e.target.value);
                       setJawwalCodeSent(false);
                       setJawwalCode("");
                       setJawwalError(null);
                     }}
-                    className="self-start text-[13px] text-glace-yellow hover:text-yellow-300 underline cursor-pointer"
-                  >
-                    لم يصلك الرمز؟ إرسال مرة أخرى أو تغيير رقم الجوال
-                  </button>
-                </>
-              )}
-
-              {jawwalError && (
-                <p className="text-[14px] text-red-300 text-center">
-                  {jawwalError}
-                </p>
-              )}
-            </div>
-          )}
-
-          {method &&
-            RECEIPT_METHODS.includes(method) &&
-            (() => {
-              const account = paymentAccounts?.find(
-                (a): a is TransferPaymentAccount =>
-                  a.method === method && !a.inStoreOnly,
-              );
-              if (!account) return null;
-
-              return (
-                <div className="bg-white/10 mb-4 sm:mb-6 p-3 sm:p-5 border border-white/25 rounded-[22px]">
-                  <div className="flex flex-col items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
-                    <div className="bg-white p-2 rounded-[14px]">
-                      <Image
-                        src={account.qrImage}
-                        alt={`رمز QR - ${PAYMENT_METHOD_LABELS[method]}`}
-                        width={160}
-                        height={160}
-                      />
-                    </div>
-                    <a
-                      href={account.qrImage}
-                      download
-                      className="text-[13px] sm:text-[14px] text-glace-yellow hover:underline"
-                    >
-                      حفظ صورة QR
-                    </a>
-                    <p className="text-[13px] sm:text-[14px] text-white/70 text-center">
-                      افتح تطبيق بنكك أو محفظتك وامسح الرمز — يعمل مع جميع
-                      البنوك والمحافظ
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2.5 sm:gap-3 my-3 sm:my-4">
-                    <div className="flex-1 border-white/20 border-t" />
-                    <span className="text-[12.5px] sm:text-[13px] text-white/60">
-                      أو — التحويل إلى الحساب مباشرة
-                    </span>
-                    <div className="flex-1 border-white/20 border-t" />
-                  </div>
-
-                  <div className="flex flex-col gap-2.5 sm:gap-3 mb-4 sm:mb-5">
-                    {account.bankName && (
-                      <div className="flex justify-between items-center text-[14px] sm:text-[15px]">
-                        <span className="text-white/70">البنك</span>
-                        <span className="font-bold">{account.bankName}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center text-[14px] sm:text-[15px]">
-                      <span className="text-white/70">اسم الحساب</span>
-                      <span className="font-bold">{account.holderName}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-[14px] sm:text-[15px]">
-                      <span className="text-white/70">
-                        {account.accountLabel}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold" dir="ltr">
-                          {account.accountValue}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleCopy("account", account.accountValue)
-                          }
-                          aria-label="نسخ"
-                          className="flex justify-center items-center hover:bg-white/10 rounded-full size-8 text-white/70 hover:text-white transition-colors cursor-pointer"
-                        >
-                          {copiedField === "account" ? (
-                            <Check size={15} className="text-green-300" />
-                          ) : (
-                            <Copy size={15} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                    {account.accountNumber && (
-                      <div className="flex justify-between items-center text-[14px] sm:text-[15px]">
-                        <span className="text-white/70">رقم الحساب</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold" dir="ltr">
-                            {account.accountNumber}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCopy("accountNumber", account.accountNumber!)
-                            }
-                            aria-label="نسخ"
-                            className="flex justify-center items-center hover:bg-white/10 rounded-full size-8 text-white/70 hover:text-white transition-colors cursor-pointer"
-                          >
-                            {copiedField === "accountNumber" ? (
-                              <Check size={15} className="text-green-300" />
-                            ) : (
-                              <Copy size={15} />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {account.iban && (
-                      <div className="flex justify-between items-center text-[14px] sm:text-[15px]">
-                        <span className="text-white/70">
-                          رقم الآيبان (IBAN)
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold" dir="ltr">
-                            {account.iban}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCopy("iban", account.iban!)
-                            }
-                            aria-label="نسخ"
-                            className="flex justify-center items-center hover:bg-white/10 rounded-full size-8 text-white/70 hover:text-white transition-colors cursor-pointer"
-                          >
-                            {copiedField === "iban" ? (
-                              <Check size={15} className="text-green-300" />
-                            ) : (
-                              <Copy size={15} />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2.5 sm:gap-3 my-4 sm:my-5">
-                    <div className="flex-1 border-white/20 border-t" />
-                    <span className="text-[12.5px] sm:text-[13px] text-white/60">
-                      ارفع إشعار التحويل
-                    </span>
-                    <div className="flex-1 border-white/20 border-t" />
-                  </div>
-
-                  <ReceiptUploadForm
-                    onSubmit={handleReceiptSubmit}
-                    submitLabel="تأكيد الدفع"
-                    submitting={placeOrderMutation.isPending}
-                    registeredAccountName={user?.name}
-                    inStore={deliveryMethod === "dine-in"}
+                    placeholder="05XXXXXXXX"
+                    className={inputClass}
                   />
                 </div>
-              );
-            })()}
+                <p className="text-[13px] text-white/70">
+                  سيتم خصم{" "}
+                  <span className="font-bold text-glace-yellow">
+                    {orderTotal.toFixed(2)} ₪
+                  </span>{" "}
+                  من رصيدك — المبلغ مذكور في رسالة رمز التأكيد
+                </p>
 
-          {method === "visa" && (
-            <p className="bg-white/10 mb-5 sm:mb-6 px-3.5 sm:px-4 py-2.5 sm:py-3 border border-white/25 rounded-[16px] sm:rounded-[20px] text-[13px] sm:text-[14px] text-white/80">
-              {paymentAccounts?.find((a) => a.method === "visa")?.holderName ??
-                "الدفع بالفيزا يتم على ماكينة الدفع داخل المحل"}
-            </p>
-          )}
+                {!jawwalCodeSent ? (
+                  <button
+                    type="button"
+                    onClick={handleSendJawwalCode}
+                    disabled={
+                      !jawwalPhone.trim() ||
+                      sendJawwalOrderCodeMutation.isPending
+                    }
+                    className="bg-glace-yellow hover:bg-yellow-300 disabled:opacity-50 py-3 border-0 rounded-full font-bold text-[#1e6a7f] text-[14px] transition cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {sendJawwalOrderCodeMutation.isPending
+                      ? "جارٍ الإرسال..."
+                      : "إرسال رمز التأكيد"}
+                  </button>
+                ) : (
+                  <>
+                    <p className="text-[13px] text-white/70">
+                      تم إرسال رمز التأكيد إلى{" "}
+                      <span className="font-bold text-glace-yellow" dir="ltr">
+                        {jawwalPhone}
+                      </span>
+                    </p>
+                    <div>
+                      <label className="block mb-1.5 text-[14px] text-white/80">
+                        رمز التأكيد
+                      </label>
+                      <Input
+                        value={jawwalCode}
+                        onChange={(e) => setJawwalCode(e.target.value)}
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="أدخل الرمز المرسل"
+                        className={inputClass}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setJawwalCodeSent(false);
+                        setJawwalCode("");
+                        setJawwalError(null);
+                      }}
+                      className="self-start text-[13px] text-glace-yellow hover:text-yellow-300 underline cursor-pointer"
+                    >
+                      لم يصلك الرمز؟ إرسال مرة أخرى أو تغيير رقم الجوال
+                    </button>
+                  </>
+                )}
 
-          {method === "cash" && (
-            <p className="bg-white/10 mb-5 sm:mb-6 px-3.5 sm:px-4 py-2.5 sm:py-3 border border-white/25 rounded-[16px] sm:rounded-[20px] text-[13px] sm:text-[14px] text-white/80">
-              {paymentAccounts?.find((a) => a.method === "cash")?.holderName ??
-                "الدفع كاش داخل المحل فقط"}
-            </p>
-          )}
+                {jawwalError && (
+                  <p className="mx-auto text-center form-error">
+                    {jawwalError}
+                  </p>
+                )}
+              </div>
+            )}
 
-          {method === "wallet" && walletBalance < orderTotal && (
-            <div className="flex flex-col gap-2.5 sm:gap-3 bg-white/10 mb-5 sm:mb-6 p-3.5 sm:p-4 border border-white/25 rounded-[16px] sm:rounded-[20px]">
-              <p className="font-bold text-[14px] sm:text-[15px] text-red-300">
-                رصيد المحفظة غير كافٍ
+            {method &&
+              RECEIPT_METHODS.includes(method) &&
+              (() => {
+                const account = paymentAccounts?.find(
+                  (a): a is TransferPaymentAccount =>
+                    a.method === method && !a.inStoreOnly,
+                );
+                if (!account) return null;
+
+                return (
+                  <div className="bg-white/10 mb-4 sm:mb-6 p-3 sm:p-5 border border-white/25 rounded-[22px]">
+                    <div className="flex flex-col items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                      <div className="bg-white p-2 rounded-[14px]">
+                        <Image
+                          src={account.qrImage}
+                          alt={`رمز QR - ${PAYMENT_METHOD_LABELS[method]}`}
+                          width={160}
+                          height={160}
+                        />
+                      </div>
+                      <a
+                        href={account.qrImage}
+                        download
+                        className="text-[13px] text-glace-yellow sm:text-[14px] hover:underline"
+                      >
+                        حفظ صورة QR
+                      </a>
+                      <p className="text-[13px] text-white/70 sm:text-[14px] text-center">
+                        افتح تطبيق بنكك أو محفظتك وامسح الرمز — يعمل مع جميع
+                        البنوك والمحافظ
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 sm:gap-3 my-3 sm:my-4">
+                      <div className="flex-1 border-white/20 border-t" />
+                      <span className="text-[12.5px] text-white/60 sm:text-[13px]">
+                        أو — التحويل إلى الحساب مباشرة
+                      </span>
+                      <div className="flex-1 border-white/20 border-t" />
+                    </div>
+
+                    <div className="flex flex-col gap-2.5 sm:gap-3 mb-4 sm:mb-5">
+                      {account.bankName && (
+                        <div className="flex justify-between items-center text-[14px] sm:text-[15px]">
+                          <span className="text-white/70">البنك</span>
+                          <span className="font-bold">{account.bankName}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center text-[14px] sm:text-[15px]">
+                        <span className="text-white/70">اسم الحساب</span>
+                        <span className="font-bold">{account.holderName}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[14px] sm:text-[15px]">
+                        <span className="text-white/70">
+                          {account.accountLabel}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold" dir="ltr">
+                            {account.accountValue}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCopy("account", account.accountValue)
+                            }
+                            aria-label="نسخ"
+                            className="flex justify-center items-center hover:bg-white/10 rounded-full size-8 text-white/70 hover:text-white transition-colors cursor-pointer"
+                          >
+                            {copiedField === "account" ? (
+                              <Check size={15} className="text-green-300" />
+                            ) : (
+                              <Copy size={15} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      {account.accountNumber && (
+                        <div className="flex justify-between items-center text-[14px] sm:text-[15px]">
+                          <span className="text-white/70">رقم الحساب</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold" dir="ltr">
+                              {account.accountNumber}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCopy(
+                                  "accountNumber",
+                                  account.accountNumber!,
+                                )
+                              }
+                              aria-label="نسخ"
+                              className="flex justify-center items-center hover:bg-white/10 rounded-full size-8 text-white/70 hover:text-white transition-colors cursor-pointer"
+                            >
+                              {copiedField === "accountNumber" ? (
+                                <Check size={15} className="text-green-300" />
+                              ) : (
+                                <Copy size={15} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {account.iban && (
+                        <div className="flex justify-between items-center text-[14px] sm:text-[15px]">
+                          <span className="text-white/70">
+                            رقم الآيبان (IBAN)
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold" dir="ltr">
+                              {account.iban}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy("iban", account.iban!)}
+                              aria-label="نسخ"
+                              className="flex justify-center items-center hover:bg-white/10 rounded-full size-8 text-white/70 hover:text-white transition-colors cursor-pointer"
+                            >
+                              {copiedField === "iban" ? (
+                                <Check size={15} className="text-green-300" />
+                              ) : (
+                                <Copy size={15} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2.5 sm:gap-3 my-4 sm:my-5">
+                      <div className="flex-1 border-white/20 border-t" />
+                      <span className="text-[12.5px] text-white/60 sm:text-[13px]">
+                        ارفع إشعار التحويل
+                      </span>
+                      <div className="flex-1 border-white/20 border-t" />
+                    </div>
+
+                    <ReceiptUploadForm
+                      onSubmit={handleReceiptSubmit}
+                      submitLabel="تأكيد الدفع"
+                      submitting={placeOrderMutation.isPending}
+                      registeredAccountName={user?.name}
+                      inStore={deliveryMethod === "dine-in"}
+                    />
+                  </div>
+                );
+              })()}
+
+            {method === "visa" && (
+              <p className="bg-white/10 mb-5 sm:mb-6 px-3.5 sm:px-4 py-2.5 sm:py-3 border border-white/25 rounded-[16px] sm:rounded-[20px] text-[13px] text-white/80 sm:text-[14px]">
+                {paymentAccounts?.find((a) => a.method === "visa")
+                  ?.holderName ??
+                  "الدفع بالفيزا يتم على ماكينة الدفع داخل المحل"}
               </p>
-              <div className="flex justify-between text-[13px] sm:text-[14px]">
-                <span className="text-white/70">رصيدك الحالي</span>
-                <span className="font-bold text-white">
-                  {walletBalance.toFixed(2)} ₪
-                </span>
+            )}
+
+            {method === "cash" && (
+              <p className="bg-white/10 mb-5 sm:mb-6 px-3.5 sm:px-4 py-2.5 sm:py-3 border border-white/25 rounded-[16px] sm:rounded-[20px] text-[13px] text-white/80 sm:text-[14px]">
+                {paymentAccounts?.find((a) => a.method === "cash")
+                  ?.holderName ?? "الدفع كاش داخل المحل فقط"}
+              </p>
+            )}
+
+            {method === "wallet" && walletBalance < orderTotal && (
+              <div className="flex flex-col gap-2.5 sm:gap-3 bg-white/10 mb-5 sm:mb-6 p-3.5 sm:p-4 border border-white/25 rounded-[16px] sm:rounded-[20px]">
+                <p className="text-[13px] sm:text-[14px] form-error">
+                  رصيد المحفظة غير كافٍ
+                </p>
+                <div className="flex justify-between text-[13px] sm:text-[14px]">
+                  <span className="text-white/70">رصيدك الحالي</span>
+                  <span className="font-bold text-white">
+                    {walletBalance.toFixed(2)} ₪
+                  </span>
+                </div>
+                <div className="flex justify-between pt-2 border-white/10 border-t text-[13px] sm:text-[14px]">
+                  <span className="text-white/70">المبلغ المطلوب</span>
+                  <span className="font-bold text-glace-yellow">
+                    {orderTotal.toFixed(2)} ₪
+                  </span>
+                </div>
+                <Button
+                  asChild
+                  className="bg-glace-yellow hover:bg-glace-yellow hover:brightness-105 py-2.5 rounded-[14px] w-full h-auto font-bold text-[#1e6a7f] text-[13px] sm:text-[14px]"
+                >
+                  <Link href="/my-account/wallet">شحن المحفظة</Link>
+                </Button>
               </div>
-              <div className="flex justify-between pt-2 border-white/10 border-t text-[13px] sm:text-[14px]">
-                <span className="text-white/70">المبلغ المطلوب</span>
-                <span className="font-bold text-glace-yellow">
-                  {orderTotal.toFixed(2)} ₪
-                </span>
-              </div>
-              <Button
-                asChild
-                className="bg-glace-yellow hover:bg-glace-yellow hover:brightness-105 py-2.5 rounded-[14px] w-full h-auto font-bold text-[#1e6a7f] text-[13px] sm:text-[14px]"
+            )}
+
+            {orderError && (
+              <p className="mx-auto mb-3 text-center form-error">
+                {orderError}
+              </p>
+            )}
+
+            <p className="mb-3 text-[12px] text-white/60 sm:text-[13px] text-center">
+              بإتمام الطلب أنت توافق على{" "}
+              <Link
+                href="/my-account/terms"
+                className="font-bold text-glace-yellow hover:text-yellow-300 underline transition-colors"
               >
-                <Link href="/my-account/wallet">شحن المحفظة</Link>
-              </Button>
-            </div>
-          )}
-
-          {orderError && (
-            <p className="mb-3 text-[12.5px] sm:text-[13px] text-red-300 text-center">
-              {orderError}
+                الشروط والأحكام
+              </Link>
             </p>
-          )}
 
-          <p className="mb-3 text-[12px] sm:text-[13px] text-white/60 text-center">
-            بإتمام الطلب أنت توافق على{" "}
-            <Link
-              href="/my-account/terms"
-              className="font-bold text-glace-yellow hover:text-yellow-300 underline transition-colors"
-            >
-              الشروط والأحكام
-            </Link>
-          </p>
-
-          {method &&
-            !RECEIPT_METHODS.includes(method) &&
-            (method !== "jawwal" || jawwalCodeSent) && (
-            <Button
-              type="button"
-              onClick={handleConfirm}
-              disabled={
-                walletDeducted ||
-                (method === "wallet" && walletBalance < orderTotal) ||
-                jawwalAmountInvalid ||
-                placeOrderMutation.isPending ||
-                deductWalletMutation.isPending
-              }
-              className="bg-glace-yellow hover:bg-yellow-300 disabled:opacity-50 py-3 sm:py-3.5 border-0 rounded-[24px] sm:rounded-[30px] w-full h-auto font-bold text-[#1e6a7f] text-[16px] sm:text-[18px] cursor-pointer disabled:cursor-not-allowed"
-            >
-              تأكيد الدفع
-            </Button>
-          )}
+            {method &&
+              !RECEIPT_METHODS.includes(method) &&
+              (method !== "jawwal" || jawwalCodeSent) && (
+                <Button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={
+                    walletDeducted ||
+                    (method === "wallet" && walletBalance < orderTotal) ||
+                    jawwalAmountInvalid ||
+                    placeOrderMutation.isPending ||
+                    deductWalletMutation.isPending
+                  }
+                  className="bg-glace-yellow hover:bg-yellow-300 disabled:opacity-50 py-3 sm:py-3.5 border-0 rounded-[24px] sm:rounded-[30px] w-full h-auto font-bold text-[#1e6a7f] text-[16px] sm:text-[18px] cursor-pointer disabled:cursor-not-allowed"
+                >
+                  تأكيد الدفع
+                </Button>
+              )}
+          </div>
         </div>
-      </div>
 
-      {/* Success dialog — closing it any way (backdrop, Escape) still sends
-       *  the customer to order tracking rather than stranding them here. */}
-      <Dialog
-        open={successOpen}
-        onOpenChange={(open) => {
-          setSuccessOpen(open);
-          if (!open && placedOrderId) {
-            router.push(`/order-status/${placedOrderId}`);
-          }
-        }}
-      >
-        <DialogContent
-          showCloseButton={false}
-          className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
+        {/* Success dialog — closing it any way (backdrop, Escape) still sends
+         *  the customer to order tracking rather than stranding them here. */}
+        <Dialog
+          open={successOpen}
+          onOpenChange={(open) => {
+            setSuccessOpen(open);
+            if (!open && placedOrderId) {
+              router.push(`/order-status/${placedOrderId}`);
+            }
+          }}
         >
-          <DialogHeader className="items-center gap-3">
-            <div className="flex justify-center items-center bg-glace-yellow rounded-full size-16">
-              <CheckCircle2
-                className="size-9 text-[#388dab]"
-                strokeWidth={2.5}
-              />
-            </div>
-            <DialogTitle className="text-white text-2xl">
-              طلبك قيد المراجعة
-            </DialogTitle>
-            <DialogDescription className="text-white/90 text-base">
-              رقم طلبك هو:{" "}
-              <span className="font-bold text-glace-yellow">
-                {placedOrderId}
-              </span>
-            </DialogDescription>
-          </DialogHeader>
-          <Button
-            asChild
-            className="bg-[#4397ae] hover:bg-[#4397ae]/90 mt-4 px-6 py-2.5 rounded-[30px] w-full h-auto text-white text-lg"
+          <DialogContent
+            showCloseButton={false}
+            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
           >
-            <Link href={`/order-status/${placedOrderId}`}>تتبع الطلب</Link>
-          </Button>
-        </DialogContent>
-      </Dialog>
+            <DialogHeader className="items-center gap-3">
+              <div className="flex justify-center items-center bg-glace-yellow rounded-full size-16">
+                <CheckCircle2
+                  className="size-9 text-[#388dab]"
+                  strokeWidth={2.5}
+                />
+              </div>
+              <DialogTitle className="text-white text-2xl">
+                طلبك قيد المراجعة
+              </DialogTitle>
+              <DialogDescription className="text-white/90 text-base">
+                رقم طلبك هو:{" "}
+                <span className="font-bold text-glace-yellow">
+                  {placedOrderId}
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            <Button
+              asChild
+              className="bg-[#4397ae] hover:bg-[#4397ae]/90 mt-4 px-6 py-2.5 rounded-[30px] w-full h-auto text-white text-lg"
+            >
+              <Link href={`/order-status/${placedOrderId}`}>تتبع الطلب</Link>
+            </Button>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
