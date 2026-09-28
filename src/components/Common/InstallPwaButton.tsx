@@ -9,6 +9,7 @@ import {
   Zap,
   Home,
   Smartphone,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -118,7 +119,7 @@ export default function InstallPwaButton() {
   return (
     <Dialog open={modalOpen} onOpenChange={setModalOpen}>
       <DialogContent
-        showCloseButton={true}
+        showCloseButton={false}
         className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-0 border-0 rounded-[30px] ring-0 overflow-hidden text-white text-center"
       >
         {/* decorative bubbles, echoing the logo's own bubble motif */}
@@ -128,6 +129,19 @@ export default function InstallPwaButton() {
           <span className="top-10 left-6 absolute bg-glace-yellow/20 rounded-full size-3" />
           <span className="top-16 left-11 absolute bg-glace-yellow/30 rounded-full size-2" />
         </div>
+
+        <button
+          type="button"
+          onClick={() => setModalOpen(false)}
+          aria-label="إغلاق"
+          className="group top-4 left-4 z-10 absolute flex justify-center items-center bg-white/15 hover:bg-white shadow-[0_4px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm border border-white/30 rounded-full size-9 text-white hover:text-[#1a4a5a] transition-all duration-300 cursor-pointer"
+        >
+          <X
+            size={18}
+            strokeWidth={2.5}
+            className="transition-transform duration-300 group-hover:rotate-90"
+          />
+        </button>
 
         <div className="relative flex flex-col items-center px-6 sm:px-8 pt-9 pb-6 sm:pb-8">
           {/* app icon, presented like an actual home-screen icon */}
@@ -184,8 +198,8 @@ export default function InstallPwaButton() {
                   <span className="inline-flex items-center gap-1">
                     <b>المشاركة</b>
                     <Share size={15} className="text-white/80 shrink-0" />
-                  </span>{" "}
-                  <span className="text-white/70 text-[12.5px]">
+                  </span>
+                  <span className="block mt-0.5 text-white/70 text-[12.5px]">
                     (من شريط الأدوات بأسفل أو أعلى الشاشة)
                   </span>
                 </p>
