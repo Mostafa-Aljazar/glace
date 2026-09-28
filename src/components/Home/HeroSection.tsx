@@ -150,7 +150,7 @@ export default function HeroSection({
                     alt=""
                     width={170}
                     height={170}
-                    className="top-[-22px] sm:top-0 right-auto left-[40%] md:left-[-170px] lg:left-[-170px] z-[1099] absolute w-[64px] sm:w-[80px] md:w-[120px] lg:w-[140px] 2xl:w-[150px]"
+                    className="top-[-110px] sm:top-[-130px] md:top-0 right-auto left-1 md:left-[-170px] lg:left-[-170px] z-[1099] absolute w-[64px] sm:w-[80px] md:w-[120px] lg:w-[140px] 2xl:w-[150px]"
                     style={{
                       animation: "rotateS 20s normal linear infinite",
                     }}
