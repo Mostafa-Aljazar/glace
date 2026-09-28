@@ -46,7 +46,11 @@ import {
   useMarkReceived,
   useEmailOrderSummary,
 } from "@/hooks/orders";
-import { getLineItemTotal, useCartStore } from "@/store/cartStore";
+import {
+  getGroupedFlavors,
+  getLineItemTotal,
+  useCartStore,
+} from "@/store/cartStore";
 import { getStatusSteps, PAYMENT_STATUS_DISPLAY } from "@/lib/orderStatusSteps";
 import { formatScheduledDateTime } from "@/lib/scheduling";
 import { getApiErrorMessage } from "@/lib/apiWithFallback";
@@ -372,7 +376,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
             </div>
           )}
           {emailError && (
-            <p className="mt-2 text-[13px] text-red-300">{emailError}</p>
+            <p className="form-error mt-2">{emailError}</p>
           )}
         </div>
 
@@ -408,6 +412,11 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
 
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-[17px]">{item.name}</p>
+                    {item.container && (
+                      <p className="opacity-70 text-[14px]">
+                        النوع: {item.container}
+                      </p>
+                    )}
                     {item.size && (
                       <p className="opacity-70 text-[14px]">
                         الحجم: {item.size}
@@ -415,28 +424,16 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
                     )}
                     {item.type && (
                       <p className="opacity-70 text-[14px]">
-                        النوع: {item.type}
+                        نوع الأطعمة: {item.type}
                       </p>
                     )}
-                    {item.selections.some(
-                      (s) =>
-                        s.kind === "flavor" ||
-                        s.kind === "mix" ||
-                        s.kind === "mixItem",
-                    ) && (
+                    {getGroupedFlavors(item).length > 0 && (
                       <p className="flex flex-wrap items-center gap-1.5 mt-1 text-[13px]">
                         <span className="flex items-center gap-1 opacity-70 shrink-0">
                           <IceCreamCone size={13} />
                           الأطعمة:
                         </span>
-                        {item.selections
-                          .filter(
-                            (s) =>
-                              s.kind === "flavor" ||
-                              s.kind === "mix" ||
-                              s.kind === "mixItem",
-                          )
-                          .map((s) => (
+                        {getGroupedFlavors(item).map((s) => (
                             <span
                               key={`${s.kind}-${s.id}`}
                               className="bg-glace-yellow/18 text-glace-yellow px-2 py-0.5 rounded-md font-semibold"
@@ -634,7 +631,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
                   تأكيد استلام الطلب
                 </button>
                 {receivedError && (
-                  <p className="mt-2 text-[13px] text-red-300 text-center">
+                  <p className="form-error mx-auto mt-2 text-center">
                     {receivedError}
                   </p>
                 )}
@@ -701,7 +698,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
                 تأكيد استلام الطلب
               </button>
               {receivedError && (
-                <p className="mt-2 text-[13px] text-red-300 text-center">
+                <p className="form-error mx-auto mt-2 text-center">
                   {receivedError}
                 </p>
               )}
@@ -740,7 +737,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
             submitting={updateReceiptMutation.isPending}
           />
           {receiptError && (
-            <p className="text-[13px] text-red-300 text-center">{receiptError}</p>
+            <p className="form-error mx-auto text-center">{receiptError}</p>
           )}
         </DialogContent>
       </Dialog>
@@ -788,7 +785,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
           </div>
 
           {cancelError && (
-            <p className="text-[13px] text-red-300 text-center">{cancelError}</p>
+            <p className="form-error mx-auto text-center">{cancelError}</p>
           )}
 
           <div className="flex gap-3 mt-2">

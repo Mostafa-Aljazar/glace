@@ -130,6 +130,20 @@ export function getLineItemTitle(item: CartItem): string {
   return parts.join(" ");
 }
 
+/** An item's flavor picks with repeats merged into one entry — orders can
+ *  come back with the same flavor as several qty-1 selections (e.g. a family
+ *  box with 4 أوريو balls), which should read "أوريو ×4", not four chips. */
+export function getGroupedFlavors(item: CartItem): CartSelection[] {
+  const byKey = new Map<string, CartSelection>();
+  for (const s of item.selections) {
+    if (s.kind !== "flavor" && s.kind !== "mix" && s.kind !== "mixItem") continue;
+    const key = `${s.kind}-${s.id || s.label}`;
+    const prev = byKey.get(key);
+    byKey.set(key, prev ? { ...prev, qty: prev.qty + s.qty } : { ...s });
+  }
+  return Array.from(byKey.values());
+}
+
 function labelWithQty(s: CartSelection): string {
   return s.qty > 1 ? `${s.label} ×${s.qty}` : s.label;
 }

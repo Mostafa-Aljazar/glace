@@ -21,7 +21,11 @@ import {
   type Order,
 } from "@/store/orderStore";
 import { useOrders } from "@/hooks/orders";
-import { getLineItemTotal, useCartStore } from "@/store/cartStore";
+import {
+  getGroupedFlavors,
+  getLineItemTotal,
+  useCartStore,
+} from "@/store/cartStore";
 import { getStatusSteps, PAYMENT_STATUS_DISPLAY } from "@/lib/orderStatusSteps";
 import { formatScheduledDateTime } from "@/lib/scheduling";
 import { cn } from "@/lib/utils";
@@ -296,12 +300,12 @@ export default function OrdersPanel() {
                       </p>
                       <div className="flex flex-col gap-3">
                         {order.items.map((item) => {
-                          const flavors = item.selections.filter(
-                            (s) =>
-                              s.kind === "flavor" ||
-                              s.kind === "mix" ||
-                              s.kind === "mixItem",
-                          );
+                          const itemProps = [
+                            item.container,
+                            item.size,
+                            item.type,
+                          ].filter(Boolean);
+                          const flavors = getGroupedFlavors(item);
                           return (
                             <div
                               key={item.id}
@@ -328,15 +332,15 @@ export default function OrdersPanel() {
                               <div className="flex-1 min-w-0">
                                 <div>
                                   <span className="font-bold">{item.name}</span>
-                                  {item.size && (
-                                    <span className="mr-2 text-white/60">
-                                      ({item.size})
-                                    </span>
-                                  )}
                                   <span className="mr-2 text-white/60">
                                     × {item.quantity}
                                   </span>
                                 </div>
+                                {itemProps.length > 0 && (
+                                  <p className="mt-0.5 text-[12px] text-white/60">
+                                    {itemProps.join(" · ")}
+                                  </p>
+                                )}
                                 {flavors.length > 0 && (
                                   <div className="flex flex-wrap items-center gap-1 mt-1">
                                     {flavors.map((s) => (
