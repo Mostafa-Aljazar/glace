@@ -122,7 +122,7 @@ export default function MixOrderSection({
                         <button
                           type="button"
                           onClick={() => removeItem(mix.id)}
-                          className="flex justify-center items-center shrink-0 rounded-full w-7 h-7 border border-rose-400/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/30 hover:border-rose-400/60 hover:text-rose-100 transition"
+                          className="flex justify-center items-center shrink-0 rounded-full w-7 h-7 bg-red-500 hover:bg-red-600 shadow-sm text-white transition cursor-pointer"
                           aria-label="حذف"
                         >
                           <X size={13} />

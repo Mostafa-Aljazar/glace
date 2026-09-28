@@ -21,7 +21,7 @@ export default function SecurityPanel() {
             type="button"
             disabled={logout.isPending}
             onClick={() => logout.mutate()}
-            className="flex items-center gap-2 bg-red-500/30 hover:bg-red-500/50 border border-red-400/50 rounded-[20px] text-white text-[17px] h-auto py-3 px-6 cursor-pointer disabled:opacity-60 shrink-0"
+            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 shadow-sm rounded-[20px] font-bold text-white text-[17px] h-auto py-3 px-6 cursor-pointer disabled:opacity-60 shrink-0"
           >
             <LogOut size={18} />
             {logout.isPending ? "جاري الخروج..." : "تسجيل الخروج"}

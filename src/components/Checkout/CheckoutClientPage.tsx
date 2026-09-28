@@ -616,9 +616,9 @@ export default function CheckoutClientPage() {
                               }}
                               role="button"
                               aria-label="حذف العنوان"
-                              className="p-1 text-white/40 hover:text-rose-300 transition-colors cursor-pointer"
+                              className="flex justify-center items-center bg-red-500 hover:bg-red-600 shadow-sm rounded-full size-7 text-white transition cursor-pointer"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={14} />
                             </span>
                           </div>
                           <p className="text-[14px] text-white/60 leading-relaxed">

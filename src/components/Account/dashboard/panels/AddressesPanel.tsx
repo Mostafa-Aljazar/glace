@@ -97,7 +97,7 @@ export default function AddressesPanel() {
                   <button
                     type="button"
                     onClick={() => removeAddressMutation.mutate(address.id)}
-                    className="flex items-center gap-1.5 text-rose-300 hover:text-rose-200 text-[13px] font-bold transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 shadow-sm px-3 py-1.5 rounded-full font-bold text-[12px] text-white transition cursor-pointer"
                   >
                     <Trash2 size={14} />
                     حذف

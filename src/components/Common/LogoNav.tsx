@@ -258,7 +258,7 @@ export default function LogoNav() {
                   setDrawerOpen(false);
                   logout.mutate();
                 }}
-                className="flex justify-center items-center gap-2 bg-red-500/15 hover:bg-red-500/25 px-4 py-3 border border-red-400/30 rounded-[16px] text-red-300 text-[16px] font-semibold transition-all disabled:opacity-60 cursor-pointer"
+                className="flex justify-center items-center gap-2 bg-red-500 hover:bg-red-600 shadow-sm px-4 py-3 rounded-[16px] text-white text-[16px] font-bold transition-all disabled:opacity-60 cursor-pointer"
               >
                 <LogOut size={18} />
                 {logout.isPending ? "جاري الخروج..." : "تسجيل الخروج"}

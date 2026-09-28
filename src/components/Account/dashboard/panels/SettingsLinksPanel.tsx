@@ -55,7 +55,7 @@ export default function SettingsLinksPanel() {
         type="button"
         disabled={logout.isPending}
         onClick={() => logout.mutate()}
-        className="flex items-center gap-2 w-full mt-5 py-3.5 rounded-[16px] bg-red-500/15 hover:bg-red-500/25 border border-red-400/30 text-red-300 text-[15px] font-bold justify-center transition-colors cursor-pointer disabled:opacity-60"
+        className="flex items-center gap-2 w-full mt-5 py-3.5 rounded-[16px] bg-red-500 hover:bg-red-600 shadow-sm text-white text-[15px] font-bold justify-center transition-colors cursor-pointer disabled:opacity-60"
       >
         <LogOut size={17} />
         {logout.isPending ? "جاري الخروج..." : "تسجيل الخروج"}

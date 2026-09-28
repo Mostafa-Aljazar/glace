@@ -128,7 +128,7 @@ function ItemCard({
                   .map((s) => (
                     <span
                       key={`${s.kind}-${s.id}`}
-                      className="bg-white px-2 py-0.5 rounded-full font-bold text-[12px] text-[#1e6a7f]"
+                      className="bg-white px-2 py-0.5 rounded-full font-bold text-[#1e6a7f] text-[12px]"
                     >
                       {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
                     </span>
@@ -149,7 +149,7 @@ function ItemCard({
                   .map((s) => (
                     <span
                       key={`addon-${s.id}`}
-                      className="bg-glace-yellow px-2 py-0.5 rounded-full font-bold text-[12px] text-[#1e6a7f]"
+                      className="bg-glace-yellow px-2 py-0.5 rounded-full font-bold text-[#1e6a7f] text-[12px]"
                     >
                       {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
                     </span>
@@ -168,7 +168,7 @@ function ItemCard({
                 {item.flatSelections!.map((s) => (
                   <span
                     key={`flat-addon-${s.id}`}
-                    className="bg-glace-yellow px-2 py-0.5 rounded-full font-bold text-[12px] text-[#1e6a7f]"
+                    className="bg-glace-yellow px-2 py-0.5 rounded-full font-bold text-[#1e6a7f] text-[12px]"
                   >
                     {s.qty > 1 ? `${s.label} ×${s.qty}` : s.label}
                   </span>
@@ -250,7 +250,7 @@ function ItemCard({
                 type="button"
                 onClick={() => removeItem(item.id)}
                 aria-label="حذف المنتج"
-                className="flex justify-center items-center bg-white/8 hover:bg-rose-500/20 border border-white/15 hover:border-rose-400/50 rounded-full size-9 text-white/50 hover:text-rose-200 transition cursor-pointer"
+                className="flex justify-center items-center bg-red-500 hover:bg-red-600 shadow-sm rounded-full size-9 text-white transition cursor-pointer"
               >
                 <Trash2 size={15} />
               </button>
@@ -379,7 +379,8 @@ function OrderSummary() {
   const { data: storeStatus } = useStoreStatus();
 
   const storeOpen = storeStatus?.storeOpen ?? true;
-  const closedMessage = storeStatus?.closedMessage ?? "نستقبل طلباتكم غداً خلال ساعات العمل";
+  const closedMessage =
+    storeStatus?.closedMessage ?? "نستقبل طلباتكم غداً خلال ساعات العمل";
   const [storeClosedDialogOpen, setStoreClosedDialogOpen] = useState(false);
 
   return (
@@ -405,7 +406,8 @@ function OrderSummary() {
         <div className="flex items-center gap-2 bg-glace-yellow/10 mt-3 px-3.5 py-2.5 border border-glace-yellow/25 rounded-[14px] text-glace-yellow">
           <Clock size={16} className="shrink-0" />
           <span className="font-semibold text-[13px] leading-snug">
-            مدة تحضير الطلب بالكامل تتراوح بين 5-25 دقيقة
+            مدة تحضير الطلب بالكامل تتراوح بين 5-25 دقيقة ( غير شامل وقت التوصيل
+            ){" "}
           </span>
         </div>
 
@@ -433,7 +435,7 @@ function OrderSummary() {
                   {getLineItemRows(item).map((row, i) => (
                     <span key={i} className="truncate">
                       {row.flavor && row.flavor !== "—" && (
-                        <>الطعمة: {row.flavor}</>
+                        <>الأطعمة: {row.flavor}</>
                       )}
                       {row.addons && row.addons !== "—" && (
                         <> · إضافات: {row.addons}</>
@@ -476,7 +478,8 @@ function CheckoutButton() {
   const subtotal = useCartStore((s) => s.subtotal);
   const { data: storeStatus } = useStoreStatus();
   const storeOpen = storeStatus?.storeOpen ?? true;
-  const closedMessage = storeStatus?.closedMessage ?? "نستقبل طلباتكم غداً خلال ساعات العمل";
+  const closedMessage =
+    storeStatus?.closedMessage ?? "نستقبل طلباتكم غداً خلال ساعات العمل";
   const [storeClosedDialogOpen, setStoreClosedDialogOpen] = useState(false);
 
   return (
@@ -503,7 +506,7 @@ function CheckoutButton() {
           <div className="flex items-center gap-2.5 mt-4">
             <Link
               href="/#location"
-              className="flex-1 bg-white/12 hover:bg-white/18 px-6 py-2.5 rounded-[30px] text-white font-bold text-lg transition-colors text-center"
+              className="flex-1 bg-white/12 hover:bg-white/18 px-6 py-2.5 rounded-[30px] font-bold text-white text-lg text-center transition-colors"
             >
               ساعات العمل
             </Link>
