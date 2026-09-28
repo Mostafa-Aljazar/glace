@@ -150,7 +150,7 @@ export default function HeroSection({
                     alt=""
                     width={170}
                     height={170}
-                    className="top-[-110px] sm:top-[-130px] md:top-0 right-auto left-1 md:left-[-170px] lg:left-[-170px] z-[1099] absolute w-[64px] sm:w-[80px] md:w-[120px] lg:w-[140px] 2xl:w-[150px]"
+                    className="top-[-64px] sm:top-[-40px] md:top-0 right-auto left-1 md:left-[-170px] lg:left-[-170px] z-[1099] absolute w-[64px] sm:w-[80px] md:w-[120px] lg:w-[140px] 2xl:w-[150px]"
                     style={{
                       animation: "rotateS 20s normal linear infinite",
                     }}
@@ -165,16 +165,20 @@ export default function HeroSection({
                     className="top-[44px] sm:top-[50px] md:top-[35px] lg:top-[50px] 2xl:top-[55px] xl:top-[50px] right-0 sm:right-[-66px] md:right-[-80px] lg:right-[-107px] 2xl:right-[-110px] xl:right-[-107px] z-[1099] absolute w-[86px] sm:w-[104px] md:w-[130px] lg:w-[145px] 2xl:w-[160px] xl:w-[150px] hover:rotate-2 transition-transform duration-300"
                   />
 
-                  {/* character */}
-                  {slide.manImg && (
-                    <HideOnErrorImage
-                      src={resolveHomeImageSrc(slide.manImg)}
-                      alt=""
-                      width={260}
-                      height={200}
-                      className="flex mb-[-5px] w-full h-[130px] sm:h-[150px] md:h-[150px] lg:h-[170px] 2xl:h-[200px] xl:h-[180px] object-bottom-left object-contain"
-                    />
-                  )}
+                  {/* character — the slot keeps its height even when the
+                      image is missing or fails to load, since the sun and
+                      badge are positioned against this layout */}
+                  <div className="mb-[-5px] w-full h-[130px] sm:h-[150px] md:h-[150px] lg:h-[170px] 2xl:h-[200px] xl:h-[180px]">
+                    {slide.manImg && (
+                      <HideOnErrorImage
+                        src={resolveHomeImageSrc(slide.manImg)}
+                        alt=""
+                        width={260}
+                        height={200}
+                        className="flex w-full h-full object-bottom-left object-contain"
+                      />
+                    )}
+                  </div>
 
                   {/* title blocks */}
                   <div className="mx-auto w-full max-w-full text-center">
