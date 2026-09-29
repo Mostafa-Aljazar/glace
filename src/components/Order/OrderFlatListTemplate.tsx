@@ -222,13 +222,19 @@ export default function OrderFlatListTemplate({
                     key={item.id}
                     className={`border rounded-[16px] px-2 [@media(min-width:400px)]:px-4 py-4 transition-all ${
                       isUnavailable
-                        ? "opacity-50 bg-white/5 border-white/5 cursor-not-allowed"
+                        ? "bg-white/5 border-white/5 cursor-not-allowed"
                         : itemLines.length > 0
                           ? "bg-glace-yellow/10 border-glace-yellow/50"
                           : "bg-white/8 border-white/10 hover:bg-white/12"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    {/* Dim the row's contents, not the row, so the red
+                        "غير متاح" badge keeps its full color. */}
+                    <div
+                      className={`flex items-center gap-3 ${
+                        isUnavailable ? "[&>*:not(:last-child)]:opacity-50" : ""
+                      }`}
+                    >
                       {item.image ? (
                         product.hasImageZoom ? (
                           <button
@@ -296,7 +302,7 @@ export default function OrderFlatListTemplate({
                       </div>
 
                       {isUnavailable ? (
-                        <span className="font-bold text-[12px] text-white/60 shrink-0">
+                        <span className="bg-red-500 px-2.5 py-1 rounded-full font-bold text-[11px] text-white shrink-0">
                           غير متاح
                         </span>
                       ) : offersScoop ? (
