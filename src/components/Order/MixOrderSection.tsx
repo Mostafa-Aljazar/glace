@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { IceCreamBowl, X } from "lucide-react";
 import CartLineStepper from "@/components/Order/CartLineStepper";
 import MixFlavorModal from "@/components/Order/MixFlavorModal";
 import { useCartStore, type CartItem } from "@/store/cartStore";
@@ -73,7 +73,7 @@ export default function MixOrderSection({
                 className="group w-full flex items-center gap-3.5 px-4 py-3.5 rounded-[20px] border border-white/15 bg-white/8 hover:bg-white/12 hover:border-glace-yellow/40 transition-all duration-200"
               >
                 <div className="flex justify-center items-center shrink-0 bg-glace-yellow/15 group-hover:bg-glace-yellow/25 rounded-2xl w-12 h-12 text-glace-yellow transition">
-                  <Sparkles size={20} />
+                  <IceCreamBowl size={22} />
                 </div>
                 <div className="flex-1 text-right min-w-0">
                   <p className="font-bold text-[15px] text-white leading-snug">
