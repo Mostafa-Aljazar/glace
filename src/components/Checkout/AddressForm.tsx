@@ -67,11 +67,8 @@ const schema = z.object({
     .min(1, "الاسم مطلوب")
     .refine((v) => {
       const words = v.trim().split(/\s+/).filter(Boolean);
-      return (
-        words.length >= 2 &&
-        words.every((w) => /^[ء-ي]{2,}$/.test(w))
-      );
-    }, "اكتب اسمك الثنائي بالعربي على الأقل (مثلاً: مصطفى الجزار)، وكل مقطع حرفان على الأقل"),
+      return words.length >= 2 && words.every((w) => /^[ء-ي]{2,}$/.test(w));
+    }, "اكتب اسمك الثنائي بالعربي على الأقل (مثلاً: أحمد محمد)، وكل مقطع حرفان على الأقل"),
   phone: z
     .string()
     .min(1, "رقم الجوال مطلوب")
@@ -173,7 +170,6 @@ export default function AddressForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultName, defaultPhone]);
 
-
   function selectType(next: AddressType) {
     setType(next);
     if (next !== "other") {
@@ -274,19 +270,22 @@ export default function AddressForm({
               name="name"
               render={({ field }) => (
                 <FormItem className="content-start">
-                  <FormLabel className={labelClass}>الاسم الكامل <span className="text-rose-400">*</span></FormLabel>
+                  <FormLabel className={labelClass}>
+                    الاسم الكامل <span className="text-rose-400">*</span>
+                  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <User size={18} className={fieldIconClass} />
                       <Input
                         {...field}
-                        placeholder="مثلاً: مصطفى الجزار"
+                        placeholder="مثلاً: أحمد محمد"
                         className={`peer ${inputClass}`}
                       />
                     </div>
                   </FormControl>
                   <p className="mt-1 text-[12px] text-white/50">
-                    اكتب اسمك الثنائي بالعربي على الأقل (مثلاً: مصطفى الجزار)، وكل مقطع حرفان على الأقل
+                    اكتب اسمك الثنائي بالعربي على الأقل (مثلاً: أحمد محمد)، وكل
+                    مقطع حرفان على الأقل
                   </p>
                   <FormMessage />
                 </FormItem>
@@ -297,7 +296,9 @@ export default function AddressForm({
               name="phone"
               render={({ field }) => (
                 <FormItem className="content-start">
-                  <FormLabel className={labelClass}>رقم الجوال <span className="text-rose-400">*</span></FormLabel>
+                  <FormLabel className={labelClass}>
+                    رقم الجوال <span className="text-rose-400">*</span>
+                  </FormLabel>
                   <FormControl>
                     <div
                       className={`flex items-center gap-2.5 ${phoneInputClass}`}
@@ -352,7 +353,9 @@ export default function AddressForm({
               name="zoneId"
               render={({ field }) => (
                 <FormItem className="content-start">
-                  <FormLabel className={labelClass}>المنطقة / الحي <span className="text-rose-400">*</span></FormLabel>
+                  <FormLabel className={labelClass}>
+                    المنطقة / الحي <span className="text-rose-400">*</span>
+                  </FormLabel>
                   <FormControl>
                     <button
                       type="button"
@@ -403,7 +406,9 @@ export default function AddressForm({
               name="street"
               render={({ field }) => (
                 <FormItem className="sm:col-span-2">
-                  <FormLabel className={labelClass}>الشارع والعنوان <span className="text-rose-400">*</span></FormLabel>
+                  <FormLabel className={labelClass}>
+                    الشارع والعنوان <span className="text-rose-400">*</span>
+                  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <MapPin size={18} className={fieldIconClass} />
@@ -451,7 +456,7 @@ export default function AddressForm({
           <Button
             type="submit"
             disabled={submitting}
-            className="bg-glace-yellow hover:bg-yellow-300 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] py-3.5 border-0 rounded-[18px] h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:pointer-events-none disabled:hover:translate-y-0"
+            className="bg-glace-yellow hover:bg-yellow-300 disabled:opacity-60 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] py-3.5 border-0 rounded-[18px] h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 disabled:hover:translate-y-0 cursor-pointer disabled:pointer-events-none"
           >
             {submitting ? "جاري التأكيد..." : submitLabel}
           </Button>
