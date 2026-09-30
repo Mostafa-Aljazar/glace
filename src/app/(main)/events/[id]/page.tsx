@@ -7,6 +7,14 @@ import fetchEventById, {
   eventQueryKey,
 } from "@/hooks/events/fetchEventById";
 import { createQueryClient } from "@/lib/reactQuery";
+import JsonLd from "@/components/Common/JsonLd";
+import {
+  breadcrumbJsonLd,
+  eventJsonLd,
+  pageMetadata,
+  toMetaDescription,
+} from "@/lib/seo";
+import { resolveEventImageSrc, type IEvent } from "@/types/events.types";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -17,12 +25,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // A backend outage must not break metadata generation for the whole route.
   const event = await fetchEventById(Number(id)).catch(() => null);
-  if (!event) return { title: "الفعالية | جلاسيه الأمير" };
+  if (!event) return { title: "الفعالية" };
 
-  return {
-    title: `${event.title} | جلاسيه الأمير`,
-    description: event.description,
-  };
+  return pageMetadata({
+    title: event.title,
+    description: toMetaDescription(event.description) || event.title,
+    path: `/events/${event.id}`,
+    image: event.listImage ? resolveEventImageSrc(event.listImage) : null,
+    imageAlt: event.title,
+    ogType: "article",
+  });
+}
+
+/** Every uploaded image of the event, cover first, without duplicates. */
+function eventImageUrls(event: IEvent): string[] {
+  const urls = [event.listImage, ...event.images]
+    .filter(Boolean)
+    .map((image) => resolveEventImageSrc(image));
+  return [...new Set(urls)];
 }
 
 export default async function EventDetailPage({ params }: Props) {
@@ -35,8 +55,9 @@ export default async function EventDetailPage({ params }: Props) {
   // throws, so an outage falls through to the client's error + retry state
   // instead of wrongly claiming the event does not exist.
   let notFoundEvent = false;
+  let event: IEvent | null = null;
   try {
-    const event = await fetchEventById(eventId);
+    event = await fetchEventById(eventId);
     if (!event) notFoundEvent = true;
     else queryClient.setQueryData(eventQueryKey(eventId), event);
   } catch {
@@ -47,6 +68,17 @@ export default async function EventDetailPage({ params }: Props) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
+      {event && (
+        <JsonLd
+          data={[
+            eventJsonLd(event, eventImageUrls(event)),
+            breadcrumbJsonLd([
+              { name: "الفعاليات والمناسبات", path: "/events" },
+              { name: event.title, path: `/events/${event.id}` },
+            ]),
+          ]}
+        />
+      )}
       <EventDetailClientPage id={eventId} />
     </HydrationBoundary>
   );

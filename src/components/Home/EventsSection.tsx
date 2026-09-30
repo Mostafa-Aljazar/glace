@@ -41,9 +41,9 @@ export default function EventsSection({
     <section className="z-[1] relative bg-white -mt-[1px] pt-2.5 pb-6 lg:pb-8 min-h-0 overflow-hidden">
       <div className="mx-auto w-[90%] max-w-400">
         <div className="text-center">
-          <h1 className="text-[#53352a] text-[24px] sm:text-[36px] lg:text-[52px] leading-snug">
+          <h2 className="text-[#53352a] text-[24px] sm:text-[36px] lg:text-[52px] leading-snug">
             {eventsData.title}
-          </h1>
+          </h2>
 
           <div className="relative flex flex-col mt-6 pb-2 md:pb-4 lg:pb-6">
             {!hasEvents ? (

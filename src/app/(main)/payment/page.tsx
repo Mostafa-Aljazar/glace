@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
+import { privatePageMetadata } from "@/lib/seo";
 import PaymentClientPage from "@/components/Payment/PaymentClientPage";
 
-export const metadata: Metadata = {
-  title: "الدفع | جلاسيه الأمير",
-};
+export const metadata: Metadata = privatePageMetadata("الدفع");
 
 export default function PaymentPage() {
   // Delivery method, address, and fee travel via `useCheckoutDraftStore`

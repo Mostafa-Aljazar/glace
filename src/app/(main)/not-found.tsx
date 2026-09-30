@@ -4,7 +4,7 @@ import LogoNav from "@/components/Common/LogoNav";
 import { imgL, imgError404 } from "@/assets/images";
 
 export const metadata: Metadata = {
-  title: "404 | جلاسيه الأمير",
+  title: "الصفحة غير موجودة",
 };
 
 export default function NotFound() {

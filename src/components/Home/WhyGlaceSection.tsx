@@ -20,9 +20,9 @@ export default function WhyGlaceSection({
       <div className="flex lg:flex-row flex-col justify-between items-center gap-4 lg:gap-[30px] mx-auto pt-10 pb-5 lg:py-12 w-[90%] max-w-400">
         {/* Text side */}
         <div className="w-full lg:w-1/2">
-          <h1 className="mb-0 text-[#53352a] text-[26px] sm:text-[36px] lg:text-[45px] leading-snug">
+          <h2 className="mb-0 text-[#53352a] text-[26px] sm:text-[36px] lg:text-[45px] leading-snug">
             {whyGlace.title}
-          </h1>
+          </h2>
           <p className="text-[16px] text-black/65 sm:text-[22px] lg:text-[30px] leading-relaxed">
             {whyGlace.description}
           </p>
@@ -40,9 +40,9 @@ export default function WhyGlaceSection({
                   fill
                   className="opacity-80 object-fill rotate-[-5deg]"
                 />
-                <h2 className="z-10 relative mb-0 px-1 text-[16px] sm:text-[24px] lg:text-[28px] text-white text-center leading-tight">
+                <h3 className="z-10 relative mb-0 px-1 text-[16px] sm:text-[24px] lg:text-[28px] text-white text-center leading-tight">
                   {f.label}
-                </h2>
+                </h3>
               </div>
             ))}
           </div>

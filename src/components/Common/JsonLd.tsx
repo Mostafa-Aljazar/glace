@@ -1,0 +1,19 @@
+/**
+ * Structured data for search engines. Rendered as a plain `<script>` (not
+ * `next/script`) per the Next JSON-LD guide, with `<` escaped so a value from
+ * the API can never close the tag early.
+ */
+export default function JsonLd({
+  data,
+}: {
+  data: Record<string, unknown> | Record<string, unknown>[];
+}) {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(data).replace(/</g, "\u003c"),
+      }}
+    />
+  );
+}

@@ -188,12 +188,12 @@ export default function HeroSection({
                         backgroundColor: slide.h1BgColor,
                       }}
                     >
-                      <h1
+                      <h2
                         className="font-bold text-[clamp(1.45rem,7.4vw,2.6rem)] sm:text-4xl md:text-5xl lg:text-5xl leading-none rotate-[1deg] -skew-x-[10deg] sm:-skew-x-[15deg]"
                         style={{ textShadow: "2px 2px #0000006c" }}
                       >
                         {slide.titleH1}
-                      </h1>
+                      </h2>
                     </div>
                     <div
                       className="mx-auto -mt-[18px] sm:-mt-[30px] px-3 sm:px-[25px] py-5 sm:py-[35px] pb-2.5 sm:pb-[15px] sm:pl-[15px] text-white -rotate-[4deg] skew-x-[8deg] sm:skew-x-[10deg] [clip-path:polygon(0%_0%,96%_0%,100%_100%,0%_90%)]"
@@ -201,12 +201,12 @@ export default function HeroSection({
                         backgroundColor: slide.h2BgColor,
                       }}
                     >
-                      <h2
+                      <p
                         className="text-[14px] sm:text-xl md:text-2xl lg:text-3xl text-center leading-snug rotate-[4deg] -skew-x-[8deg] sm:-skew-x-[10deg]"
                         style={{ textShadow: "2px 2px #0000001e" }}
                       >
                         {slide.titleH2}
-                      </h2>
+                      </p>
                     </div>
                   </div>
 

@@ -103,9 +103,9 @@ export default function LoadingPage() {
         </div>
 
         <div className="flex flex-col items-center gap-1.5 splash-text">
-          <h1 className="drop-shadow-md font-bold text-[28px] text-white sm:text-[36px] tracking-wide">
+          <p className="drop-shadow-md font-bold text-[28px] text-white sm:text-[36px] tracking-wide">
             جلاسيه الأمير
-          </h1>
+          </p>
           <p className="text-[14px] text-white/60 sm:text-[16px] tracking-widest splash-sub">
             أفضل البوظة والمثلجات
           </p>

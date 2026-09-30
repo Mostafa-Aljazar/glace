@@ -31,12 +31,12 @@ export default function AboutSection({
         {/* Text */}
         <div className="z-10 relative w-full lg:w-[60%] text-white">
           <div className="max-w-[700px]">
-            <h1
+            <h2
               className="mb-5 text-[#f4e451] text-[24px] md:text-[30px] lg:text-[36px] leading-snug"
               style={{ textShadow: "2px 2px #00000046" }}
             >
               {about.title}
-            </h1>
+            </h2>
             {about.paragraphs.map((paragraph) => (
               <p
                 key={paragraph.slice(0, 24)}

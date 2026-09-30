@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import EventsBackground from "@/components/Events/EventsBackground";
 import CartBar from "@/components/Order/CartBar";
 import DataError from "@/components/Common/DataError";
@@ -144,9 +144,11 @@ export default function MenuClientPage() {
     () => (allCategories ?? []).filter((c) => c.available !== false),
     [allCategories],
   );
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const queryCategory = searchParams.get("category");
+  // `?category=` is read after mount instead of through `useSearchParams`:
+  // that hook makes Next skip server rendering for the whole menu, leaving
+  // search engines an empty page.
+  const [queryCategory, setQueryCategory] = useState<string | null>(null);
   const { data: storeStatus } = useStoreStatus();
 
   // Use real API data for store status
@@ -160,10 +162,17 @@ export default function MenuClientPage() {
   const selectorScrollRef = useRef<HTMLDivElement | null>(null);
   const suppressObserverRef = useRef(false);
   const suppressObserverTimeoutRef = useRef<number | undefined>(undefined);
-  const [activeCategory, setActiveCategory] = useState(
-    queryCategory ?? "ice-cream",
-  );
+  const [activeCategory, setActiveCategory] = useState("ice-cream");
   const [closedDialogOpen, setClosedDialogOpen] = useState(() => !storeOpen);
+
+  useEffect(() => {
+    const category = new URLSearchParams(window.location.search).get(
+      "category",
+    );
+    if (!category) return;
+    setQueryCategory(category);
+    setActiveCategory(category);
+  }, []);
 
   useEffect(() => {
     if (!queryCategory) return;
@@ -249,7 +258,7 @@ export default function MenuClientPage() {
     }, 800);
     const section = sectionRefs.current[categoryId];
     if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(window.location.search);
     params.set("category", categoryId);
     router.replace(`/menu?${params.toString()}`);
   };

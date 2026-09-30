@@ -2,6 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import OrderTypeClientPage from "@/components/Order/OrderTypeClientPage";
+import JsonLd from "@/components/Common/JsonLd";
+import {
+  breadcrumbJsonLd,
+  pageMetadata,
+  productJsonLd,
+  toMetaDescription,
+} from "@/lib/seo";
+import { resolveMenuImageSrc, type IProduct } from "@/types/menu.types";
 import { createQueryClient } from "@/lib/reactQuery";
 // Import from the fetch modules, not the `"use client"` hooks.
 import { fetchMenuProducts } from "@/hooks/menu/fetchMenuProducts";
@@ -27,11 +35,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // A backend outage must not break metadata for the whole route.
   const product = await fetchMenuProductBySlug(type).catch(() => null);
-  return {
-    title: product
-      ? `طلب ${product.name} | جلاسيه الأمير`
-      : "طلب | جلاسيه الأمير",
-  };
+  if (!product) return { title: "اطلب أونلاين" };
+
+  return pageMetadata({
+    title: product.name,
+    description: productDescription(product),
+    path: `/menu/order/${product.slug}`,
+    image: resolveMenuImageSrc(product.image),
+    imageAlt: product.name,
+  });
+}
+
+function productDescription(product: IProduct): string {
+  const lead = toMetaDescription(product.description, 110);
+  return toMetaDescription(
+    `${lead ? `${lead}، ` : ""}اطلب ${product.name} من جلاسيه الأمير أونلاين مع التوصيل في غزة`,
+  );
 }
 
 export async function generateStaticParams() {
@@ -52,8 +71,9 @@ export default async function OrderTypePage({ params }: Props) {
   // does not exist; anything else throws and falls through to the client's
   // error + retry state rather than a misleading 404.
   let missing = false;
+  let product: IProduct | null = null;
   try {
-    const product = await fetchMenuProductBySlug(type);
+    product = await fetchMenuProductBySlug(type);
     if (!product) missing = true;
     else queryClient.setQueryData(menuProductQueryKey(type), product);
   } catch {
@@ -73,6 +93,17 @@ export default async function OrderTypePage({ params }: Props) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
+      {product && (
+        <JsonLd
+          data={[
+            productJsonLd(product, resolveMenuImageSrc(product.image)),
+            breadcrumbJsonLd([
+              { name: "المنيو", path: "/menu" },
+              { name: product.name, path: `/menu/order/${product.slug}` },
+            ]),
+          ]}
+        />
+      )}
       <OrderTypeClientPage productId={type} />
     </HydrationBoundary>
   );

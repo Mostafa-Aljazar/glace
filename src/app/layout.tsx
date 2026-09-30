@@ -6,24 +6,35 @@ import LoadingPage from "@/components/Common/LoadingPage";
 import ServiceWorkerRegister from "@/components/Common/ServiceWorkerRegister";
 import OfflineOverlay from "@/components/Common/OfflineOverlay";
 import InstallPwaButton from "@/components/Common/InstallPwaButton";
+import JsonLd from "@/components/Common/JsonLd";
 import {
   SITE_URL,
   SITE_NAME,
-  SITE_NAME_EN,
   SITE_TAGLINE,
   SITE_DESCRIPTION,
+  SITE_OG_IMAGE,
 } from "@/lib/site";
+import { OG_LOCALE, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+
+// Search Console / Bing Webmaster ownership tokens, set per deployment.
+const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
+const bingVerification = process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    default: `${SITE_NAME} | ${SITE_TAGLINE}`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   keywords: [
     "جلاسيه الأمير",
+    "جلاسيه الامير",
+    "آيس كريم غزة",
+    "بوظة غزة",
+    "حلويات غزة",
+    "توصيل آيس كريم غزة",
     "آيس كريم فلسطين",
     "بوظة فلسطين",
     "حلويات فلسطين",
@@ -33,19 +44,21 @@ export const metadata: Metadata = {
     "Palestine ice cream",
   ],
   authors: [{ name: SITE_NAME }],
-  alternates: {
-    canonical: "/",
-  },
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "food",
+  // No `alternates.canonical` here: metadata is inherited, so a root canonical
+  // would tell Google every page is a copy of the home page. Public pages set
+  // their own through `pageMetadata()` in src/lib/seo.ts.
   openGraph: {
     type: "website",
-    locale: "ar",
-    url: SITE_URL,
+    locale: OG_LOCALE,
     siteName: SITE_NAME,
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
     images: [
       {
-        url: "/opengraph-image.png",
+        url: SITE_OG_IMAGE,
         width: 1200,
         height: 630,
         alt: SITE_NAME,
@@ -61,8 +74,24 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true },
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
+  ...(googleVerification || bingVerification
+    ? {
+        verification: {
+          ...(googleVerification ? { google: googleVerification } : {}),
+          ...(bingVerification
+            ? { other: { "msvalidate.01": bingVerification } }
+            : {}),
+        },
+      }
+    : {}),
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -77,28 +106,6 @@ export const viewport: Viewport = {
   themeColor: "#1c6b88",
 };
 
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: SITE_NAME,
-  alternateName: SITE_NAME_EN,
-  url: SITE_URL,
-  logo: `${SITE_URL}/icons/icon-512.png`,
-  image: `${SITE_URL}/opengraph-image.png`,
-  description: SITE_DESCRIPTION,
-  email: "info@glaceelameer.com",
-  telephone: "+970592226522",
-  sameAs: [
-    "https://t.me/glaceelameer",
-    "https://wa.me/972592226522",
-    "https://www.instagram.com/glaceelameer/",
-    "https://x.com/GlaceElameer",
-    "https://www.facebook.com/GlaceElameer",
-    "https://www.linkedin.com/company/el-ameer-icecream-glaceelameer/",
-    "https://www.tiktok.com/@glace_elameer",
-  ],
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -107,18 +114,6 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/boxicons@latest/css/boxicons.min.css"
-        />
-        <Script
-          id="organization-jsonld"
-          type="application/ld+json"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationJsonLd),
-          }}
-        />
         <Script
           id="splash-seen-check"
           strategy="beforeInteractive"
@@ -133,6 +128,7 @@ export default function RootLayout({
         />
       </head>
       <body className="">
+        <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         <QueryProvider>
           <LoadingPage />
           {children}

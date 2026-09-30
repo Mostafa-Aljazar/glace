@@ -1,24 +1,16 @@
 import type { MetadataRoute } from "next";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, PRIVATE_ROUTES } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Private/user-specific flows and pages not yet live (see src/middleware.ts)
-      // add no SEO value and shouldn't be crawled or shown as search results.
-      disallow: [
-        "/cart",
-        "/checkout",
-        "/payment",
-        "/order-status",
-        "/my-account",
-        "/favorites",
-        "/auth",
-        "/coming-soon",
-      ],
+      // Per-visitor flows, account pages and API docs add no search value.
+      // They also carry `noindex` (see privatePageMetadata in src/lib/seo.ts).
+      disallow: PRIVATE_ROUTES,
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

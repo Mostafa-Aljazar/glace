@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import MenuClientPage from "@/components/Menu/MenuClientPage";
+import JsonLd from "@/components/Common/JsonLd";
+import { absoluteUrl, breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
+import { SITE_NAME } from "@/lib/site";
+import type { IProduct } from "@/types/menu.types";
 import { createQueryClient } from "@/lib/reactQuery";
 // Import from the fetch modules, not the `"use client"` hooks — a Server
 // Component cannot call a function exported from a client module.
@@ -18,10 +21,12 @@ import fetchMenuProducts, {
 export const revalidate = 120;
 
 
-export const metadata: Metadata = {
-  title: "المنيو | جلاسيه الأمير",
-  description: "تصفح قائمة منتجاتنا المتنوعة من الآيس كريم والعصائر والحلويات",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "المنيو",
+  description:
+    "منيو جلاسيه الأمير: آيس كريم بنكهات كثيرة، براد، عصائر طبيعية، وافل، كريب، بان كيك، كنافة وحلويات، اطلب أونلاين مع التوصيل في غزة",
+  path: "/menu",
+});
 
 export default async function MenuPage() {
   const queryClient = createQueryClient();
@@ -43,11 +48,32 @@ export default async function MenuPage() {
       .catch(() => {}),
   ]);
 
+  const products =
+    queryClient.getQueryData<IProduct[]>(menuProductsQueryKey()) ?? [];
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense fallback={null}>
-        <MenuClientPage />
-      </Suspense>
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([{ name: "المنيو", path: "/menu" }]),
+          ...(products.length
+            ? [
+                {
+                  "@context": "https://schema.org",
+                  "@type": "ItemList",
+                  name: `منيو ${SITE_NAME}`,
+                  itemListElement: products.map((product, index) => ({
+                    "@type": "ListItem",
+                    position: index + 1,
+                    name: product.name,
+                    url: absoluteUrl(`/menu/order/${product.slug}`),
+                  })),
+                },
+              ]
+            : []),
+        ]}
+      />
+      <MenuClientPage />
     </HydrationBoundary>
   );
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import EventsClientPage from "@/components/Events/EventsClientPage";
+import JsonLd from "@/components/Common/JsonLd";
+import { breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 import { createQueryClient } from "@/lib/reactQuery";
 // Import from the fetch module, not the `"use client"` hook.
 import fetchEvents, { eventsQueryKey } from "@/hooks/events/fetchEvents";
@@ -12,10 +14,12 @@ import { EVENTS_PER_PAGE } from "@/types/events.types";
 export const revalidate = 300;
 
 
-export const metadata: Metadata = {
-  title: "الفعاليات و المناسبات | جلاسيه الأمير",
-  description: "تصفح أحدث فعاليات ومناسبات جلاسيه الأمير",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "الفعاليات والمناسبات",
+  description:
+    "تابع أحدث فعاليات ومناسبات جلاسيه الأمير من عروض وافتتاحات ومشاركات مجتمعية بالصور",
+  path: "/events",
+});
 
 export default async function EventsPage() {
   const queryClient = createQueryClient();
@@ -32,6 +36,9 @@ export default async function EventsPage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
+      <JsonLd
+        data={breadcrumbJsonLd([{ name: "الفعاليات والمناسبات", path: "/events" }])}
+      />
       <EventsClientPage />
     </HydrationBoundary>
   );

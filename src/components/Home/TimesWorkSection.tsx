@@ -159,7 +159,7 @@ export default function TimesWorkSection({
         </ul>
 
         <div className="relative mb-5">
-          <h1 className={sectionTitle}>{branchesData.title}</h1>
+          <h2 className={sectionTitle}>{branchesData.title}</h2>
           <Image
             src={imgpp2}
             alt=""

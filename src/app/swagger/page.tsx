@@ -10,8 +10,9 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "Glace API — Swagger",
+  title: "Glace API Swagger",
   description: "OpenAPI documentation for the Glace API",
+  robots: { index: false, follow: false },
 };
 
 export default function SwaggerPage() {
