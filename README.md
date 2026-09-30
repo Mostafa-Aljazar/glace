@@ -124,8 +124,7 @@ npm run lint    # ESLint
 glace-next/
 │
 ├── docs/
-│   ├── swagger.yaml          # OpenAPI 3 spec
-│   └── MENU_CATALOG.md       # Menu API contract for Laravel
+│   └── swagger.yaml          # OpenAPI 3 spec
 │
 ├── public/images/            # Static assets (logo, icons, decorations)
 │
@@ -241,12 +240,11 @@ Local-only today — shape for a future backend sync.
 
 | Resource | Purpose |
 | --- | --- |
-| [`docs/MENU_CATALOG.md`](docs/MENU_CATALOG.md) | Full menu contract for Laravel (categories, products, flavors, addons, checklist) |
 | [`docs/swagger.yaml`](docs/swagger.yaml) | OpenAPI 3 — all documented endpoints & schemas |
 | `/swagger` | Interactive Try-it-out UI |
 | `GET /api/openapi` | Serves the YAML to Swagger UI |
 
-**Share `MENU_CATALOG.md` + `swagger.yaml` with the backend team.**
+**Share `swagger.yaml` with the backend team.**
 
 When checkout goes live, each ordered unit should send selected addon ids + the product **PK** (`id`), so quantity N can carry up to N distinct addition sets.
 

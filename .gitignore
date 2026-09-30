@@ -37,8 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
-# docs
-/docs
+# docs (only the OpenAPI spec is kept: /api/openapi serves it)
+/docs/*
+!/docs/swagger.yaml
 
 # typescript
 *.tsbuildinfo
@@ -48,3 +49,6 @@ next-env.d.ts
 /.claude
 /graphify-out
 /src/graphify-out
+
+# logs
+*.log

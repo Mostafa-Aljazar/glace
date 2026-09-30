@@ -44,7 +44,7 @@ export interface TopUpRequest {
   phone?: string;
   /** Set by the admin dashboard when rejecting a request — explains why to
    *  the customer instead of a generic "تواصل معنا" message. Not sent by
-   *  the backend yet (see docs/22-9-2026/22-9-2026-topup-rejection-reason.md). */
+   *  the backend yet (it should add it to GET /wallet/topup-requests). */
   rejectionReason?: string;
 }
 

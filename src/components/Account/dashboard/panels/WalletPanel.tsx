@@ -662,9 +662,9 @@ export default function WalletPanel() {
                         {req.status === "مرفوض" && (
                           <div className="bg-red-500/15 px-3 py-2.5 rounded-[12px] text-[13px] text-red-200">
                             {/* Backend doesn't send a rejection reason yet
-                                (confirmed against the live API 2026-09-19) —
-                                see docs/22-9-2026/22-9-2026-topup-rejection-reason.md.
-                                Falls back to a generic message until it does. */}
+                                (confirmed against the live API 2026-09-19): it
+                                should add `rejectionReason` to each request in
+                                GET /wallet/topup-requests. Falls back to a generic message until it does. */}
                             {req.rejectionReason?.trim() ||
                               "تم رفض طلب الشحن هذا. تواصل معنا لمعرفة السبب."}
                           </div>
