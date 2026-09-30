@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useUrlSearchParam } from "@/hooks/useUrlSearchParam";
 import EventsBackground from "@/components/Events/EventsBackground";
 import CartBar from "@/components/Order/CartBar";
 import FlavorBall from "@/components/Order/FlavorBall";
@@ -187,8 +187,9 @@ export default function OrderBuilderTemplate({
 }: {
   product: IBuilderProduct;
 }) {
-  const searchParams = useSearchParams();
-  const requestedContainer = searchParams.get("container");
+  // Not `useSearchParams`: it would make Next skip server rendering for the
+  // whole order page, leaving search engines an empty page.
+  const requestedContainer = useUrlSearchParam("container");
 
   // Extra-biscuit pricing is backend-owned — never hardcode a charge.
   const { data: sharedAddons } = useMenuAddons();
@@ -208,14 +209,18 @@ export default function OrderBuilderTemplate({
   // option is the exception: it's derived as picked (never stored, so a reset
   // or container switch re-derives it). A container passed via the URL is
   // honored as a starting point since that reflects an explicit prior choice.
-  const [pickedContainerId, setContainerId] = useState(
+  const [pickedContainerId, setContainerId] = useState("");
+  // Clearing the selections also drops the container that came from the URL.
+  const [urlContainerCleared, setUrlContainerCleared] = useState(false);
+  const urlContainerId =
+    !urlContainerCleared &&
     requestedContainer &&
-      product.containerOptions?.some((c) => c.id === requestedContainer)
+    product.containerOptions?.some((c) => c.id === requestedContainer)
       ? requestedContainer
-      : "",
-  );
+      : "";
   const containerId =
     pickedContainerId ||
+    urlContainerId ||
     soleId((product.containerOptions ?? []).filter((c) => c.available));
 
   const availableSizes = useMemo(
@@ -326,6 +331,7 @@ export default function OrderBuilderTemplate({
   // aren't "unsaved work" worth a leave confirmation.
   const hasPendingSelections =
     !!pickedContainerId ||
+    !!urlContainerId ||
     !!pickedSizeId ||
     !!pickedFlavorFamily ||
     selectedFlavorIds.length > 0 ||
@@ -336,6 +342,7 @@ export default function OrderBuilderTemplate({
   // re-derive themselves).
   const clearSelections = useCallback(() => {
     setContainerId("");
+    setUrlContainerCleared(true);
     setSizeId("");
     setFlavorFamily("");
     setSelectedFlavorIds([]);

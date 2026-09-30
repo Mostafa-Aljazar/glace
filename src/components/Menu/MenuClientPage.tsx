@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useUrlSearchParam } from "@/hooks/useUrlSearchParam";
 import EventsBackground from "@/components/Events/EventsBackground";
 import CartBar from "@/components/Order/CartBar";
 import DataError from "@/components/Common/DataError";
@@ -145,10 +146,9 @@ export default function MenuClientPage() {
     [allCategories],
   );
   const router = useRouter();
-  // `?category=` is read after mount instead of through `useSearchParams`:
-  // that hook makes Next skip server rendering for the whole menu, leaving
-  // search engines an empty page.
-  const [queryCategory, setQueryCategory] = useState<string | null>(null);
+  // Not `useSearchParams`: it would make Next skip server rendering for the
+  // whole menu, leaving search engines an empty page.
+  const queryCategory = useUrlSearchParam("category");
   const { data: storeStatus } = useStoreStatus();
 
   // Use real API data for store status
@@ -162,17 +162,10 @@ export default function MenuClientPage() {
   const selectorScrollRef = useRef<HTMLDivElement | null>(null);
   const suppressObserverRef = useRef(false);
   const suppressObserverTimeoutRef = useRef<number | undefined>(undefined);
-  const [activeCategory, setActiveCategory] = useState("ice-cream");
+  // The category the visitor scrolled/tapped to, else the one in the URL.
+  const [pickedCategory, setActiveCategory] = useState<string | null>(null);
+  const activeCategory = pickedCategory ?? queryCategory ?? "ice-cream";
   const [closedDialogOpen, setClosedDialogOpen] = useState(() => !storeOpen);
-
-  useEffect(() => {
-    const category = new URLSearchParams(window.location.search).get(
-      "category",
-    );
-    if (!category) return;
-    setQueryCategory(category);
-    setActiveCategory(category);
-  }, []);
 
   useEffect(() => {
     if (!queryCategory) return;
