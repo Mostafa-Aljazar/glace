@@ -1,696 +1,304 @@
 openapi: 3.0.3
 info:
   title: Glace API
+  version: 2.0.0
   description: |
-    API specification for the Glace storefront (Next.js) and Filament admin.
+    The endpoints the Glace storefront (this Next.js app) actually calls, with
+    request and response shapes taken from its TypeScript types.
 
-    **Source of truth for open backend work:** `docs/backend-handoff/`
-    (`01` … `14` + README). This file encodes the agreed contract.
+    Each operation names the frontend file that calls it, so the spec and
+    the code can be checked against each other.
 
-    ### Net-new: Auth/Account/Addresses/Cart/Orders/Payments/Wallet (handoff 08-14)
-    Everything under the `Auth`, `Account`, `Addresses`, `Cart`, `Orders`,
-    `Payments`, and `Wallet` tags below is **not implemented on any backend
-    yet** — the frontend currently runs entirely on local state (zustand +
-    localStorage) for these systems. This is net-new endpoint work, not a
-    fix to an existing integration. See `docs/backend-handoff/08` … `14` for
-    full context per system, and `docs/frontend-integration-plan.md` for the
-    frontend-side migration plan once these are live.
+    ### Authentication
+    Signed-in calls send the token from `POST /auth/otp/verify` in the
+    `Authorization` header **as is**, with no `Bearer ` prefix added by the
+    frontend (see `src/lib/axios.ts`).
 
-    Auth has fully moved to **phone/OTP** — there is no password anywhere in
-    the current frontend. Any password-based schema in an older version of
-    this file is stale and superseded by `AuthOtpSendRequest` /
-    `AuthOtpVerifyRequest` below.
+    ### Wire names that differ from the frontend
+    The frontend uses `paypal` for بال باي; the API uses `palpay`. The
+    frontend translates at the network boundary for top-up requests, wallet
+    transactions, payment accounts and `POST /orders`.
 
-    ### Media URLs (handoff 01 · 03 · 04)
-    Every image field (`format: uri`) MUST be an **absolute** URL from
-    `Storage::disk('public')->url(...)` (or a real CDN), e.g.
-    `https://host/storage/products/….png`.
-    - Relative paths (`products/…`, `hero-slides/…`) are **rejected by contract**.
-    - Dead hosts (`cdn.example.com`, `example.com`) are **rejected**.
-
-    ### Dashboard-driven catalogs (handoff 05 · 07 · 01)
-    Builder `containerOptions` / `sizes` / prices, flat-list `items` (+ images),
-    and flat-list `mixes` are edited in Filament and reflected immediately on
-    `GET /menu/products` and `GET /menu/products/{slug}`.
-
-    ### Booleans
-    Never drop `false` fields. Especially `flavors[].available` and
-    `mixes[].available` — omit-when-false breaks the frontend parse.
-
-    ### Brad-boza media (handoff 06)
-    Product has a **single** hero `image`. Do **not** send `secondaryImage`
-    or any companion cup/scoop asset.
-  version: 1.1.0
-  contact:
-    name: Glace Team
-
+    ### Images
+    Image fields are absolute URLs (or `null` where noted). The frontend
+    also accepts storage-relative paths and resolves them against the API
+    origin, but absolute URLs are the contract.
 servers:
-  - url: http://acw348d983gr8x01lb5myd3x.64.176.172.179.sslip.io/api
-    description: Current backend (NEXT_PUBLIC_API_URL)
-  - url: https://glace-bzjj.onrender.com/api
-    description: Staging (Render)
-  - url: http://localhost:8000/api
-    description: Backend API (local)
-  # NOTE: never use `cdn.example.com` / `api.example.com` in live payloads.
-  # Examples below use `cdn.glace.ps` as the intended production CDN shape;
-  # storage absolute URLs (`…/storage/…`) are equally valid.
+  - url: /backend-api
+    description: Same-origin proxy used by the browser (rewritten to the API by next.config.ts)
+  - url: https://back.glaceelameer.com/api
+    description: Production API (NEXT_PUBLIC_API_URL)
 
 tags:
   - name: Home
-    description: Home page content
-  - name: Menu
-    description: Menu categories and items
   - name: Events
-    description: Events and promotions
   - name: Contact
-    description: Contact and support forms
+  - name: Menu
+  - name: Store
   - name: Auth
-    description: |
-      Phone/OTP authentication (handoff 08). Not implemented yet — see
-      `docs/backend-handoff/08-auth-otp.md`.
-  - name: Account
-    description: |
-      Profile read/update (handoff 09). Not implemented yet — see
-      `docs/backend-handoff/09-account-profile.md`. Logout is client-side
-      only (no endpoint) — see the handoff doc.
   - name: Addresses
-    description: |
-      Saved delivery addresses CRUD (handoff 10). Not implemented yet — see
-      `docs/backend-handoff/10-addresses.md`.
   - name: Cart
-    description: |
-      Coupon validation (handoff 11). Not implemented yet — see
-      `docs/backend-handoff/11-cart-coupons.md`. The cart itself stays
-      client-side (zustand) until checkout.
   - name: Orders
-    description: |
-      Order creation, tracking, and delivery zones (handoff 12). Not
-      implemented yet — see `docs/backend-handoff/12-orders.md`.
   - name: Payments
-    description: |
-      Merchant payment accounts for manual bank transfer (handoff 13). Not
-      implemented yet — see `docs/backend-handoff/13-payments.md`.
   - name: Wallet
-    description: |
-      Wallet balance, top-up requests, and deduction (handoff 14). Not
-      implemented yet — see `docs/backend-handoff/14-wallet.md`.
-  - name: Help
-    description: |
-      FAQ list for the help page (handoff 15). Not implemented yet — see
-      `docs/backend-handoff/15-help-faqs.md`.
-  - name: Terms
-    description: |
-      Terms-and-conditions HTML content (handoff 16). Not implemented yet —
-      see `docs/backend-handoff/16-terms-content.md`.
-  - name: Privacy
-    description: |
-      Privacy-policy HTML content (handoff 17). Not implemented yet — see
-      `docs/backend-handoff/17-privacy-content.md`.
+  - name: Content
 
 paths:
+  # ───────────────────────────── Home ─────────────────────────────
   /home:
     get:
       tags: [Home]
-      summary: Get home page content
-      description: |
-        Public aggregate endpoint for the entire home page.
-        Returns hero slides, about, why-glace, branches, and events
-        in a single response so the frontend can load the page with one request.
-
-        **Contract notes (handoff 04):**
-        - All image fields = absolute URLs (`Storage::url` / real CDN).
-        - `about.paragraphs` = `string[]` (NOT `[{ "text": "..." }]`).
-        - `events.items` length up to **10** (latest first), each with a real
-          card image when available.
-        - `whyGlace.features[]` = `{ label }` only — do not send `image`.
+      summary: Full home page content in one request
+      description: "Called by `src/hooks/home/fetchHomePage.ts`."
       operationId: getHomePage
-      security: []
       responses:
         "200":
-          description: Home page content (`IHomePageData`)
+          description: Home page payload
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IHomePageData"
-              example:
-                hero:
-                  slides:
-                    - manImg: https://cdn.glace.ps/home/hero/man-1.png
-                      pieceImg: https://cdn.glace.ps/home/hero/piece-1.png
-                      zigzagsImg: https://cdn.glace.ps/home/hero/zigzags.png
-                      titleH1: جلاسية الأمير
-                      titleH2: لإنتاج الآيس كريم و البراد و العصائر و الحلويات
-                      bgColor: "#51C9F4"
-                      headerBgColor: "#51c9f4"
-                      h1BgColor: "#53352a"
-                      h2BgColor: "#51c9f4"
-                about:
-                  title: موهوبون في صناعة الأيسكريم !
-                  paragraphs:
-                    - تأسس جلاسيه الأمير عام 2015 كأحد أفرع شركة أسكمو الأمير...
-                    - تعمل الشركة على تقديم أجود أنواع الآيس كريم والبراد...
-                  image: https://cdn.glace.ps/home/about/character.png
-                  ctaLabel: اعرف أكثر
-                  ctaHref: /about
-                whyGlace:
-                  title: لماذا جلاسيه الأمير؟
-                  description: جلاسيه الأمير حاصلة على شهادة الجودة العالمية لسلامة الغذاء ISO 22000
-                  features:
-                    - label: جودة عالية
-                    - label: أمانة وثقة
-                  videoUrl: https://www.youtube.com/embed/ShMr0XzIqSM
-                  videoThumbnail: https://cdn.glace.ps/home/why/video-thumb.png
-                branches:
-                  title: ننتظركم في المواعيد التالية
-                  branches:
-                    - id: ramal
-                      label: فرع الرمال
-                      mapSrc: https://www.google.com/maps/embed?...
-                      address: غزة، الرمال، شارع الشهداء...
-                      phone: "0592 226 522"
-                      whatsapp: "0592 226 522"
-                      weekdayHours: "PM 11:45 – AM 10:00"
-                      fridayHours: "PM 11:45 – PM02:00"
-                      borderRadius: "32% 68% 69% 31% / 30% 28% 72% 70%"
-                events:
-                  title: الفعاليات و المناسبات
-                  moreLabel: عرض المزيد
-                  moreHref: /events
-                  items:
-                    - id: 1
-                      title: مشارك معرض الصناعات الغذائية الفلسطينية
-                      image: https://cdn.glace.ps/home/events/1.png
-                      href: /events/1
-        "500":
-          $ref: "#/components/responses/ServerError"
+                $ref: "#/components/schemas/HomePage"
 
+  # ───────────────────────────── Events ─────────────────────────────
   /events:
     get:
       tags: [Events]
-      summary: List events
-      description: |
-        Public paginated list of events for `/events`.
-        Matches TypeScript `IEventsListResponse` / `IEvent`.
-
-        **Contract (handoff 04):** every listed event SHOULD have a non-null
-        `listImage` absolute URL. `images` must be a string array with **no
-        `null` entries** (empty `[]` if no gallery yet).
-      operationId: getEvents
-      security: []
+      summary: Paginated events
+      description: "Called by `src/hooks/events/fetchEvents.ts` (default `perPage` is 8)."
+      operationId: listEvents
       parameters:
-        - name: page
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-          example: 1
-        - name: perPage
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 50
-            default: 8
-          example: 8
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
       responses:
         "200":
-          description: Paginated events list (`IEventsListResponse`)
+          description: One page of events
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IEventsListResponse"
-              example:
-                items:
-                  - id: 2
-                    title: أجواء العيد مع جلاسيه غير
-                    date: "11/06/2020"
-                    description: كل عام وانتم بخير بحلول عيد الفطر المبارك...
-                    listImage: https://cdn.glace.ps/events/2-list.png
-                    images:
-                      - https://cdn.glace.ps/events/2-a.png
-                      - https://cdn.glace.ps/events/2-b.png
-                total: 10
-                page: 1
-                perPage: 8
-                totalPages: 2
-        "500":
-          $ref: "#/components/responses/ServerError"
+                $ref: "#/components/schemas/EventsPage"
 
   /events/{id}:
     get:
       tags: [Events]
-      summary: Get event by id
-      description: |
-        Public event detail for `/events/{id}`.
-        Matches TypeScript `IEvent`.
-
-        **Contract (handoff 04):** `images` is the detail gallery — absolute
-        URL strings only. Never return `[null, null, …]`. Manage uploads from
-        Filament (multi-file / repeater), not card image alone.
-      operationId: getEventById
-      security: []
+      summary: One event
+      description: "Called by `src/hooks/events/fetchEventById.ts`. A 404 is shown as \"not found\"; any other failure as an error."
+      operationId: getEvent
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: integer
-            minimum: 1
-          example: 2
       responses:
         "200":
-          description: Event detail (`IEvent`)
+          description: The event
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IEvent"
-              example:
-                id: 2
-                title: أجواء العيد مع جلاسيه غير
-                date: "11/06/2020"
-                description: كل عام وانتم بخير بحلول عيد الفطر المبارك احتفالنا معكم بالعيد أجمل...
-                listImage: https://cdn.glace.ps/events/2-list.png
-                images:
-                  - https://cdn.glace.ps/events/2-a.png
-                  - https://cdn.glace.ps/events/2-b.png
-                  - https://cdn.glace.ps/events/2-c.png
-                  - https://cdn.glace.ps/events/2-d.png
+                $ref: "#/components/schemas/Event"
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
+  # ───────────────────────────── Contact ─────────────────────────────
   /contact:
     post:
       tags: [Contact]
-      summary: Send contact message
-      description: |
-        Public contact form submission.
-        Matches TypeScript `IContactRequest` → `IContactResponse`.
+      summary: Send a contact form message
+      description: "Called by `src/hooks/contact/sendContactMessage.ts`. A response with `success: false` is treated as a failure and its `message` is shown."
       operationId: sendContactMessage
-      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/IContactRequest"
-            example:
-              name: أحمد علي
-              phone: "0592123456"
-              email: ahmed@example.com
-              message: أريد الاستفسار عن العروض الحالية
+              $ref: "#/components/schemas/ContactRequest"
       responses:
         "200":
-          description: Message accepted (`IContactResponse`)
+          description: Delivery result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IContactResponse"
-              example:
-                success: true
-                message: تم إرسال رسالتك بنجاح
+                $ref: "#/components/schemas/ContactResponse"
         "422":
           $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
+  # ───────────────────────────── Menu ─────────────────────────────
   /menu/categories:
     get:
       tags: [Menu]
-      summary: List menu categories
-      description: |
-        Public list of browse-grid category tabs for `/menu`.
-        Matches TypeScript `IMenuCategory`.
-      operationId: getMenuCategories
-      security: []
+      summary: Menu categories
+      description: "Called by `src/hooks/menu/fetchMenuCategories.ts`. Categories with `available: false` are hidden."
+      operationId: listMenuCategories
       responses:
         "200":
-          description: Menu categories (`IMenuCategory[]`)
+          description: All categories
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/IMenuCategory"
-              example:
-                - id: pancake
-                  label: بان كيك
-                  icon: cake
-                  accentColor: "#f4a851"
-                  gradientFrom: "#f4a851"
-                  gradientTo: "#c97d2a"
-                  sortOrder: 11
-        "500":
-          $ref: "#/components/responses/ServerError"
+                  $ref: "#/components/schemas/MenuCategory"
 
   /menu/products:
     get:
       tags: [Menu]
-      summary: List products
+      summary: Products, optionally filtered by category
       description: |
-        Public list of orderable/reference products, optionally filtered by
-        category. Matches TypeScript `IProduct` — a discriminated union on
-        `kind` (`builder` | `flat-list`).
-
-        **Contract (handoff 01 · 02 · 03 · 05 · 07):**
-        - Filter query is **`category`** (= `IMenuCategory.id`). Do **not**
-          treat `categoryId` as a silent alias — return **422** (or ignore
-          explicitly). Never return the full unfiltered catalog when a wrong
-          filter key was sent as if filtering succeeded.
-        - List rows MUST **omit** `flavors[]` (detail-only).
-        - Flat-list `items[].image` is **required** on every item.
-        - Builder `containerOptions` / `sizes` and flat-list `mixes` are
-          Filament-managed and must round-trip here.
-      operationId: getMenuProducts
-      security: []
+        Called by `src/hooks/menu/fetchMenuProducts.ts`. The frontend calls
+        it without `category` to get every product in one request.
+        List items omit `flavors`; those only come with `GET /menu/products/{slug}`.
+      operationId: listMenuProducts
       parameters:
         - name: category
           in: query
           required: false
-          description: |
-            Filter by `IMenuCategory.id`. Wrong key `categoryId` is not
-            supported — respond 422 ValidationError (handoff 03).
+          description: A `MenuCategory.id`
           schema:
             type: string
-          example: pancake
       responses:
         "200":
-          description: Products (`IProduct[]`)
+          description: Products
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/IProduct"
-              example:
-                - id: "a1c3e5f7-1111-4b22-9c33-aa44bb55cc66"
-                  slug: pancake
-                  categoryId: pancake
-                  kind: flat-list
-                  name: بان كيك
-                  description: بان كيك طازج بنكهات متنوعة
-                  image: https://cdn.glace.ps/menu/pancake.jpg
-                  sortOrder: 1
-                  available: true
-                  inStoreOnly: true
-                  hasFavorites: true
-                  hasNotes: true
-                  addons:
-                    - id: extra-nutella
-                      label: صوص نوتيلا إضافي
-                      price: 4
-                      available: true
-                    - id: extra-nuts
-                      label: بندق مبشور
-                      price: 4
-                      available: true
-                    - id: extra-ice-cream-classic
-                      label: آيس كريم إضافي - كلاسيك
-                      price: 5
-                      available: true
-                      type: counter
-                      maxQty: 3
-                    - id: extra-ice-cream-special
-                      label: آيس كريم إضافي - سبيشل
-                      price: 8
-                      available: true
-                      type: counter
-                      maxQty: 3
-                  items:
-                    - id: nutella
-                      label: نوتيلا
-                      price: 11
-                      available: true
-                      description: بان كيك بصوص النوتيلا
-                      image: https://cdn.glace.ps/menu/pancake-nutella.jpg
-                    - id: lotus
-                      label: لوتس
-                      price: 13
-                      available: true
-                      image: https://cdn.glace.ps/menu/pancake-lotus.jpg
-                    - id: pistachio
-                      label: بيستاشيو
-                      price: 17
-                      available: true
-                      isPremiumMixFlavor: true
-                      image: https://cdn.glace.ps/menu/pancake-pistachio.jpg
-                  mixes:
-                    - id: mix
-                      label: مكس (اختر طعمين)
-                      available: true
-                      pick: 2
-                      basePrice: 14
-                      flavorPrice: 7
-                      premiumFlavorPrice: 11
-                      itemIds: [nutella, lotus, pistachio]
-                - id: "b7f1c2a4-9e3d-4a10-8c21-3f5a2d1e9b04"
-                  slug: cup
-                  categoryId: ice-cream
-                  kind: builder
-                  name: بوظة كاسة
-                  image: https://cdn.glace.ps/menu/cup.jpg
-                  sortOrder: 1
-                  available: true
-                  selectionMode: repeatable
-                  flavorFamilies: [classic, special, mix]
-                  hasExtraBiscuitAddon: true
-                  containerOptions:
-                    - id: cup
-                      label: كاسة
-                      available: true
-                    - id: biscuit
-                      label: بسكوت
-                      available: true
-                      name: بوظة بسكوت
-                      image: https://cdn.glace.ps/menu/biscuit.jpg
-                  sizes:
-                    - id: cup-small
-                      label: صغير
-                      maxBalls: 1
-                      containerId: cup
-                      prices:
-                        - flavorFamily: classic
-                          price: 2
-                        - flavorFamily: special
-                          price: 4
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/ServerError"
+                  $ref: "#/components/schemas/Product"
 
   /menu/products/{slug}:
     get:
       tags: [Menu]
-      summary: Get product by slug
+      summary: One product, with its builder flavors inline
       description: |
-        Public product detail for `/menu/order/{type}` — looked up by the
-        product's **`slug`** column (route-model-bind on `slug`, NOT the
-        primary key). In Laravel: `Route::get('products/{product:slug}', ...)`.
-        The response's `id` is still the internal PK to send back when
-        POSTing cart/order data. Matches TypeScript `IProduct`.
-
-        **Contract (handoff 02 · 05 · 06 · 07):**
-        - Builder products with a flavor step (`cup`, `family`, `brad-boza`)
-          MUST include `flavors[]`; every flavor includes `available` even when
-          `false`. List endpoint omits `flavors`.
-        - `family` detail MUST return a non-empty `flavors[]`.
-        - Brad-boza: single product `image` only — **no** `secondaryImage`.
-          `pricingLabel` may already include «أسعار» (frontend does not
-          double-prefix).
-        - `containerOptions` / `sizes` / `iceCreamAddonPrices` / `mixes` are
-          Filament CRUD surfaces; changes appear here without a frontend deploy.
-      operationId: getMenuProductBySlug
-      security: []
+        Called by `src/hooks/menu/fetchMenuProductById.ts`. The API currently
+        answers an unknown slug with `200 {}`; the frontend treats an empty
+        body the same as a 404.
+      operationId: getMenuProduct
       parameters:
         - name: slug
           in: path
           required: true
-          description: Stable URL-safe identifier (`IProductBase.slug`)
+          description: "`Product.slug`, e.g. `cup`, `family`, `waffle`"
           schema:
             type: string
-          example: cup
       responses:
         "200":
-          description: Product detail (`IProduct`)
+          description: The product (or `{}` when the slug is unknown)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IProduct"
-              example:
-                id: "b7f1c2a4-9e3d-4a10-8c21-3f5a2d1e9b04"
-                slug: cup
-                categoryId: ice-cream
-                kind: builder
-                name: بوظة كاسة
-                image: https://cdn.glace.ps/menu/cup.jpg
-                sortOrder: 1
-                available: true
-                selectionMode: repeatable
-                flavorFamilies: [classic, special, mix]
-                hasExtraBiscuitAddon: true
-                containerOptions:
-                  - id: cup
-                    label: كاسة
-                    available: true
-                    pricingLabel: الكاسة
-                  - id: biscuit
-                    label: بسكوت
-                    available: true
-                    name: بوظة بسكوت
-                    image: https://cdn.glace.ps/menu/biscuit.jpg
-                    pricingLabel: البسكوت
-                sizes:
-                  - id: cup-small
-                    label: صغير
-                    maxBalls: 1
-                    containerId: cup
-                    prices:
-                      - flavorFamily: classic
-                        price: 2
-                      - flavorFamily: special
-                        price: 4
+                $ref: "#/components/schemas/Product"
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /menu/addons:
     get:
       tags: [Menu]
-      summary: List additions catalog
-      description: |
-        Public shared additions (إضافات) catalog — the per-unit extras a
-        customer can attach to a cart line (e.g. sauces, nuts, biscuit), each
-        with its own price. Applied to any product in the cart's
-        "تخصيص الإضافات" flow. A product MAY override this shared list with its
-        own `IProductBase.addons`. Matches TypeScript `IAddonOption[]`.
-      operationId: getMenuAddons
-      security: []
+      summary: Shared addon catalog
+      description: "Called by `src/hooks/menu/fetchMenuAddons.ts`. Includes the `extra-biscuit` addon used by builder products."
+      operationId: listMenuAddons
       responses:
         "200":
-          description: Additions catalog (`IAddonOption[]`)
+          description: All addons
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/IAddonOption"
-              example:
-                - id: extra-biscuit
-                  label: بسكوت مخروط
-                  price: 3
-                  available: true
-                  type: counter
-                  maxQty: 10
-                - id: extra-caramel
-                  label: صوص كراميل
-                  price: 3
-                  available: true
-                  type: toggle
-                - id: extra-nuts
-                  label: بندق مبشور
-                  price: 4
-                  available: true
-                  type: toggle
-        "500":
-          $ref: "#/components/responses/ServerError"
+                  $ref: "#/components/schemas/AddonOption"
 
-  # --- Auth (handoff 08) — NOT IMPLEMENTED YET ---
+  # ───────────────────────────── Store ─────────────────────────────
+  /store/status:
+    get:
+      tags: [Store]
+      summary: Whether the store and delivery are open now, with schedules
+      description: "Called by `src/hooks/store/fetchStoreStatus.ts`."
+      operationId: getStoreStatus
+      responses:
+        "200":
+          description: Current status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreStatus"
+
+  # ───────────────────────────── Auth ─────────────────────────────
   /auth/otp/send:
     post:
       tags: [Auth]
-      summary: Send OTP code to a phone number
-      description: |
-        **Not implemented yet (handoff 08).** Sends a one-time code via SMS.
-        Register vs. login is not distinguished here — verify decides.
+      summary: Text a login code to a phone number
+      description: "Called by `useSendOtp` in `src/hooks/auth/useOtpAuth.ts`."
       operationId: sendOtp
-      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AuthOtpSendRequest"
+              $ref: "#/components/schemas/OtpSendRequest"
       responses:
         "200":
-          description: OTP sent
+          description: Code sent
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SuccessMessage"
+                $ref: "#/components/schemas/OtpSendResponse"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
-          description: Rate limited — too many OTP requests for this phone
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "500":
-          $ref: "#/components/responses/ServerError"
+          $ref: "#/components/responses/TooManyRequests"
 
   /auth/otp/verify:
     post:
       tags: [Auth]
-      summary: Verify OTP code and authenticate
+      summary: Verify the code and sign in (or sign up)
       description: |
-        **Not implemented yet (handoff 08).** `fullName` is required only on
-        first-time registration; omit for an existing user's login.
+        Called by `useVerifyOtp` in `src/hooks/auth/useOtpAuth.ts`.
+        `fullName` is sent for new users (`userExists: false` from the send step).
       operationId: verifyOtp
-      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AuthOtpVerifyRequest"
+              $ref: "#/components/schemas/OtpVerifyRequest"
       responses:
         "200":
-          description: Authenticated (`AuthOtpResponse`)
+          description: Signed in
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthOtpResponse"
+                $ref: "#/components/schemas/OtpVerifyResponse"
         "422":
-          description: Invalid or expired code
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/ValidationError"
         "429":
-          $ref: "#/components/responses/ServerError"
-        "500":
-          $ref: "#/components/responses/ServerError"
+          $ref: "#/components/responses/TooManyRequests"
 
-  # --- Account (handoff 09) — NOT IMPLEMENTED YET ---
   /auth/me:
     get:
-      tags: [Account]
-      summary: Get current authenticated user
-      description: "**Not implemented yet (handoff 09).**"
+      tags: [Auth]
+      summary: The signed-in user
+      description: "Called by `src/hooks/auth/useMe.ts`."
       operationId: getMe
+      security:
+        - TokenAuth: []
       responses:
         "200":
-          description: Current user (`AuthUser`)
+          description: Current user
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthUser"
+                $ref: "#/components/schemas/UserResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /auth/profile:
     put:
-      tags: [Account]
-      summary: Update current user's profile
-      description: "**Not implemented yet (handoff 09).** `name` and `email` required; `phone` optional."
+      tags: [Auth]
+      summary: Update the signed-in user's profile
+      description: "Called by `src/hooks/auth/useUpdateProfile.ts`."
       operationId: updateProfile
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
@@ -699,28 +307,31 @@ paths:
               $ref: "#/components/schemas/UpdateProfileRequest"
       responses:
         "200":
-          description: Updated user (`AuthUser`)
+          description: Updated user
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthUser"
+                $ref: "#/components/schemas/UserResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
-  # --- Addresses (handoff 10) — NOT IMPLEMENTED YET ---
+  # ───────────────────────────── Addresses ─────────────────────────────
   /addresses:
     get:
       tags: [Addresses]
-      summary: List current user's saved addresses
-      description: "**Not implemented yet (handoff 10).**"
-      operationId: getAddresses
+      summary: The user's saved addresses
+      description: |
+        Called by `src/hooks/addresses/fetchAddresses.ts`. The API currently
+        omits `area`, `zoneDescription` and `fee`; the frontend fills them in
+        from `GET /addresses/delivery-zones` by `zoneId`.
+      operationId: listAddresses
+      security:
+        - TokenAuth: []
       responses:
         "200":
-          description: Saved addresses (`SavedAddress[]`)
+          description: Saved addresses
           content:
             application/json:
               schema:
@@ -729,22 +340,28 @@ paths:
                   $ref: "#/components/schemas/SavedAddress"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/ServerError"
     post:
       tags: [Addresses]
-      summary: Add a new saved address
-      description: "**Not implemented yet (handoff 10).**"
-      operationId: addAddress
+      summary: Save a new address
+      description: "Called by `src/hooks/addresses/useAddAddress.ts`."
+      operationId: createAddress
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AddressRequest"
+              $ref: "#/components/schemas/AddressInput"
       responses:
+        "200":
+          description: The saved address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedAddress"
         "201":
-          description: Created (`SavedAddress`)
+          description: The saved address
           content:
             application/json:
               schema:
@@ -753,30 +370,26 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /addresses/{id}:
+    parameters:
+      - $ref: "#/components/parameters/AddressId"
     put:
       tags: [Addresses]
       summary: Update a saved address
-      description: "**Not implemented yet (handoff 10).**"
+      description: "Called by `src/hooks/addresses/useUpdateAddress.ts`."
       operationId: updateAddress
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AddressRequest"
+              $ref: "#/components/schemas/AddressInput"
       responses:
         "200":
-          description: Updated (`SavedAddress`)
+          description: The updated address
           content:
             application/json:
               schema:
@@ -787,48 +400,36 @@ paths:
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/ServerError"
     delete:
       tags: [Addresses]
       summary: Delete a saved address
-      description: "**Not implemented yet (handoff 10).**"
+      description: "Called by `src/hooks/addresses/useDeleteAddress.ts`. The response body is ignored."
       operationId: deleteAddress
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      security:
+        - TokenAuth: []
       responses:
         "200":
           description: Deleted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessMessage"
+        "204":
+          description: Deleted
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /addresses/{id}/default:
+    parameters:
+      - $ref: "#/components/parameters/AddressId"
     post:
       tags: [Addresses]
-      summary: Set an address as default
-      description: "**Not implemented yet (handoff 10).**"
+      summary: Make an address the default one
+      description: "Called by `src/hooks/addresses/useSetDefaultAddress.ts`. No request body."
       operationId: setDefaultAddress
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      security:
+        - TokenAuth: []
       responses:
         "200":
-          description: Updated (`SavedAddress`)
+          description: The address, now default
           content:
             application/json:
               schema:
@@ -837,39 +438,32 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /addresses/delivery-zones:
     get:
       tags: [Addresses]
-      summary: List delivery zones and fees
-      description: |
-        **Not implemented yet (handoff 10).** Replaces the frontend's
-        hardcoded 31-zone table in `src/lib/deliveryZones.ts` — same shape.
-      operationId: getDeliveryZones
+      summary: Delivery zones with their fees
+      description: "Called by `src/lib/deliveryZones.ts` without a token."
+      operationId: listDeliveryZones
       responses:
         "200":
-          description: Delivery zones (`DeliveryZone[]`)
+          description: All zones
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/DeliveryZone"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
-  # --- Cart (handoff 11) — NOT IMPLEMENTED YET ---
+  # ───────────────────────────── Cart ─────────────────────────────
   /cart/apply-coupon:
     post:
       tags: [Cart]
-      summary: Validate a coupon code against a subtotal
-      description: |
-        **Not implemented yet (handoff 11).** Replaces the frontend's
-        hardcoded `VALID_COUPONS` table. Server is the source of truth for
-        discount amount — recomputed again at order time (`POST /orders`).
+      summary: Check a coupon against the cart subtotal
+      description: "Called by `src/hooks/cart/applyCouponRequest.ts`."
       operationId: applyCoupon
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
@@ -878,70 +472,67 @@ paths:
               $ref: "#/components/schemas/ApplyCouponRequest"
       responses:
         "200":
-          description: Coupon result (`ApplyCouponResponse`)
+          description: "Coupon result (`valid: false` for an unknown or expired code)"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApplyCouponResponse"
+                $ref: "#/components/schemas/ApplyCouponResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
-  # --- Orders (handoff 12) — NOT IMPLEMENTED YET ---
+  # ───────────────────────────── Orders ─────────────────────────────
   /orders:
     get:
       tags: [Orders]
-      summary: List current user's orders
-      description: "**Not implemented yet (handoff 12).** Newest first."
-      operationId: getOrders
+      summary: The user's orders, newest first
+      description: "Called by `src/hooks/orders/fetchOrders.ts` (default `perPage` is 20)."
+      operationId: listOrders
+      security:
+        - TokenAuth: []
       parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-        - name: perPage
-          in: query
-          schema:
-            type: integer
-            default: 20
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
       responses:
         "200":
-          description: Paginated orders, newest first (`OrdersResponse`)
+          description: One page of orders
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrdersResponse"
+                $ref: "#/components/schemas/OrdersPage"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/ServerError"
     post:
       tags: [Orders]
-      summary: Create an order
+      summary: Place an order
       description: |
-        **Not implemented yet (handoff 12).** **Critical:** the server MUST
-        recompute all pricing (`unitPrice`, `addonTotal`, `subtotal`,
-        `discount`, `total`) from `productId` / selection ids / quantity /
-        `couponCode` — never trust prices sent by the frontend.
-        `addressId` references a saved address (handoff 10); the server
-        resolves and snapshots it into `order.address`. A delivery order
-        containing a delivery-restricted item must be rejected with 422.
-        Multipart request — `items` is sent as a JSON-encoded string field
-        (the rest are plain form fields) since `receiptImage` is a real file.
-      operationId: createOrder
+        Called by `src/hooks/orders/usePlaceOrder.ts`. Sent as
+        `multipart/form-data` so a receipt photo can be attached as a file.
+        `items` is a JSON-encoded array.
+      operationId: placeOrder
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/CreateOrderRequest"
+              $ref: "#/components/schemas/PlaceOrderRequest"
+            encoding:
+              items:
+                contentType: application/json
+              receiptImage:
+                contentType: image/*
       responses:
+        "200":
+          description: The created order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
         "201":
-          description: Created (`Order`)
+          description: The created order
           content:
             application/json:
               schema:
@@ -949,84 +540,50 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
-          description: |
-            Validation failed, or a delivery-restricted item was included
-            with `deliveryMethod: delivery`
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "500":
-          $ref: "#/components/responses/ServerError"
+          $ref: "#/components/responses/ValidationError"
 
   /orders/jawwal/send-code:
     post:
       tags: [Orders]
-      summary: Start jawwal (automatic) payment for a pending order — server asks JawwalPay to text a payment code
+      summary: Ask JawwalPay to text a payment code for an order
       description: |
-        **Not implemented yet (handoff 12).** Same JawwalPay integration as
-        `POST /wallet/topup-requests/jawwal/send-code` — the server asks
-        JawwalPay to text `phone` a code confirming payment of `amount`
-        (the order total). The returned code is then passed as
-        `jawwalPhone`/`jawwalCode` on the immediately-following
-        `POST /orders` call — the frontend never talks to JawwalPay
-        directly, and no order exists yet at this point. Rate-limit per
-        phone to avoid SMS abuse.
+        Called by `src/hooks/orders/useSendJawwalOrderCode.ts`. `amount` is the
+        live order total. The phone and code are then sent with `POST /orders`
+        as `jawwalPhone` and `jawwalCode`.
       operationId: sendJawwalOrderCode
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [phone, amount]
-              properties:
-                phone:
-                  type: string
-                  example: "0599123456"
-                amount:
-                  type: number
-                  example: 42.5
+              $ref: "#/components/schemas/JawwalSendCodeRequest"
       responses:
         "200":
           description: Code sent
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  sent:
-                    type: boolean
-                    example: true
+                $ref: "#/components/schemas/SentResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/ValidationError"
-        "429":
-          description: Too many code requests for this phone
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /orders/{id}:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
     get:
       tags: [Orders]
-      summary: Get order detail
-      description: "**Not implemented yet (handoff 12).** Used by the order tracking page."
-      operationId: getOrderById
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: ORD-M3K2A1
+      summary: One order
+      description: "Called by `src/hooks/orders/fetchOrderById.ts`."
+      operationId: getOrder
+      security:
+        - TokenAuth: []
       responses:
         "200":
-          description: Order detail (`Order`)
+          description: The order
           content:
             application/json:
               schema:
@@ -1035,44 +592,26 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /orders/{id}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
     post:
       tags: [Orders]
       summary: Cancel an order
-      description: |
-        **Not implemented yet (handoff 12).** Rejected with 409 if the order
-        is already in a final status (delivered/received/cancelled/refunded).
-        Sets status to `ملغي` only — does NOT refund to the wallet
-        automatically. The paid amount stays "قيد المراجعة" (under review)
-        until staff verifies and processes it; a separate, later transition
-        to `مسترد` (refunded, likely via a staff/dashboard action, out of
-        scope for this handoff) is what actually credits the wallet. The
-        frontend's cancel dialog reflects this — "قيد المراجعة", not an
-        instant/automatic refund.
+      description: "Called by `src/hooks/orders/useCancelOrder.ts`."
       operationId: cancelOrder
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [reason]
-              properties:
-                reason:
-                  type: string
-                  example: غيرت رأيي
+              $ref: "#/components/schemas/CancelOrderRequest"
       responses:
         "200":
-          description: Cancelled (`Order`)
+          description: The cancelled order
           content:
             application/json:
               schema:
@@ -1081,1145 +620,663 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          description: Order already in a final status
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "500":
-          $ref: "#/components/responses/ServerError"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
   /orders/{id}/receipt:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
     post:
       tags: [Orders]
-      summary: Upload/replace a payment receipt for an order
-      description: |
-        **Not implemented yet (handoff 12).** `RECEIPT_METHODS` orders only
-        (`jawwal-manual` / `paypal` / `bop`). Multipart file upload — server
-        returns a stored URL, never a stored base64 string.
-      operationId: uploadOrderReceipt
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      summary: Replace an order's transfer receipt
+      description: "Called by `src/hooks/orders/useUpdateReceipt.ts`. Sent as `multipart/form-data`."
+      operationId: updateOrderReceipt
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              type: object
-              properties:
-                receiptImage:
-                  type: string
-                  format: binary
-                receiptNote:
-                  type: string
-                  nullable: true
+              $ref: "#/components/schemas/UpdateReceiptRequest"
+            encoding:
+              receiptImage:
+                contentType: image/*
       responses:
         "200":
-          description: Updated (`Order`)
+          description: The updated order
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          description: Invalid file type/size
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "500":
-          $ref: "#/components/responses/ServerError"
-
-  /orders/{id}/received:
-    post:
-      tags: [Orders]
-      summary: Customer confirms receipt of a delivery order
-      description: "**Not implemented yet (handoff 12).** Sets status to تم الاستلام and records `receivedAt`."
-      operationId: markOrderReceived
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Updated (`Order`)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Order"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/ServerError"
-
-  /orders/{id}/email-summary:
-    post:
-      tags: [Orders]
-      summary: Email the order summary/receipt to a given address
-      description: |
-        **Not implemented yet (handoff 12).** Optional convenience action on
-        the order-tracking page ("يوصلك ملخص الطلب على إيميلك؟") — sends the
-        order summary (items, totals, status) to `email`. Not tied to the
-        account's own email; the customer can type any address. Does not
-        require the order to be in any particular status.
-      operationId: emailOrderSummary
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email]
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: customer@example.com
-      responses:
-        "200":
-          description: Sent
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  sent:
-                    type: boolean
-                    example: true
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
-  # --- Payments (handoff 13) — NOT IMPLEMENTED YET ---
+  /orders/{id}/received:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
+    post:
+      tags: [Orders]
+      summary: Mark a delivered order as received by the customer
+      description: "Called by `src/hooks/orders/useMarkReceived.ts`. No request body."
+      operationId: markOrderReceived
+      security:
+        - TokenAuth: []
+      responses:
+        "200":
+          description: The updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /orders/{id}/email-summary:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
+    post:
+      tags: [Orders]
+      summary: Email the order summary to any address
+      description: "Called by `src/hooks/orders/useEmailOrderSummary.ts`. The address is typed by the customer and need not be the account email."
+      operationId: emailOrderSummary
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailSummaryRequest"
+      responses:
+        "200":
+          description: Email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SentResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  # ───────────────────────────── Payments ─────────────────────────────
   /payment-accounts:
     get:
       tags: [Payments]
-      summary: List merchant payment accounts for manual transfer
+      summary: The store's receiving accounts per payment method
       description: |
-        **Not implemented yet (handoff 13).** Replaces the frontend's
-        hardcoded `src/lib/merchantPaymentAccounts.ts`. Include a `visa`
-        entry with `inStoreOnly: true` and no account fields — the frontend
-        uses it only to show "pay in-store" copy, never a transfer account.
-      operationId: getPaymentAccounts
-      security: []
+        Called by `src/lib/merchantPaymentAccounts.ts` without a token. The
+        frontend maps `palpay` to `paypal`, `primaryLabel`/`primaryValue` to
+        its account label/value, and `secondaryValue` to the IBAN.
+      operationId: listPaymentAccounts
       responses:
         "200":
-          description: Payment accounts (`MerchantPaymentAccount[]`)
+          description: One entry per payment method
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/MerchantPaymentAccount"
-        "500":
-          $ref: "#/components/responses/ServerError"
+                  $ref: "#/components/schemas/PaymentAccount"
 
-  # --- Wallet (handoff 14) — NOT IMPLEMENTED YET ---
+  # ───────────────────────────── Wallet ─────────────────────────────
   /wallet:
     get:
       tags: [Wallet]
-      summary: Get wallet balance
-      description: |
-        **Not implemented yet (handoff 14).** Balance only — transaction
-        history moved to the paginated `GET /wallet/transactions` below.
+      summary: Wallet balance
+      description: "Called by `src/hooks/wallet/fetchWallet.ts`."
       operationId: getWallet
+      security:
+        - TokenAuth: []
       responses:
         "200":
-          description: Wallet (`WalletResponse`)
+          description: Balance in ILS
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WalletResponse"
+                $ref: "#/components/schemas/WalletBalance"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /wallet/transactions:
     get:
       tags: [Wallet]
-      summary: List current user's wallet transactions, paginated
-      description: "**Not implemented yet (handoff 14).** Newest first."
-      operationId: getWalletTransactions
+      summary: Paginated wallet transactions
+      description: "Called by `src/hooks/wallet/fetchWalletTransactions.ts` (default `perPage` is 20)."
+      operationId: listWalletTransactions
+      security:
+        - TokenAuth: []
       parameters:
-        - name: page
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-          example: 1
-        - name: perPage
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 50
-            default: 20
-          example: 20
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
       responses:
         "200":
-          description: Paginated wallet transactions (`WalletTransactionsResponse`)
+          description: One page of transactions
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WalletTransactionsResponse"
+                $ref: "#/components/schemas/WalletTransactionsPage"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /wallet/topup-requests:
     get:
       tags: [Wallet]
-      summary: List current user's top-up requests
-      description: "**Not implemented yet (handoff 14).**"
-      operationId: getTopUpRequests
+      summary: The user's top-up requests
+      description: "Called by `src/hooks/wallet/fetchTopUpRequests.ts`."
+      operationId: listTopUpRequests
+      security:
+        - TokenAuth: []
       responses:
         "200":
-          description: Top-up requests (`TopUpRequest[]`)
+          description: All top-up requests
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TopUpRequest"
+                $ref: "#/components/schemas/TopUpRequestsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/ServerError"
     post:
       tags: [Wallet]
-      summary: Submit a receipt-based wallet top-up request
+      summary: Submit a receipt-based top-up request
       description: |
-        **Not implemented yet (handoff 14).** Covers `bop`/`paypal`/
-        `jawwal-manual` only — the customer transfers externally, then
-        uploads the receipt here. Stays `قيد المراجعة` until an admin
-        approves it from Filament and sets the real `amount` off the
-        receipt — there is no user-facing approval endpoint, and the
-        customer never types the amount themselves (avoids it disagreeing
-        with what the receipt actually shows).
-
-        The `jawwal` (automatic) method does **not** use this endpoint — see
-        `POST /wallet/topup-requests/jawwal/send-code` and `.../confirm`
-        below, which credit the balance immediately instead of queuing a
-        request for manual review.
+        Called by `src/hooks/wallet/useSubmitTopUpRequest.ts`. Only for the
+        receipt methods; automatic JawwalPay uses the `jawwal/*` endpoints below.
+        The request starts as `قيد المراجعة` until staff check the receipt.
       operationId: submitTopUpRequest
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              type: object
-              required: [method, receiptImage]
-              properties:
-                method:
-                  type: string
-                  enum: [bop, paypal, jawwal-manual]
-                receiptImage:
-                  type: string
-                  format: binary
-                receiptNote:
-                  type: string
-                  nullable: true
+              $ref: "#/components/schemas/SubmitTopUpRequest"
+            encoding:
+              receiptImage:
+                contentType: image/*
       responses:
-        "201":
-          description: Created (`TopUpRequest`)
+        "200":
+          description: The created request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TopUpRequest"
+                $ref: "#/components/schemas/TopUpRequestResponse"
+        "201":
+          description: The created request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopUpRequestResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /wallet/topup-requests/jawwal/send-code:
     post:
       tags: [Wallet]
-      summary: Start a jawwal (automatic) top-up — server asks JawwalPay to text a payment code
-      description: |
-        **Not implemented yet (handoff 14).** The server calls JawwalPay's
-        API to push an SMS to `phone` asking the customer to confirm paying
-        `amount` — the code is generated and owned by JawwalPay, not by our
-        backend. The frontend never talks to JawwalPay directly. Rate-limit
-        per phone to avoid SMS abuse.
+      summary: Step 1 of an automatic JawwalPay top-up (text a code)
+      description: "Called by `useSendJawwalTopUpCode` in `src/hooks/wallet/useJawwalTopUp.ts`."
       operationId: sendJawwalTopUpCode
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [phone, amount]
-              properties:
-                phone:
-                  type: string
-                  example: "0599123456"
-                amount:
-                  type: number
-                  example: 50
+              $ref: "#/components/schemas/JawwalSendCodeRequest"
       responses:
         "200":
           description: Code sent
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  sent:
-                    type: boolean
-                    example: true
+                $ref: "#/components/schemas/SentResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/ValidationError"
-        "429":
-          description: Too many code requests for this phone
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /wallet/topup-requests/jawwal/confirm:
     post:
       tags: [Wallet]
-      summary: Confirm a jawwal top-up with the code JawwalPay texted the customer
+      summary: Step 2 of an automatic JawwalPay top-up (verify the code)
       description: |
-        **Not implemented yet (handoff 14).** The server verifies `code`
-        against JawwalPay for this `phone`/`amount` pair. On success the
-        transfer already happened on JawwalPay's side, so — unlike the
-        receipt-based methods — the wallet balance is credited immediately
-        and the returned `TopUpRequest.status` is `مكتمل`, with no manual
-        review step.
+        Called by `useConfirmJawwalTopUp` in `src/hooks/wallet/useJawwalTopUp.ts`.
+        A correct code credits the balance at once, so the request comes back
+        already `مكتمل`.
       operationId: confirmJawwalTopUp
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [phone, amount, code]
-              properties:
-                phone:
-                  type: string
-                  example: "0599123456"
-                amount:
-                  type: number
-                  example: 50
-                code:
-                  type: string
-                  example: "482913"
+              $ref: "#/components/schemas/JawwalConfirmRequest"
       responses:
-        "201":
-          description: "Created and completed immediately (`TopUpRequest` with status مكتمل)"
+        "200":
+          description: The completed request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TopUpRequest"
+                $ref: "#/components/schemas/TopUpRequestResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
-          description: Wrong or expired code
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "500":
-          $ref: "#/components/responses/ServerError"
+          $ref: "#/components/responses/ValidationError"
 
   /wallet/deduct:
     post:
       tags: [Wallet]
-      summary: Deduct from wallet balance (payment by wallet)
+      summary: Pay from the wallet balance
       description: |
-        **Not implemented yet (handoff 14).** Server is the sole authority
-        on sufficient balance — must reject with 409, never assume success
-        client-side.
+        Called by `src/hooks/wallet/useDeductWallet.ts` when an order is paid
+        with `wallet`. The frontend refetches `GET /wallet` first and stops if
+        the balance is lower than `amount`.
       operationId: deductWallet
+      security:
+        - TokenAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [amount, label]
-              properties:
-                amount:
-                  type: number
-                  example: 22.5
-                label:
-                  type: string
-                  example: "دفع طلب #ORD-M3K2"
+              $ref: "#/components/schemas/DeductWalletRequest"
       responses:
         "200":
-          description: New balance
+          description: The new balance
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  balance:
-                    type: number
-                    example: 82.75
+                $ref: "#/components/schemas/WalletBalance"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "409":
-          description: Insufficient balance
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "500":
-          $ref: "#/components/responses/ServerError"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
+  # ───────────────────────────── Content ─────────────────────────────
   /help/faqs:
     get:
-      tags: [Help]
-      summary: List help-page FAQs
-      description: |
-        **Not implemented yet (handoff 15).** Static content today
-        (hardcoded array in the frontend) — moving it here lets support
-        staff edit the FAQ list from Filament without a code deploy. Order
-        of the returned array is the display order.
-      operationId: getHelpFaqs
+      tags: [Content]
+      summary: Help page FAQs
+      description: "Called by `src/hooks/help/fetchHelpFaqs.ts`."
+      operationId: listHelpFaqs
       responses:
         "200":
-          description: FAQ list (`Faq[]`)
+          description: All FAQs
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/Faq"
-        "500":
-          $ref: "#/components/responses/ServerError"
 
   /terms:
     get:
-      tags: [Terms]
-      summary: Get terms-and-conditions HTML content
-      description: |
-        **Not implemented yet (handoff 16).** Static content today
-        (hardcoded sections in the frontend) — moving it here lets support
-        staff edit the terms from Filament without a code deploy.
-
-        Returns a single HTML string with all sections already formatted
-        (`<h3>` headings, `<p>` paragraphs, `<ul><li>` lists, `<a>` links).
-        The frontend renders it with `dangerouslySetInnerHTML` after running
-        it through DOMPurify — sanitize on the backend too, but never treat
-        that as a substitute for frontend sanitization.
-      operationId: getTermsContent
+      tags: [Content]
+      summary: Terms and conditions as an HTML fragment
+      description: "Called by `src/hooks/terms/fetchTermsContent.ts`. The body is a JSON string holding HTML, sanitized by the frontend before rendering."
+      operationId: getTerms
       responses:
         "200":
-          description: Raw HTML string (`text/plain` or `application/json` string body)
+          description: HTML fragment
           content:
             application/json:
               schema:
                 type: string
-                example: "<h3>1. قبول الشروط</h3><p>...</p>"
-        "500":
-          $ref: "#/components/responses/ServerError"
+                example: "<h3>الشروط والأحكام</h3><p>…</p>"
 
   /privacy:
     get:
-      tags: [Privacy]
-      summary: Get privacy-policy HTML content
-      description: |
-        **Not implemented yet (handoff 17).** Static content today
-        (hardcoded sections in the frontend) — moving it here lets support
-        staff edit the privacy policy from Filament without a code deploy.
-
-        Returns a single HTML string with all sections already formatted
-        (`<h3>` headings, `<p>` paragraphs, `<ul><li>` lists, `<a>` links).
-        The frontend renders it with `dangerouslySetInnerHTML` after running
-        it through DOMPurify — sanitize on the backend too, but never treat
-        that as a substitute for frontend sanitization.
-      operationId: getPrivacyContent
+      tags: [Content]
+      summary: Privacy policy as an HTML fragment
+      description: "Called by `src/hooks/privacy/fetchPrivacyContent.ts`. The body is a JSON string holding HTML, sanitized by the frontend before rendering."
+      operationId: getPrivacy
       responses:
         "200":
-          description: Raw HTML string (`text/plain` or `application/json` string body)
+          description: HTML fragment
           content:
             application/json:
               schema:
                 type: string
-                example: "<h3>1. المعلومات التي نجمعها</h3><p>...</p>"
-        "500":
-          $ref: "#/components/responses/ServerError"
+                example: "<h3>سياسة الخصوصية</h3><p>…</p>"
 
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: |
-        Token from login. Sent as:
-        `Authorization: <token>`
-        (matches the frontend `userApi` axios interceptor)
+    TokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: "The `token` from `POST /auth/otp/verify`, sent exactly as received."
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PerPage:
+      name: perPage
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+    AddressId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    OrderId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ValidationError:
+      description: Rejected input; `message` is shown to the customer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    TooManyRequests:
+      description: Too many attempts; the frontend shows its own wait message
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
-    Error:
+    ErrorResponse:
       type: object
+      description: The frontend only reads `message`.
       required: [message]
       properties:
         message:
           type: string
-          example: Something went wrong
         errors:
           type: object
           additionalProperties:
             type: array
             items:
               type: string
-          example:
-            email: ["The email field is required."]
 
-    # --- Auth (handoff 08) — phone/OTP, no passwords anywhere ---
-    AuthOtpSendRequest:
+    # ───────────── Home (src/types/home.types.ts) ─────────────
+    HomeImage:
+      type: string
+      nullable: true
+      description: Image URL, or `null` when nothing is uploaded (the frontend shows a placeholder)
+    HeroSlide:
       type: object
-      description: Matches `useSendOtp` — not implemented yet (handoff 08)
-      required: [phone]
-      properties:
-        phone:
-          type: string
-          example: "0599123456"
-
-    AuthOtpVerifyRequest:
-      type: object
-      description: |
-        Matches `useVerifyOtp` — not implemented yet (handoff 08). `fullName`
-        is required only on first-time registration.
-      required: [phone, code]
-      properties:
-        phone:
-          type: string
-          example: "0599123456"
-        code:
-          type: string
-          example: "123456"
-        fullName:
-          type: string
-          nullable: true
-          example: أحمد علي
-
-    AuthOtpResponse:
-      type: object
-      description: Not implemented yet (handoff 08)
-      required: [token, user]
-      properties:
-        token:
-          type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        user:
-          $ref: "#/components/schemas/AuthUser"
-
-    # --- Account (handoff 09) ---
-    AuthUser:
-      type: object
-      description: |
-        Not implemented yet (handoff 09). `phone` is the primary identifier
-        (OTP login); `email` is optional and may be `""`/`null` when never
-        set.
-      required: [id, name, phone]
-      properties:
-        id:
-          type: string
-          example: "1"
-        name:
-          type: string
-          example: أحمد علي
-        email:
-          type: string
-          format: email
-          nullable: true
-        phone:
-          type: string
-          example: "0599123456"
-
-    UpdateProfileRequest:
-      type: object
-      description: |
-        Not implemented yet (handoff 09). `email` and `phone` are optional —
-        phone/OTP is the primary identifier, email is never required
-        (matches `AuthUser.email`, which may be `""`).
-      required: [name]
-      properties:
-        name:
-          type: string
-        email:
-          type: string
-          format: email
-          nullable: true
-        phone:
-          type: string
-          nullable: true
-
-    # --- Contact (matches src/types/contact.types.ts) ---
-    IContactRequest:
-      type: object
-      description: Matches TypeScript `IContactRequest`
-      required:
-        - name
-        - phone
-        - email
-        - message
-      properties:
-        name:
-          type: string
-          example: أحمد علي
-        phone:
-          type: string
-          example: "0592123456"
-        email:
-          type: string
-          format: email
-          example: ahmed@example.com
-        subject:
-          type: string
-          description: Optional subject (not used by current UI)
-        message:
-          type: string
-          example: أريد الاستفسار عن العروض الحالية
-      example:
-        name: أحمد علي
-        phone: "0592123456"
-        email: ahmed@example.com
-        message: أريد الاستفسار عن العروض الحالية
-
-    IContactResponse:
-      type: object
-      description: Matches TypeScript `IContactResponse`
-      required:
-        - success
-        - message
-      properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: تم إرسال رسالتك بنجاح
-      example:
-        success: true
-        message: تم إرسال رسالتك بنجاح
-
-    # Legacy alias (prefer IContactRequest)
-    ContactRequest:
-      allOf:
-        - $ref: "#/components/schemas/IContactRequest"
-
-    # --- Shared ---
-    SuccessMessage:
-      type: object
-      properties:
-        message:
-          type: string
-          example: Operation completed successfully
-
-    # --- Home (matches src/types/home.types.ts) ---
-    IHomePageData:
-      type: object
-      description: Full payload for GET /home — matches TypeScript `IHomePageData`
-      required:
-        - hero
-        - about
-        - whyGlace
-        - branches
-        - events
-      properties:
-        hero:
-          $ref: "#/components/schemas/IHomeHero"
-        about:
-          $ref: "#/components/schemas/IHomeAboutData"
-        whyGlace:
-          $ref: "#/components/schemas/IHomeWhyGlaceData"
-        branches:
-          $ref: "#/components/schemas/IHomeBranchesData"
-        events:
-          $ref: "#/components/schemas/IHomeEventsData"
-      example:
-        hero:
-          slides:
-            - manImg: https://cdn.glace.ps/home/hero/man-1.png
-              pieceImg: https://cdn.glace.ps/home/hero/piece-1.png
-              zigzagsImg: https://cdn.glace.ps/home/hero/zigzags.png
-              titleH1: جلاسية الأمير
-              titleH2: لإنتاج الآيس كريم و البراد و العصائر و الحلويات
-              bgColor: "#51C9F4"
-              headerBgColor: "#51c9f4"
-              h1BgColor: "#53352a"
-              h2BgColor: "#51c9f4"
-        about:
-          title: موهوبون في صناعة الأيسكريم !
-          paragraphs:
-            - تأسس جلاسيه الأمير عام 2015...
-            - تعمل الشركة على تقديم أجود أنواع الآيس كريم...
-          image: https://cdn.glace.ps/home/about/character.png
-          ctaLabel: اعرف أكثر
-          ctaHref: /about
-        whyGlace:
-          title: لماذا جلاسيه الأمير؟
-          description: جلاسيه الأمير حاصلة على شهادة الجودة العالمية لسلامة الغذاء ISO 22000
-          features:
-            - label: جودة عالية
-          videoUrl: https://www.youtube.com/embed/ShMr0XzIqSM
-          videoThumbnail: https://cdn.glace.ps/home/why/video-thumb.png
-        branches:
-          title: ننتظركم في المواعيد التالية
-          branches:
-            - id: ramal
-              label: فرع الرمال
-              mapSrc: https://www.google.com/maps/embed?...
-              address: غزة، الرمال...
-              phone: "0592 226 522"
-              whatsapp: "0592 226 522"
-              weekdayHours: "PM 11:45 – AM 10:00"
-              fridayHours: "PM 11:45 – PM02:00"
-              borderRadius: "32% 68% 69% 31% / 30% 28% 72% 70%"
-        events:
-          title: الفعاليات و المناسبات
-          moreLabel: عرض المزيد
-          moreHref: /events
-          items:
-            - id: 1
-              title: مشارك معرض الصناعات الغذائية الفلسطينية
-              image: https://cdn.glace.ps/home/events/1.png
-              href: /events/1
-
-    IHomeHero:
-      type: object
-      description: Hero block inside `IHomePageData.hero`
-      required:
-        - slides
-      properties:
-        slides:
-          type: array
-          items:
-            $ref: "#/components/schemas/ISlideData"
-
-    ISlideData:
-      type: object
-      description: Matches TypeScript `ISlideData`
-      required:
-        - manImg
-        - pieceImg
-        - zigzagsImg
-        - titleH1
-        - titleH2
-        - bgColor
-        - headerBgColor
-        - h1BgColor
-        - h2BgColor
+      required: [manImg, pieceImg, zigzagsImg, titleH1, titleH2, bgColor, headerBgColor, h1BgColor, h2BgColor]
       properties:
         manImg:
-          type: string
-          format: uri
-          description: |
-            Character / person image — **absolute** URL
-            (`Storage::disk('public')->url(...)` or real CDN). Relative paths
-            like `hero-slides/…` are invalid (handoff 04).
-          example: https://cdn.glace.ps/home/hero/man-1.png
+          $ref: "#/components/schemas/HomeImage"
         pieceImg:
-          type: string
-          format: uri
-          description: Ice cream piece decoration — absolute URL (handoff 04)
-          example: https://cdn.glace.ps/home/hero/piece-1.png
+          $ref: "#/components/schemas/HomeImage"
         zigzagsImg:
-          type: string
-          format: uri
-          description: Zigzag decoration — absolute URL (handoff 04)
-          example: https://cdn.glace.ps/home/hero/zigzags.png
+          $ref: "#/components/schemas/HomeImage"
         titleH1:
           type: string
-          example: جلاسية الأمير
         titleH2:
           type: string
-          example: لإنتاج الآيس كريم و البراد و العصائر و الحلويات
         bgColor:
           type: string
-          example: "#51C9F4"
         headerBgColor:
           type: string
-          example: "#51c9f4"
         h1BgColor:
           type: string
-          example: "#53352a"
         h2BgColor:
           type: string
-          example: "#51c9f4"
-
-    IHomeAboutData:
+    HomeAbout:
       type: object
-      description: Matches TypeScript `IHomeAboutData`
-      required:
-        - title
-        - paragraphs
-        - image
-        - ctaLabel
-        - ctaHref
+      required: [title, paragraphs, image, ctaLabel, ctaHref]
       properties:
         title:
           type: string
-          example: موهوبون في صناعة الأيسكريم !
         paragraphs:
           type: array
-          description: |
-            Plain string paragraphs (handoff 04).
-            **Required shape:** `["نص…", "نص…"]`
-            **Forbidden:** `[{ "text": "…" }]` — that shape breaks About.
           items:
             type: string
-          example:
-            - تأسس جلاسيه الأمير عام 2015...
-            - تعمل الشركة على تقديم أجود أنواع الآيس كريم...
         image:
-          type: string
-          format: uri
-          description: About section character image — absolute URL (handoff 04)
-          example: https://cdn.glace.ps/home/about/character.png
+          $ref: "#/components/schemas/HomeImage"
         ctaLabel:
           type: string
-          example: اعرف أكثر
         ctaHref:
           type: string
-          example: /about
-
-    IHomeWhyFeature:
+    HomeWhyFeature:
       type: object
-      description: |
-        Matches TypeScript `IHomeWhyFeature`.
-
-        Label only — do NOT send an image. The coloured blob behind each label
-        is fixed frontend decoration (alternating blue/brown by position), not
-        content. Sending an `image` here has no effect; it is ignored.
-      required:
-        - label
+      required: [label]
       properties:
         label:
           type: string
-          example: جودة عالية
-
-    IHomeWhyGlaceData:
+    HomeWhyGlace:
       type: object
-      description: Matches TypeScript `IHomeWhyGlaceData`
-      required:
-        - title
-        - description
-        - features
-        - videoUrl
-        - videoThumbnail
+      required: [title, description, features, videoUrl, videoThumbnail]
       properties:
         title:
           type: string
-          example: لماذا جلاسيه الأمير؟
         description:
           type: string
-          example: جلاسيه الأمير حاصلة على شهادة الجودة العالمية لسلامة الغذاء ISO 22000
         features:
           type: array
           items:
-            $ref: "#/components/schemas/IHomeWhyFeature"
+            $ref: "#/components/schemas/HomeWhyFeature"
         videoUrl:
           type: string
-          format: uri
-          example: https://www.youtube.com/embed/ShMr0XzIqSM
         videoThumbnail:
-          type: string
-          format: uri
-          description: Thumbnail shown for the video CTA
-          example: https://cdn.glace.ps/home/why/video-thumb.png
-
-    IHomeBranch:
+          $ref: "#/components/schemas/HomeImage"
+    HomeBranch:
       type: object
-      description: Matches TypeScript `IHomeBranch`
-      required:
-        - id
-        - label
-        - mapSrc
-        - address
-        - phone
-        - whatsapp
-        - weekdayHours
-        - fridayHours
-        - borderRadius
+      required: [id, label, mapSrc, address, phone, whatsapp, weekdayHours, fridayHours, borderRadius]
       properties:
         id:
           type: string
-          example: ramal
         label:
           type: string
-          example: فرع الرمال
         mapSrc:
           type: string
-          format: uri
-          description: Google Maps embed URL
+          description: "Google Maps embed URL (`https://www.google.com/maps/embed?pb=...`)"
         address:
           type: string
-          example: غزة، الرمال، شارع الشهداء...
         phone:
           type: string
-          example: "0592 226 522"
         whatsapp:
           type: string
-          example: "0592 226 522"
         weekdayHours:
           type: string
-          example: "PM 11:45 – AM 10:00"
+          description: Free text, e.g. `PM 10:30 – AM 11:00` (Saturday to Thursday)
         fridayHours:
           type: string
-          example: "PM 11:45 – PM02:00"
         borderRadius:
           type: string
           description: CSS border-radius for the map frame
-          example: "32% 68% 69% 31% / 30% 28% 72% 70%"
         available:
           type: boolean
-          description: >-
-            Whether the branch can be selected. Omitted or absent is treated
-            as available (`true`) by the frontend, for backward compatibility
-            with responses that don't send this field yet.
-          example: true
-
-    IHomeBranchesData:
+          description: Absent means available
+    HomeBranches:
       type: object
-      description: Matches TypeScript `IHomeBranchesData`
-      required:
-        - title
-        - branches
+      required: [title, branches]
       properties:
         title:
           type: string
-          example: ننتظركم في المواعيد التالية
         branches:
           type: array
           items:
-            $ref: "#/components/schemas/IHomeBranch"
-
-    IHomeEvent:
+            $ref: "#/components/schemas/HomeBranch"
+    HomeEvent:
       type: object
-      description: |
-        Matches TypeScript `IHomeEvent` — card in `home.events.items`.
-        Prefer mapping from the events catalog `listImage` (absolute URL).
-      required:
-        - id
-        - title
-        - image
-        - href
+      required: [id, title, image, href]
       properties:
         id:
           type: integer
-          example: 1
         title:
           type: string
-          example: مشارك معرض الصناعات الغذائية الفلسطينية
         image:
-          type: string
-          format: uri
-          description: |
-            Card thumbnail — absolute URL (handoff 04). Should not be null for
-            events shown on the home carousel.
-          example: https://cdn.glace.ps/home/events/1.png
+          $ref: "#/components/schemas/HomeImage"
         href:
           type: string
-          example: /events/1
-
-    IHomeEventsData:
+    HomeEvents:
       type: object
-      description: |
-        Matches TypeScript `IHomeEventsData`.
-        `items` should include up to **10** latest events (handoff 04) — not 3.
-      required:
-        - title
-        - items
-        - moreLabel
-        - moreHref
+      required: [title, items, moreLabel, moreHref]
       properties:
         title:
           type: string
-          example: الفعاليات و المناسبات
         items:
           type: array
-          maxItems: 10
-          description: Up to 10 latest events (newest first)
           items:
-            $ref: "#/components/schemas/IHomeEvent"
+            $ref: "#/components/schemas/HomeEvent"
         moreLabel:
           type: string
-          example: عرض المزيد
         moreHref:
           type: string
-          example: /events
-
-    # --- Events (matches src/types/events.types.ts) ---
-    IEvent:
+    HomePage:
       type: object
-      description: Matches TypeScript `IEvent` — list card + detail
-      required:
-        - id
-        - title
-        - date
-        - description
-        - listImage
-        - images
+      required: [hero, about, whyGlace, branches, events]
+      properties:
+        hero:
+          type: object
+          required: [slides]
+          properties:
+            slides:
+              type: array
+              items:
+                $ref: "#/components/schemas/HeroSlide"
+        about:
+          $ref: "#/components/schemas/HomeAbout"
+        whyGlace:
+          $ref: "#/components/schemas/HomeWhyGlace"
+        branches:
+          $ref: "#/components/schemas/HomeBranches"
+        events:
+          $ref: "#/components/schemas/HomeEvents"
+
+    # ───────────── Events (src/types/events.types.ts) ─────────────
+    EventImage:
+      type: string
+      nullable: true
+    Event:
+      type: object
+      required: [id, title, date, description, listImage, images]
       properties:
         id:
           type: integer
-          example: 2
         title:
           type: string
-          example: أجواء العيد مع جلاسيه غير
         date:
           type: string
-          example: "11/06/2020"
+          description: Shown as is on the page
         description:
           type: string
-          example: كل عام وانتم بخير بحلول عيد الفطر المبارك...
         listImage:
-          type: string
-          format: uri
-          description: |
-            Card thumbnail — absolute URL (handoff 04). Upload from Filament
-            «صورة البطاقة». Must not be null for published events.
-          example: https://cdn.glace.ps/events/2-list.png
+          $ref: "#/components/schemas/EventImage"
         images:
           type: array
-          description: |
-            Detail gallery (handoff 04). Absolute URL strings only.
-            **No `null` entries** — use `[]` when empty. Managed via Filament
-            multi-upload / repeater (not the card image field alone).
           items:
-            type: string
-            format: uri
-            nullable: false
-          example:
-            - https://cdn.glace.ps/events/2-a.png
-            - https://cdn.glace.ps/events/2-b.png
-      example:
-        id: 2
-        title: أجواء العيد مع جلاسيه غير
-        date: "11/06/2020"
-        description: كل عام وانتم بخير بحلول عيد الفطر المبارك احتفالنا معكم بالعيد أجمل...
-        listImage: https://cdn.glace.ps/events/2-list.png
-        images:
-          - https://cdn.glace.ps/events/2-a.png
-          - https://cdn.glace.ps/events/2-b.png
-          - https://cdn.glace.ps/events/2-c.png
-          - https://cdn.glace.ps/events/2-d.png
-
-    IEventsListResponse:
+            $ref: "#/components/schemas/EventImage"
+    EventsPage:
       type: object
-      description: Matches TypeScript `IEventsListResponse`
-      required:
-        - items
-        - total
-        - page
-        - perPage
-        - totalPages
+      required: [items, total, page, perPage, totalPages]
       properties:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/IEvent"
+            $ref: "#/components/schemas/Event"
         total:
           type: integer
-          example: 10
         page:
           type: integer
-          example: 1
         perPage:
           type: integer
-          example: 8
         totalPages:
           type: integer
-          example: 2
-      example:
-        items:
-          - id: 2
-            title: أجواء العيد مع جلاسيه غير
-            date: "11/06/2020"
-            description: كل عام وانتم بخير...
-            listImage: https://cdn.glace.ps/events/2-list.png
-            images:
-              - https://cdn.glace.ps/events/2-a.png
-        total: 10
-        page: 1
-        perPage: 8
-        totalPages: 2
 
-    IMenuCategory:
+    # ───────────── Contact (src/types/contact.types.ts) ─────────────
+    ContactRequest:
       type: object
-      description: Matches TypeScript `IMenuCategory`
+      required: [name, phone, email, message]
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        message:
+          type: string
+        subject:
+          type: string
+          description: Not on the current form
+    ContactResponse:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+
+    # ───────────── Menu (src/types/menu.types.ts) ─────────────
+    MenuImage:
+      type: string
+      nullable: true
+    MenuCategory:
+      type: object
       required: [id, label, icon, accentColor, gradientFrom, gradientTo, sortOrder]
       properties:
         id:
           type: string
-          example: pancake
+          example: ice-cream
         label:
           type: string
-          example: بان كيك
         icon:
           type: string
           enum: [ice-cream, cup-soda, cake, glass-water, milk, apple]
-          example: cake
-        available:
-          type: boolean
-          default: true
-          description: |
-            Omit or `true` when the category is shown. `false` hides the whole
-            section from the menu (e.g. hot drinks during summer).
-          example: true
         accentColor:
           type: string
-          example: "#f4a851"
         gradientFrom:
           type: string
-          example: "#f4a851"
         gradientTo:
           type: string
-          example: "#c97d2a"
         sortOrder:
           type: integer
-          example: 11
-
-    IFlavorOption:
+        available:
+          type: boolean
+          description: "Absent or `true` shows the category; `false` hides it"
+    FlavorOption:
       type: object
-      description: |
-        Matches TypeScript `IFlavorOption`.
-
-        **handoff 02:** `available` is always required — send `false` for
-        paused flavors. Do not omit the key when false (breaks frontend parse
-        on cup / brad-boza). `family` detail must return a non-empty
-        `flavors[]` with the same shape.
+      description: One flavor ball in the builder flow
       required: [id, nameAr, nameEn, image, family, available]
       properties:
         id:
@@ -2227,118 +1284,89 @@ components:
           example: pistachio
         nameAr:
           type: string
-          example: بيستاشيو
         nameEn:
           type: string
-          example: Pistachio
         image:
-          type: string
-          format: uri
-          description: Absolute flavor image URL — no `cdn.example.com` (handoff 03)
+          $ref: "#/components/schemas/MenuImage"
         family:
           type: string
           enum: [classic, special, stevia]
         available:
           type: boolean
-          description: |
-            Always present. `true` = orderable; `false` = shown disabled.
-            Never drop this field when false.
-          example: false
+          description: "Must always be sent; a missing value is read as `false`"
         isPremiumMixFlavor:
           type: boolean
-          description: Priced at a mix's premiumFlavorPrice instead of flavorPrice
-
-    IProductVariant:
+    ProductVariant:
       type: object
-      description: |
-        Matches TypeScript `IProductVariant` — one row in a flat-list product.
-
-        **handoff 01:** `image` is required for every item (all 15 flat-list
-        products / 69 variants). Used on the order list AND inside the mix /
-        super-mix modal. Upload per item from Filament (not only product.image).
-      required: [id, label, price, available, image]
+      description: One item of a flat-list product
+      required: [id, label, price, available]
       properties:
         id:
           type: string
-          description: |
-            Stable, dashboard-safe identifier, unique within the product.
-            Mixes reference items by THIS id (`IMixRule.itemIds`), so renaming
-            `label` from the dashboard never breaks a mix rule.
-          example: nutella
+          description: Stable id; mixes reference items by it
         label:
           type: string
-          example: نوتيلا
         price:
           type: number
-          example: 11
         description:
           type: string
         image:
-          type: string
-          format: uri
-          description: |
-            Per-item thumbnail — absolute URL. Required on every `items[]`
-            entry (handoff 01). Empty/missing → blank circle in UI.
-          example: https://cdn.glace.ps/menu/pancake-nutella.jpg
+          $ref: "#/components/schemas/MenuImage"
         available:
           type: boolean
         isPremiumMixFlavor:
           type: boolean
-          description: |
-            When true inside a mix, charge `premiumFlavorPrice` instead of
-            `flavorPrice`. Toggle from Filament on the item (handoff 07).
-
-    IMixRule:
+          description: "Priced at the mix's `premiumFlavorPrice` inside a mix"
+    AddonOption:
       type: object
-      description: |
-        Matches TypeScript `IMixRule` — مكس / سوبر مكس on flat-list products.
-
-        **handoff 07:** full CRUD from Filament (label, pick, prices, itemIds,
-        available). `itemIds` reference `items[].id` on the same product only.
+      required: [id, label, price]
+      properties:
+        id:
+          type: string
+          example: extra-biscuit
+        label:
+          type: string
+        price:
+          type: number
+          description: Surcharge in ILS per selected quantity
+        available:
+          type: boolean
+        type:
+          type: string
+          enum: [toggle, counter]
+          description: Defaults to `toggle`
+        maxQty:
+          type: integer
+          description: Cap for `counter` addons
+    MixRule:
+      type: object
       required: [id, label, pick, basePrice, flavorPrice, premiumFlavorPrice, itemIds]
       properties:
         id:
           type: string
-          description: Stable seed id (`mix`, `super-mix`) — do not rename after orders exist
           example: mix
         label:
           type: string
-          example: مكس (اختر طعمين)
-        available:
-          type: boolean
-          default: true
-          description: |
-            Prefer always sending the field. `false` hides this mix on the
-            order page. Omit or `true` = offered.
-          example: true
+          example: مكس
         pick:
           type: integer
-          example: 2
+          description: How many distinct items the customer picks
         basePrice:
           type: number
-          example: 14
         flavorPrice:
           type: number
-          example: 7
         premiumFlavorPrice:
           type: number
-          example: 11
         itemIds:
           type: array
-          description: |
-            Ids of the `items[]` this mix can be built from — these are
-            `IProductVariant.id` values on the SAME product.
-
-            NOT flavor ids, and NOT labels. (This field was previously named
-            `flavorOptionIds` and held Arabic labels; matching by label broke
-            whenever an item was renamed from the dashboard.)
+          description: "`ProductVariant.id`s of this product the mix can use"
           items:
             type: string
-          example: [nutella, lotus, pistachio]
-
-    IPriceCell:
+        available:
+          type: boolean
+          description: "Absent or `true` offers the mix"
+    PriceCell:
       type: object
-      description: Matches TypeScript `IPriceCell`
       required: [flavorFamily, price]
       properties:
         flavorFamily:
@@ -2346,231 +1374,136 @@ components:
           enum: [classic, special, mix]
         price:
           type: number
-          example: 4
-
-    IContainerOption:
+    SizeOption:
       type: object
-      description: |
-        Matches TypeScript `IContainerOption` — builder "type" pills
-        (كاسة/بسكوت, ليمون/مانجا, بلاستيك/فلين…).
-
-        **handoff 05:** full Filament CRUD (add / edit / delete / available /
-        image / pricingLabel). Not step titles — those stay frontend-only.
-      required: [id, label, available]
-      properties:
-        id:
-          type: string
-          example: biscuit
-        label:
-          type: string
-          example: بسكوت
-        available:
-          type: boolean
-        name:
-          type: string
-          description: Overrides the product's own name when this container is picked
-          example: بوظة بسكوت
-        image:
-          type: string
-          format: uri
-          description: Absolute URL — fallback thumbnail when size.image is missing
-        pricingLabel:
-          type: string
-          description: Heading for this container's price table, e.g. "الكاسة"
-          example: الكاسة
-
-    ISizeOption:
-      type: object
-      description: |
-        Matches TypeScript `ISizeOption`.
-
-        **handoff 05:** Filament CRUD for sizes + `prices[]` + optional
-        `image` (strongly preferred for family merged rows).
       required: [id, label, maxBalls, prices]
       properties:
         id:
           type: string
-          example: plastic-half
         label:
           type: string
-          example: 1/2 لتر
         maxBalls:
           type: integer
-          example: 8
         prices:
           type: array
           items:
-            $ref: "#/components/schemas/IPriceCell"
+            $ref: "#/components/schemas/PriceCell"
         containerId:
           type: string
-          description: Restricts this size to one IContainerOption id
-          example: plastic
+          description: Limits the size to one container; absent means every container
         available:
           type: boolean
-          default: true
-          description: |
-            Omit or `true` when the size is orderable. `false` renders the size
-            greyed with a "غير متوفر" badge instead of removing it.
-
-            Needed to stop a single size independently of its container — e.g.
-            بوظة عائلي merges container+size into one step, so disabling
-            "1 لتر فلين" must be possible without disabling "1/2 لتر فلين".
-          example: true
+          description: "Absent or `true` means orderable"
         image:
-          type: string
-          format: uri
-          description: |
-            Thumbnail for this size on the order page (especially family
-            merged "نوع + حجم" rows). Preferred over `containerOptions[].image`
-            when both are set. Absolute URL via Storage::url(...) (handoff 05).
-          example: https://cdn.glace.ps/menu/sizes/family-plastic-half.png
-
-    IProductBase:
+          $ref: "#/components/schemas/MenuImage"
+    ContainerOption:
       type: object
-      description: Fields shared by every IProduct variant (see the `kind` discriminator on IProduct)
-      required: [id, slug, categoryId, name, image, sortOrder, available]
+      required: [id, label, available]
       properties:
         id:
           type: string
-          description: |
-            Opaque backend primary key (auto-increment int or UUID). Used for
-            cart/order/favorites references sent back to the API — NEVER
-            rendered in a URL. Do not assume it equals `slug`.
-          example: "a1c3e5f7-1111-4b22-9c33-aa44bb55cc66"
-        slug:
+        label:
           type: string
-          description: |
-            Stable, URL-safe identifier matched against `/menu/order/{type}`
-            and used to fetch the product (`GET /menu/products/{slug}`). Must be
-            unique and stable — renaming the display `name` must NOT change it.
-          example: pancake
-        categoryId:
-          type: string
-          example: pancake
+        available:
+          type: boolean
         name:
           type: string
-          example: بان كيك
+          description: Overrides the product name when this container is picked
+        image:
+          $ref: "#/components/schemas/MenuImage"
+        pricingLabel:
+          type: string
+    ExtraScoopOption:
+      type: object
+      required: [id, label, price, available]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        price:
+          type: number
+        available:
+          type: boolean
+    ExtraScoop:
+      type: object
+      description: "\"أضف بوظة\" on flat-list items; either family may be absent"
+      properties:
+        classic:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExtraScoopOption"
+        special:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExtraScoopOption"
+    ProductBase:
+      type: object
+      required: [id, slug, categoryId, name, image, sortOrder, available, kind]
+      properties:
+        id:
+          type: string
+          description: Backend primary key, used in cart and orders
+        slug:
+          type: string
+          description: "URL id, matches `/menu/order/{slug}`"
+        categoryId:
+          type: string
+        name:
+          type: string
         description:
           type: string
-          description: Short product description shown on the order page
-          example: بان كيك طازج بنكهات متنوعة
         image:
-          type: string
-          format: uri
-          description: |
-            Product hero image — absolute URL. Brad-boza uses **this field only**
-            (no companion / secondary cup image — handoff 06).
-          example: https://cdn.glace.ps/menu/pancake.jpg
+          $ref: "#/components/schemas/MenuImage"
         sortOrder:
           type: integer
-          example: 1
         available:
+          type: boolean
+        kind:
+          type: string
+          enum: [builder, flat-list]
+        hasAddons:
+          type: boolean
+        hasNotes:
           type: boolean
         addons:
           type: array
-          description: |
-            Optional per-unit extras a customer can add to this product
-            (toppings, sauces...). Drives the cart's "تخصيص الإضافات" flow,
-            where the additions can be applied uniformly to all units or
-            differently per individual unit.
           items:
-            $ref: "#/components/schemas/IAddonOption"
-        hasAddons:
-          type: boolean
-          description: Legacy flag — superseded by a non-empty `addons` array.
-        hasNotes:
-          type: boolean
+            $ref: "#/components/schemas/AddonOption"
         hasFavorites:
           type: boolean
         hasImageZoom:
           type: boolean
         inStoreOnly:
           type: boolean
-          description: Shows an in-store-only warning before entering the order flow
-
-    IAddonOption:
-      type: object
-      description: |
-        Matches TypeScript `IAddonOption` — one optional per-unit extra, served
-        by `GET /menu/addons` and/or a product's `addons` catalog. Each addon's
-        `type` (set in the dashboard) decides how it's picked in the cart:
-        `toggle` (on/off) or `counter` (a quantity stepper, e.g. extra biscuit).
-      required: [id, label, price]
-      properties:
-        id:
-          type: string
-          description: Stable slug for the addon
-          example: extra-caramel
-        label:
-          type: string
-          example: صوص كراميل إضافي
-        price:
-          type: number
-          description: Per-unit surcharge (₪), charged per selected quantity
-          example: 3
-        available:
-          type: boolean
-        type:
-          type: string
-          enum: [toggle, counter]
-          default: toggle
-          description: |
-            How the customer picks this addon — `toggle` (on/off checkbox,
-            default) or `counter` (+/- quantity stepper, e.g. extra biscuit ×3).
-          example: toggle
-        maxQty:
-          type: integer
-          description: Optional cap for `counter` addons (max quantity per unit)
-          example: 10
-
-    IBuilderProduct:
-      description: |
-        Matches TypeScript `IBuilderProduct` — size/flavor wizard
-        (cup, family, brad, brad-boza).
-
-        **handoff 05 · 06:** Filament manages `containerOptions`, `sizes`
-        (+ images/prices), and brad-boza `iceCreamAddonPrices`. Do **not**
-        send `secondaryImage`. Step titles («اختر النوع» / «اختر الحجم») are
-        frontend-only — not API fields.
+    BuilderProduct:
+      description: "Step-by-step products: cup, family, brad, brad-boza"
       allOf:
-        - $ref: "#/components/schemas/IProductBase"
+        - $ref: "#/components/schemas/ProductBase"
         - type: object
-          required: [kind, sizes]
+          required: [sizes]
           properties:
             kind:
               type: string
               enum: [builder]
             containerOptions:
               type: array
-              description: Types managed from Filament (handoff 05)
               items:
-                $ref: "#/components/schemas/IContainerOption"
+                $ref: "#/components/schemas/ContainerOption"
             includesIceCreamStep:
               type: boolean
-              description: |
-                Brad-boza only — renders the extra ice-type + flavor-ball step.
-                Does NOT imply a second hero image.
             iceCreamAddonPrices:
               type: array
-              description: Brad-boza additive prices — Filament-editable (handoff 05)
               items:
-                $ref: "#/components/schemas/IPriceCell"
+                $ref: "#/components/schemas/PriceCell"
             hasExtraBiscuitAddon:
               type: boolean
             pricingLabel:
               type: string
-              description: |
-                Price-table heading when sizes aren't split per container
-                (handoff 06). Prefer the full title already including "أسعار"
-                (e.g. "أسعار البراد"), or just the noun ("البراد") —
-                the frontend only prefixes "أسعار" when missing.
-                Unused when sizes carry containerId (container.pricingLabel wins).
-              example: أسعار البراد
             sizes:
               type: array
-              description: Sizes + prices (+ optional image) — Filament CRUD (handoff 05)
               items:
-                $ref: "#/components/schemas/ISizeOption"
+                $ref: "#/components/schemas/SizeOption"
             selectionMode:
               type: string
               enum: [repeatable, toggle]
@@ -2581,312 +1514,411 @@ components:
                 enum: [classic, special, mix]
             flavors:
               type: array
-              description: |
-                Flavor balls served INLINE — no separate `/menu/flavors` endpoint.
-
-                Returned by `GET /menu/products/{slug}` (detail) ONLY. The
-                `GET /menu/products` list MUST omit it (handoff 02).
-
-                Required for builder products with a non-empty `flavorFamilies`
-                (`cup`, `family`, `brad-boza`). `family` MUST return a non-empty
-                array. `brad` has no flavor step and does not need it.
-                Every element must include `available` even when `false`.
+              description: "Only on `GET /menu/products/{slug}`"
               items:
-                $ref: "#/components/schemas/IFlavorOption"
-
-    IFlatListProduct:
-      description: |
-        Matches TypeScript `IFlatListProduct` — flat items + optional mixes
-        (milkshake, pancake, waffle, …).
-
-        **handoff 01 · 07:** every `items[]` row requires `image`. `mixes[]`
-        (مكس / سوبر مكس) are Filament-managed when the product offers them.
+                $ref: "#/components/schemas/FlavorOption"
+    FlatListProduct:
+      description: "List products: waffle, crepe, kunafa, juices and the rest"
       allOf:
-        - $ref: "#/components/schemas/IProductBase"
+        - $ref: "#/components/schemas/ProductBase"
         - type: object
-          required: [kind, items]
+          required: [items]
           properties:
             kind:
               type: string
               enum: [flat-list]
             items:
               type: array
-              description: |
-                Variants shown on the order page. Each item MUST include
-                `image` (handoff 01) — also used inside the mix modal.
               items:
-                $ref: "#/components/schemas/IProductVariant"
+                $ref: "#/components/schemas/ProductVariant"
             mixes:
               type: array
-              description: |
-                Optional mix rules (handoff 07). Filament CRUD; `available: false`
-                hides the rule. `itemIds` → same product's `items[].id`.
               items:
-                $ref: "#/components/schemas/IMixRule"
-
-    IProduct:
-      description: Matches TypeScript `IProduct` — discriminated union on `kind`
+                $ref: "#/components/schemas/MixRule"
+            extraScoop:
+              $ref: "#/components/schemas/ExtraScoop"
+    Product:
       oneOf:
-        - $ref: "#/components/schemas/IBuilderProduct"
-        - $ref: "#/components/schemas/IFlatListProduct"
+        - $ref: "#/components/schemas/BuilderProduct"
+        - $ref: "#/components/schemas/FlatListProduct"
       discriminator:
         propertyName: kind
         mapping:
-          builder: "#/components/schemas/IBuilderProduct"
-          flat-list: "#/components/schemas/IFlatListProduct"
+          builder: "#/components/schemas/BuilderProduct"
+          flat-list: "#/components/schemas/FlatListProduct"
 
-    # --- Addresses (handoff 10) — NOT IMPLEMENTED YET ---
-    SavedAddress:
+    # ───────────── Store (src/hooks/store/fetchStoreStatus.ts) ─────────────
+    StoreSchedule:
       type: object
-      description: Matches TypeScript `SavedAddress` (addressStore) — not implemented yet (handoff 10)
-      required: [id, type, label, name, phone, city, zoneId, street, isDefault]
+      required: [day, label, enabled, open, close, allDay]
       properties:
-        id:
+        day:
           type: string
-          example: addr_123
-        type:
-          type: string
-          enum: [home, work, other]
         label:
           type: string
-          example: المنزل
+        enabled:
+          type: boolean
+        open:
+          type: string
+        close:
+          type: string
+        allDay:
+          type: boolean
+    StoreStatusDetails:
+      type: object
+      required: [open, source, override, scheduleOpen, opensAt, closesAt, nextChangeAt, today]
+      properties:
+        open:
+          type: boolean
+        source:
+          type: string
+          enum: [schedule, override]
+        override:
+          type: boolean
+          nullable: true
+        scheduleOpen:
+          type: boolean
+        opensAt:
+          type: string
+          nullable: true
+        closesAt:
+          type: string
+          nullable: true
+        nextChangeAt:
+          type: string
+          nullable: true
+        today:
+          $ref: "#/components/schemas/StoreSchedule"
+    StoreStatus:
+      type: object
+      required: [storeOpen, deliveryOpen, closedMessage, deliveryClosedMessage, autoConfirmMinutes, timezone, serverTime, store, delivery, schedule]
+      properties:
+        storeOpen:
+          type: boolean
+        deliveryOpen:
+          type: boolean
+        closedMessage:
+          type: string
+        deliveryClosedMessage:
+          type: string
+        autoConfirmMinutes:
+          type: integer
+        timezone:
+          type: string
+        serverTime:
+          type: string
+        store:
+          $ref: "#/components/schemas/StoreStatusDetails"
+        delivery:
+          $ref: "#/components/schemas/StoreStatusDetails"
+        schedule:
+          type: object
+          required: [store, delivery]
+          properties:
+            store:
+              type: array
+              items:
+                $ref: "#/components/schemas/StoreSchedule"
+            delivery:
+              type: array
+              items:
+                $ref: "#/components/schemas/StoreSchedule"
+
+    # ───────────── Auth (src/store/authStore.ts, src/hooks/auth/*) ─────────────
+    AuthUser:
+      type: object
+      required: [id, name, email]
+      properties:
+        id:
+          type: integer
         name:
           type: string
-          example: أحمد علي
+        email:
+          type: string
         phone:
           type: string
-          example: "0599123456"
-        city:
-          type: string
-          example: غزة
-        zoneId:
-          type: string
-          description: References `DeliveryZone.id`
-          example: rimal
-        street:
-          type: string
-          example: شارع الجلاء
-        landmark:
-          type: string
-          nullable: true
-        location:
-          type: object
-          nullable: true
-          properties:
-            lat:
-              type: number
-            lng:
-              type: number
-        isDefault:
-          type: boolean
-
-    AddressRequest:
+    UserResponse:
       type: object
-      description: |
-        Request body for create/update — not implemented yet (handoff 10).
-        `isDefault` is never sent by the client; it's computed server-side
-        (first address a user adds becomes default automatically, see
-        `POST /addresses/{id}/default` to change it afterwards).
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/AuthUser"
+    OtpSendRequest:
+      type: object
+      required: [phone]
+      properties:
+        phone:
+          type: string
+    OtpSendResponse:
+      type: object
+      required: [success, message, data]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          required: [userExists]
+          properties:
+            userExists:
+              type: boolean
+              description: "`false` means the verify step must send `fullName`"
+    OtpVerifyRequest:
+      type: object
+      required: [phone, code]
+      properties:
+        phone:
+          type: string
+        code:
+          type: string
+        fullName:
+          type: string
+    OtpVerifyResponse:
+      type: object
+      required: [success, message, data]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          required: [token, user]
+          properties:
+            token:
+              type: string
+            user:
+              $ref: "#/components/schemas/AuthUser"
+    UpdateProfileRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+
+    # ───────────── Addresses (src/store/addressStore.ts, src/lib/deliveryZones.ts) ─────────────
+    AddressType:
+      type: string
+      enum: [home, work, other]
+    AddressInput:
+      type: object
+      description: "`SavedAddress` without `id` and `isDefault`"
       required: [type, label, name, phone, city, zoneId, street]
       properties:
         type:
-          type: string
-          enum: [home, work, other]
+          $ref: "#/components/schemas/AddressType"
         label:
           type: string
+          description: "Required when `type` is `other`"
         name:
           type: string
         phone:
           type: string
         city:
           type: string
-          example: غزة
         zoneId:
           type: string
+          description: "A `DeliveryZone.id`"
+        area:
+          type: string
+          description: Zone name
+        zoneDescription:
+          type: string
+        fee:
+          type: number
         street:
           type: string
         landmark:
           type: string
-          nullable: true
-        location:
-          type: object
-          nullable: true
+    SavedAddress:
+      allOf:
+        - $ref: "#/components/schemas/AddressInput"
+        - type: object
+          required: [id, isDefault]
           properties:
-            lat:
-              type: number
-            lng:
-              type: number
-
+            id:
+              type: string
+            isDefault:
+              type: boolean
     DeliveryZone:
       type: object
-      description: |
-        Matches `src/lib/deliveryZones.ts` shape exactly — not implemented
-        yet (handoff 10). Returned by `GET /addresses/delivery-zones`.
       required: [id, name, fee]
       properties:
         id:
           type: string
-          example: rimal
         name:
           type: string
-          example: الرمال
         description:
           type: string
-          nullable: true
-          example: حي الرمال
+          description: Boundary streets or landmarks of the zone
         fee:
           type: number
-          example: 10
 
-    # --- Cart (handoff 11) — NOT IMPLEMENTED YET ---
+    # ───────────── Cart (src/hooks/cart/applyCouponRequest.ts) ─────────────
     ApplyCouponRequest:
       type: object
-      description: Not implemented yet (handoff 11)
       required: [code, subtotal]
       properties:
         code:
           type: string
-          example: GLACE10
         subtotal:
           type: number
-          example: 33
-
-    ApplyCouponResponse:
+    ApplyCouponResult:
       type: object
-      description: Not implemented yet (handoff 11)
-      required: [valid]
+      required: [valid, discount]
       properties:
         valid:
           type: boolean
         discount:
           type: number
-          description: Discount amount in ₪ (absolute, already resolved from the code's percentage)
-          example: 3.3
+          description: Discount amount in ILS
         message:
           type: string
           nullable: true
-          description: Set when `valid` is false (e.g. expired/unknown code)
 
-    # --- Orders (handoff 12) — NOT IMPLEMENTED YET ---
+    # ───────────── Orders (src/store/orderStore.ts, src/store/cartStore.ts) ─────────────
+    PaymentMethod:
+      type: string
+      description: "Payment method as the frontend types it on `Order` (`paypal` is بال باي)"
+      enum: [jawwal, jawwal-manual, paypal, cash, visa, wallet, bop]
+    PaymentMethodWire:
+      type: string
+      description: "Payment method as sent on `POST /orders` (بال باي is `palpay`)"
+      enum: [jawwal, jawwal-manual, palpay, cash, visa, wallet, bop]
+    DeliveryMethod:
+      type: string
+      enum: [delivery, pickup, dine-in]
+    OrderStatus:
+      type: string
+      enum: ["قيد المراجعة", "جاري التحضير", "جاهز للاستلام", "في الطريق", "تم التسليم", "تم الاستلام", "ملغي", "مسترد"]
     CartSelection:
       type: object
-      description: Matches TypeScript `CartSelection` (cartStore) — not implemented yet (handoff 12)
       required: [kind, id, label, qty, unitPrice]
       properties:
         kind:
           type: string
-          enum: [flavor, mix, addon]
+          enum: [flavor, mix, mixItem, addon]
+          description: "`mixItem` is only sent back by the API for a mix flavor; the frontend sends `mix`"
         id:
           type: string
+          description: Flavor, addon or mix item id
         label:
           type: string
         qty:
           type: integer
         unitPrice:
           type: number
-
+          description: "`0` for flavors included in the base price"
+    CartUnit:
+      type: object
+      required: [selections]
+      properties:
+        selections:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartSelection"
     CartItem:
       type: object
-      description: Matches TypeScript `CartItem` (cartStore) — not implemented yet (handoff 12)
-      required: [productId, name, unitPrice, quantity]
+      required: [id, productId, name, selections, addonTotal, unitPrice, quantity]
       properties:
+        id:
+          type: string
+          description: Cart line id
         productId:
           type: string
+          description: "`Product.id`"
         name:
           type: string
         image:
           type: string
-          format: uri
-          nullable: true
         size:
           type: string
-          nullable: true
         type:
           type: string
-          nullable: true
         container:
           type: string
-          nullable: true
+        sizeId:
+          type: string
+          description: "`SizeOption.id` (builder products)"
+        containerId:
+          type: string
+          description: "`ContainerOption.id` (builder products with a container step)"
+        itemId:
+          type: string
+          description: "`ProductVariant.id` (flat-list, non-mix lines)"
+        mixId:
+          type: string
+          description: "`MixRule.id` (mix lines)"
+        mixItemIds:
+          type: array
+          description: "Picked `ProductVariant.id`s for a mix line, one per pick"
+          items:
+            type: string
         flavorFamily:
           type: string
           enum: [classic, special, mix]
-          nullable: true
         selections:
           type: array
           items:
             $ref: "#/components/schemas/CartSelection"
         addonTotal:
           type: number
-          default: 0
+          description: Per-unit addon cost
         unitPrice:
           type: number
         quantity:
           type: integer
+        units:
+          type: array
+          description: "Per-unit addons; when present, `units.length` equals `quantity`"
+          items:
+            $ref: "#/components/schemas/CartUnit"
         flatSelections:
           type: array
-          nullable: true
+          description: Addons priced once for the whole line (not per unit)
           items:
             $ref: "#/components/schemas/CartSelection"
         flatAddonTotal:
           type: number
-          nullable: true
-
-    CreateOrderRequest:
+    PlaceOrderItem:
+      description: "A `CartItem` as sent inside `POST /orders`"
+      allOf:
+        - $ref: "#/components/schemas/CartItem"
+        - type: object
+          properties:
+            flavorIds:
+              type: array
+              description: "Flavor and mix pick ids from `selections`, each repeated by its `qty`. Only sent when there is at least one"
+              items:
+                type: string
+    OrderItemSelection:
       type: object
-      description: |
-        Not implemented yet (handoff 12). Client-computed price fields
-        (`subtotal`/`discount`/`total`) are NOT part of this request — the
-        server recomputes everything from `items`/`couponCode`.
-      required: [items, paymentMethod, deliveryMethod]
+      required: [type]
       properties:
-        items:
+        type:
           type: string
-          description: JSON-encoded `CartItem[]` — a plain array field can't travel in multipart/form-data, so the frontend stringifies it.
-          example: '[{"productId":"b7f1c2a4-...","name":"بوظة كاسة","unitPrice":15,"quantity":2,"addonTotal":3,"selections":[]}]'
-        couponCode:
+          enum: [builder, flat, mix]
+        sizeId:
           type: string
-          nullable: true
-        paymentMethod:
+        containerId:
           type: string
-          enum: [jawwal, jawwal-manual, paypal, cash, visa, wallet, bop]
-        deliveryMethod:
+        itemId:
           type: string
-          enum: [delivery, pickup, dine-in]
-        addressId:
-          type: string
-          nullable: true
-          description: Required when `deliveryMethod` is `delivery`. References `SavedAddress.id`.
-        pickupTime:
-          type: string
-          nullable: true
-          format: date-time
-        receiptImage:
-          type: string
-          format: binary
-          nullable: true
-          description: Required (or `receiptNote`) when `paymentMethod` is jawwal-manual/paypal/bop
-        receiptNote:
-          type: string
-          nullable: true
-        jawwalPhone:
-          type: string
-          nullable: true
-          description: |
-            Required when `paymentMethod` is `jawwal` (automatic) — the
-            phone JawwalPay sent the confirmation code to via
-            `POST /orders/jawwal/send-code`.
-        jawwalCode:
-          type: string
-          nullable: true
-          description: |
-            Required when `paymentMethod` is `jawwal`. The server verifies
-            this against JawwalPay for `jawwalPhone`/`total` before creating
-            the order — a wrong/expired code fails with 422 and no order is
-            created.
-
-    OrderAddressSnapshot:
+    OrderItem:
+      allOf:
+        - $ref: "#/components/schemas/CartItem"
+        - type: object
+          properties:
+            selection:
+              $ref: "#/components/schemas/OrderItemSelection"
+    DeliveryAddress:
       type: object
-      description: Order-time snapshot of a SavedAddress — not implemented yet (handoff 12)
+      required: [name, phone, city, area, street]
       properties:
         name:
           type: string
@@ -2896,44 +1928,34 @@ components:
           type: string
         area:
           type: string
-          description: Zone name at order time (resolved server-side from `zoneId`)
         street:
           type: string
         landmark:
           type: string
-          nullable: true
         note:
           type: string
-          nullable: true
-
-    OrderDriver:
+    Driver:
       type: object
-      description: Not implemented yet (handoff 12)
+      required: [id, name, phone]
       properties:
         id:
           type: string
         name:
           type: string
-          example: محمود الأحمد
         phone:
           type: string
-          example: "0599876543"
         company:
           type: string
-          example: توصيل فلسطين
-
     Order:
       type: object
-      description: Matches TypeScript `Order` (orderStore) — not implemented yet (handoff 12)
       required: [id, items, subtotal, discount, total, paymentMethod, deliveryMethod, status, createdAt]
       properties:
         id:
           type: string
-          example: ORD-M3K2A1
         items:
           type: array
           items:
-            $ref: "#/components/schemas/CartItem"
+            $ref: "#/components/schemas/OrderItem"
         subtotal:
           type: number
         discount:
@@ -2941,57 +1963,53 @@ components:
         total:
           type: number
         paymentMethod:
-          type: string
-          enum: [jawwal, jawwal-manual, paypal, cash, visa, wallet, bop]
+          $ref: "#/components/schemas/PaymentMethod"
         deliveryMethod:
-          type: string
-          enum: [delivery, pickup, dine-in]
+          $ref: "#/components/schemas/DeliveryMethod"
         address:
-          $ref: "#/components/schemas/OrderAddressSnapshot"
+          $ref: "#/components/schemas/DeliveryAddress"
         pickupTime:
           type: string
-          format: date-time
-          nullable: true
-        status:
+          description: "Dine-in time, e.g. `17:00`"
+        scheduledFor:
           type: string
-          enum: [قيد المراجعة, جاري التحضير, جاهز للاستلام, في الطريق, تم التسليم, تم الاستلام, ملغي, مسترد]
+          description: "ISO datetime the `pickupTime` field of `POST /orders` becomes (delivery and pickup)"
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        paymentStatus:
+          type: string
+          description: "Known values: pending, paid, failed, refunded"
         createdAt:
           type: string
-          format: date-time
+        orderNote:
+          type: string
+        captainNote:
+          type: string
         receiptImage:
           type: string
-          format: uri
-          nullable: true
+          description: Receipt image URL
         receiptNote:
           type: string
-          nullable: true
+        senderAccountName:
+          type: string
         cancelReason:
           type: string
-          nullable: true
+        adminNotes:
+          type: string
         driver:
-          allOf:
-            - $ref: "#/components/schemas/OrderDriver"
-          nullable: true
+          $ref: "#/components/schemas/Driver"
         driverAssignedAt:
           type: string
-          format: date-time
-          nullable: true
         preparationTime:
           type: integer
-          description: Minutes (5-30), set by server/staff
-          nullable: true
+          description: Minutes (5 to 30)
         estimatedDeliveryTime:
           type: integer
-          description: Minutes (10-25), delivery orders only
-          nullable: true
+          description: Minutes (10 to 25)
         receivedAt:
           type: string
-          format: date-time
-          nullable: true
-
-    OrdersResponse:
+    OrdersPage:
       type: object
-      description: Not implemented yet (handoff 12). Same page-envelope shape as `WalletTransactionsResponse`.
       required: [items, total, page, perPage, totalPages]
       properties:
         items:
@@ -3006,57 +2024,132 @@ components:
           type: integer
         totalPages:
           type: integer
-
-    # --- Payments (handoff 13) — NOT IMPLEMENTED YET ---
-    MerchantPaymentAccount:
+    PlaceOrderRequest:
       type: object
-      description: |
-        Matches `src/lib/merchantPaymentAccounts.ts` shape exactly — not
-        implemented yet (handoff 13). `visa` has no transfer account —
-        `inStoreOnly: true` and no `accountLabel`/`accountValue`/`holderName`,
-        since it can only be paid on the in-store card terminal.
+      required: [items, paymentMethod, deliveryMethod]
+      properties:
+        items:
+          type: string
+          description: "JSON-encoded array of `PlaceOrderItem`"
+        couponCode:
+          type: string
+        paymentMethod:
+          $ref: "#/components/schemas/PaymentMethodWire"
+        deliveryMethod:
+          $ref: "#/components/schemas/DeliveryMethod"
+        addressId:
+          type: string
+          description: "A `SavedAddress.id`; needed for `delivery`"
+        pickupTime:
+          type: string
+        captainNote:
+          type: string
+          description: Note for the delivery captain
+        orderNote:
+          type: string
+          description: Note about the order itself
+        receiptImage:
+          type: string
+          format: binary
+          description: "Transfer receipt for `jawwal-manual`, `palpay` and `bop`"
+        receiptNote:
+          type: string
+        senderAccountName:
+          type: string
+          description: "Name on the account the customer paid from; needed for `jawwal-manual`, `palpay` and `bop`"
+        jawwalPhone:
+          type: string
+          description: "Needed for `jawwal`; from `POST /orders/jawwal/send-code`"
+        jawwalCode:
+          type: string
+          description: "Needed for `jawwal`; the code JawwalPay texted"
+    UpdateReceiptRequest:
+      type: object
+      properties:
+        receiptImage:
+          type: string
+          format: binary
+        receiptNote:
+          type: string
+        senderAccountName:
+          type: string
+    CancelOrderRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+    EmailSummaryRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+    JawwalSendCodeRequest:
+      type: object
+      required: [phone, amount]
+      properties:
+        phone:
+          type: string
+        amount:
+          type: number
+    SentResponse:
+      type: object
+      required: [sent]
+      properties:
+        sent:
+          type: boolean
+
+    # ───────────── Payments (src/lib/merchantPaymentAccounts.ts) ─────────────
+    PaymentAccount:
+      type: object
       required: [method]
       properties:
         method:
           type: string
-          enum: [bop, jawwal, jawwal-manual, paypal, visa]
-        inStoreOnly:
-          type: boolean
-          nullable: true
-          description: True only for `visa` — no online transfer, pay in-store only.
+          enum: [jawwal, jawwal-manual, palpay, cash, visa, wallet, bop]
+        displayName:
+          type: string
         qrImage:
           type: string
-          format: uri
-          nullable: true
         holderName:
           type: string
-          nullable: true
         bankName:
           type: string
-          nullable: true
-          description: Bank-only accounts (bop)
-        accountLabel:
+          description: Bank transfer methods only
+        primaryLabel:
           type: string
-          nullable: true
-          description: e.g. "رقم الحساب" or "رقم الجوال"
-        accountValue:
+          example: رقم الحساب
+        primaryValue:
           type: string
-          nullable: true
-        iban:
+        secondaryLabel:
           type: string
-          nullable: true
+        secondaryValue:
+          type: string
+          description: Read by the frontend as the IBAN
+        accountNumber:
+          type: string
 
-    # --- Wallet (handoff 14) — NOT IMPLEMENTED YET ---
+    # ───────────── Wallet (src/store/walletStore.ts, src/hooks/wallet/*) ─────────────
+    WalletBalance:
+      type: object
+      required: [balance]
+      properties:
+        balance:
+          type: number
+    TopUpMethodWire:
+      type: string
+      description: "Top-up method on the wire (بال باي is `palpay`)"
+      enum: [bop, palpay, jawwal, jawwal-manual, visa]
     WalletTransaction:
       type: object
-      description: Not implemented yet (handoff 14)
       required: [id, date, amount, type, label]
       properties:
         id:
           type: string
         date:
           type: string
-          format: date-time
         amount:
           type: number
         type:
@@ -3066,29 +2159,11 @@ components:
           type: string
         method:
           type: string
-          enum: [bop, paypal, jawwal, jawwal-manual, visa, cash, wallet]
-          nullable: true
+          enum: [bop, palpay, jawwal, jawwal-manual, visa, cash, wallet]
         receiptImage:
           type: string
-          format: uri
-          nullable: true
-
-    WalletResponse:
+    WalletTransactionsPage:
       type: object
-      description: |
-        Not implemented yet (handoff 14). Balance only — see
-        `WalletTransactionsResponse` for the paginated transaction history.
-      required: [balance]
-      properties:
-        balance:
-          type: number
-          example: 105.25
-
-    WalletTransactionsResponse:
-      type: object
-      description: |
-        Not implemented yet (handoff 14). Same pagination shape as
-        `IEventsListResponse` — `items` newest first.
       required: [items, total, page, perPage, totalPages]
       properties:
         items:
@@ -3097,60 +2172,94 @@ components:
             $ref: "#/components/schemas/WalletTransaction"
         total:
           type: integer
-          example: 46
         page:
           type: integer
-          example: 1
         perPage:
           type: integer
-          example: 20
         totalPages:
           type: integer
-          example: 3
-
+    TopUpRequestStatus:
+      type: string
+      enum: ["قيد المراجعة", "مكتمل", "مرفوض"]
     TopUpRequest:
       type: object
-      description: |
-        Not implemented yet (handoff 14). `amount` is nullable while the
-        request is `قيد المراجعة` for receipt-based methods (bop, paypal,
-        jawwal-manual) — the customer never types it, the reviewer reads it
-        off the uploaded receipt and sets it on approval. Only the `jawwal`
-        automatic flow always has it set upfront (no receipt to read it from).
-      required: [id, method, status, createdAt]
+      required: [id, amount, method, status, createdAt]
       properties:
         id:
           type: string
         amount:
           type: number
-          nullable: true
         method:
-          type: string
-          enum: [bop, paypal, jawwal, jawwal-manual]
+          $ref: "#/components/schemas/TopUpMethodWire"
         status:
-          type: string
-          enum: [قيد المراجعة, مكتمل]
+          $ref: "#/components/schemas/TopUpRequestStatus"
         createdAt:
           type: string
-          format: date-time
         receiptImage:
           type: string
-          format: uri
-          nullable: true
         receiptNote:
           type: string
-          nullable: true
+        senderAccountName:
+          type: string
         phone:
           type: string
-          nullable: true
-          description: Only for the jawwal automatic method
+          description: "Automatic `jawwal` only: the number the customer paid from"
+        rejectionReason:
+          type: string
+          description: "Read by the frontend for `مرفوض` requests; not sent by the API yet"
+    TopUpRequestsResponse:
+      type: object
+      required: [requests]
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopUpRequest"
+    TopUpRequestResponse:
+      type: object
+      required: [request]
+      properties:
+        request:
+          $ref: "#/components/schemas/TopUpRequest"
+    SubmitTopUpRequest:
+      type: object
+      required: [method, amount]
+      properties:
+        method:
+          type: string
+          enum: [bop, palpay, jawwal-manual]
+        amount:
+          type: number
+        receiptImage:
+          type: string
+          format: binary
+        receiptNote:
+          type: string
+        senderAccountName:
+          type: string
+          description: Name on the account the customer paid from
+    JawwalConfirmRequest:
+      type: object
+      required: [phone, amount, code]
+      properties:
+        phone:
+          type: string
+        amount:
+          type: number
+        code:
+          type: string
+    DeductWalletRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+        label:
+          type: string
 
+    # ───────────── Content (src/hooks/help/fetchHelpFaqs.ts) ─────────────
     Faq:
       type: object
-      description: |
-        Not implemented yet (handoff 15). `answer` uses "\n\n" to separate
-        paragraphs; a paragraph starting with "- " renders as a bullet list
-        (each line one item). `link` is an optional trailing CTA, e.g. the
-        contact page.
       required: [id, question, answer]
       properties:
         id:
@@ -3159,46 +2268,12 @@ components:
           type: string
         answer:
           type: string
+          description: 'Paragraphs separated by a blank line; a paragraph starting with "- " is a bullet list'
         link:
           type: object
-          nullable: true
           required: [href, label]
           properties:
             href:
               type: string
             label:
               type: string
-
-  responses:
-    Unauthorized:
-      description: Missing or invalid authentication token
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-
-    NotFound:
-      description: Resource not found
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-
-    ValidationError:
-      description: Validation failed
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-
-    ServerError:
-      description: Internal server error
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-
-# Default security for protected routes.
-# Override with `security: []` on public endpoints (e.g. login, register).
-security:
-  - bearerAuth: []
