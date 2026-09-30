@@ -142,10 +142,20 @@ export default function PaymentClientPage() {
   const user = useAuthStore((s) => s.user);
   const { data: paymentAccounts } = usePaymentAccounts();
 
-  // Nothing is pre-selected: a hardcoded default (it used to be "jawwal")
-  // could point at a method the backend doesn't even offer, showing its
-  // form while no option in the list looks selected.
+  // Starts empty, then defaults to "jawwal" once the backend's enabled
+  // methods load and include it — a hardcoded initial value could point at
+  // a method that's been turned off, showing its form with no option lit.
   const [method, setMethod] = useState<PaymentMethod | null>(null);
+  const defaultMethodApplied = useRef(false);
+  const skipNextMethodScroll = useRef(false);
+  useEffect(() => {
+    if (defaultMethodApplied.current || !paymentAccounts) return;
+    defaultMethodApplied.current = true;
+    if (method === null && paymentAccounts.some((a) => a.method === "jawwal")) {
+      skipNextMethodScroll.current = true;
+      setMethod("jawwal");
+    }
+  }, [paymentAccounts, method]);
   const [jawwalPhone, setJawwalPhone] = useState(user?.phone ?? "");
   const [jawwalCodeSent, setJawwalCodeSent] = useState(false);
   const [jawwalCode, setJawwalCode] = useState("");
@@ -186,6 +196,10 @@ export default function PaymentClientPage() {
   useEffect(() => {
     if (isFirstMethodRender.current) {
       isFirstMethodRender.current = false;
+      return;
+    }
+    if (skipNextMethodScroll.current) {
+      skipNextMethodScroll.current = false;
       return;
     }
     methodDetailsRef.current?.scrollIntoView({
