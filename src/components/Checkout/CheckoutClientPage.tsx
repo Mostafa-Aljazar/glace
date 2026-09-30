@@ -216,6 +216,43 @@ export default function CheckoutClientPage() {
     goToPayment(selectedAddress, selectedAddress.id);
   }
 
+  function onConfirmPickup() {
+    if (deliveryBlockingItem) {
+      setDeliveryBlockedOpen(true);
+      return;
+    }
+    setCheckoutDraft({
+      deliveryMethod: "pickup",
+      address: undefined,
+      deliveryFee: 0,
+      pickupTime: pickupTimeISO,
+    });
+    router.push("/payment");
+  }
+
+  function onConfirmDineIn() {
+    setCheckoutDraft({
+      deliveryMethod: "dine-in",
+      address: undefined,
+      deliveryFee: 0,
+    });
+    router.push("/payment");
+  }
+
+  // The new-address form keeps its own inline save/cancel buttons, so the
+  // pinned bar only covers the modes that go straight to payment.
+  const confirmAction =
+    delivery === "delivery"
+      ? isAddingNewAddress
+        ? null
+        : onConfirmSavedAddress
+      : delivery === "pickup"
+        ? onConfirmPickup
+        : delivery === "dine-in"
+          ? onConfirmDineIn
+          : null;
+  const showActionBar = isLoggedIn && confirmAction !== null;
+
   function handleCancelOrder() {
     clearCart();
     setCancelOpen(false);
@@ -259,7 +296,11 @@ export default function CheckoutClientPage() {
     <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
 
-      <div className="z-90 relative mx-auto px-2 sm:px-4 pt-22.5 lg:pt-26.5 pb-40 lg:pb-12 max-w-300">
+      <div
+        className={`z-90 relative mx-auto px-2 sm:px-4 pt-22.5 lg:pt-26.5 max-w-300 ${
+          showActionBar ? "pb-56 lg:pb-44" : "pb-40 lg:pb-12"
+        }`}
+      >
         <h1 className="mb-6 text-[40px] text-white sm:text-[50px] text-center">
           إتمام الطلب
         </h1>
@@ -635,7 +676,7 @@ export default function CheckoutClientPage() {
 
                   <div className="mb-6">
                     <label className={labelClass}>
-                      هل تريد جدولة وقت التوصيل؟{" "}
+                      اختر الوقت المناسب لتوصيل طلبك{" "}
                       <span className="font-normal text-white/35">
                         (اختياري)
                       </span>
@@ -644,10 +685,11 @@ export default function CheckoutClientPage() {
                       days={scheduleDays}
                       value={schedule}
                       onChange={setSchedule}
+                      hideDate
                     />
                   </div>
 
-                  <div className="mb-6">
+                  <div>
                     <label className={labelClass}>
                       ملاحظة للكابتن{" "}
                       <span className="font-normal text-white/35">
@@ -662,26 +704,6 @@ export default function CheckoutClientPage() {
                       className="bg-white/8 px-3.5 py-3 border border-white/20 focus-visible:border-glace-yellow/60 rounded-[16px] outline-none focus-visible:ring-3 focus-visible:ring-glace-yellow/20 w-full text-[15px] text-white placeholder:text-white/40 transition-colors resize-none"
                     />
                   </div>
-
-                  {isLoggedIn && (
-                    <div className="flex items-center gap-2.5">
-                      <Button
-                        type="button"
-                        onClick={() => setCancelOpen(true)}
-                        className="bg-rose-600 hover:bg-rose-500 px-4 py-3.5 border-0 rounded-[18px] h-auto font-bold text-[14px] text-white transition-colors cursor-pointer shrink-0"
-                      >
-                        إلغاء الطلب
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={onConfirmSavedAddress}
-                        disabled={!selectedAddress}
-                        className="flex-1 bg-glace-yellow hover:bg-yellow-300 disabled:opacity-60 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] py-3.5 border-0 rounded-[18px] h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 cursor-pointer disabled:pointer-events-none"
-                      >
-                        تأكيد وانتقل للدفع
-                      </Button>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -766,7 +788,7 @@ export default function CheckoutClientPage() {
                     <>
                       <div>
                         <label className={labelClass}>
-                          هل تريد جدولة وقت التوصيل؟{" "}
+                          اختر الوقت المناسب لتوصيل طلبك{" "}
                           <span className="font-normal text-white/35">
                             (اختياري)
                           </span>
@@ -775,6 +797,7 @@ export default function CheckoutClientPage() {
                           days={scheduleDays}
                           value={schedule}
                           onChange={setSchedule}
+                          hideDate
                         />
                       </div>
 
@@ -810,100 +833,18 @@ export default function CheckoutClientPage() {
 
               {delivery === "pickup" && (
                 <div>
-                  <div className="flex items-start gap-3 bg-white/8 mb-6 p-4 border border-white/15 rounded-[16px]">
-                    <span className="flex justify-center items-center bg-glace-yellow/15 rounded-full size-10 text-glace-yellow shrink-0">
-                      <Store size={20} />
-                    </span>
-                    <p className="pt-1.5 text-[14px] text-white/80 leading-relaxed">
-                      سيتم تجهيز الطلب تيك اواي وستقوم أنت باستلامه من المحل
-                      مباشرة، بدون رسوم توصيل.
-                    </p>
-                  </div>
-
-                  <div className="mb-6">
+                  <div>
                     <label className={`${labelClass} mb-2.5`}>
-                      هل تريد جدولة وقت الاستلام؟{" "}
-                      <span className="font-normal text-white/35">
-                        (اختياري)
-                      </span>
+                      إذا أردت استلام الطلب في وقت لاحق، الرجاء اختيار التوقيت
+                      المناسب
                     </label>
                     <ScheduleTimePicker
                       days={scheduleDays}
                       value={schedule}
                       onChange={setSchedule}
+                      hideDate
                     />
                   </div>
-
-                  {isLoggedIn && (
-                    <div className="flex items-center gap-2.5">
-                      <Button
-                        type="button"
-                        onClick={() => setCancelOpen(true)}
-                        className="bg-rose-600 hover:bg-rose-500 px-4 py-3.5 border-0 rounded-[18px] h-auto font-bold text-[14px] text-white transition-colors cursor-pointer shrink-0"
-                      >
-                        إلغاء الطلب
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          if (deliveryBlockingItem) {
-                            setDeliveryBlockedOpen(true);
-                            return;
-                          }
-                          setCheckoutDraft({
-                            deliveryMethod: "pickup",
-                            address: undefined,
-                            deliveryFee: 0,
-                            pickupTime: pickupTimeISO,
-                          });
-                          router.push("/payment");
-                        }}
-                        className="flex-1 bg-glace-yellow hover:bg-yellow-300 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] py-3.5 border-0 rounded-[18px] h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 cursor-pointer"
-                      >
-                        تأكيد وانتقل للدفع
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {delivery === "dine-in" && (
-                <div>
-                  <div className="flex items-start gap-3 bg-white/8 mb-6 p-4 border border-white/15 rounded-[16px]">
-                    <span className="flex justify-center items-center bg-glace-yellow/15 rounded-full size-10 text-glace-yellow shrink-0">
-                      <Utensils size={20} />
-                    </span>
-                    <p className="pt-1.5 text-[14px] text-white/80 leading-relaxed">
-                      سيتم تجهيز طلبك لتناوله داخل المطعم مباشرة، بدون رسوم
-                      توصيل.
-                    </p>
-                  </div>
-
-                  {isLoggedIn && (
-                    <div className="flex items-center gap-2.5">
-                      <Button
-                        type="button"
-                        onClick={() => setCancelOpen(true)}
-                        className="bg-rose-600 hover:bg-rose-500 px-4 py-3.5 border-0 rounded-[18px] h-auto font-bold text-[14px] text-white transition-colors cursor-pointer shrink-0"
-                      >
-                        إلغاء الطلب
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          setCheckoutDraft({
-                            deliveryMethod: "dine-in",
-                            address: undefined,
-                            deliveryFee: 0,
-                          });
-                          router.push("/payment");
-                        }}
-                        className="flex-1 bg-glace-yellow hover:bg-yellow-300 shadow-[0_8px_28px_rgba(244,228,81,0.28)] hover:shadow-[0_10px_32px_rgba(244,228,81,0.4)] py-3.5 border-0 rounded-[18px] h-auto font-bold text-[#1e6a7f] text-[17px] transition-all hover:-translate-y-0.5 cursor-pointer"
-                      >
-                        تأكيد وانتقل للدفع
-                      </Button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -934,6 +875,30 @@ export default function CheckoutClientPage() {
           </div>
         </div>
       </div>
+
+      {showActionBar && (
+        <div className="right-0 bottom-28 md:bottom-24 lg:bottom-20 left-0 z-9999999 fixed px-3 pointer-events-auto">
+          <div className="mx-auto max-w-300">
+            <div className="flex items-center gap-2.5 bg-[#2d8aaa]/95 shadow-[0_8px_28px_rgba(0,0,0,0.3)] backdrop-blur-md p-3 border border-white/25 rounded-[20px]">
+              <Button
+                type="button"
+                onClick={() => setCancelOpen(true)}
+                className="bg-rose-600 hover:bg-rose-500 px-4 py-3 border-0 rounded-[16px] h-auto font-bold text-[14px] text-white transition-colors cursor-pointer shrink-0"
+              >
+                إلغاء الطلب
+              </Button>
+              <Button
+                type="button"
+                onClick={confirmAction ?? undefined}
+                disabled={delivery === "delivery" && !selectedAddress}
+                className="flex-1 bg-glace-yellow hover:bg-yellow-300 disabled:opacity-60 shadow-[0_4px_16px_rgba(244,228,81,0.35)] hover:shadow-[0_6px_20px_rgba(244,228,81,0.45)] py-3 border-0 rounded-[16px] h-auto font-bold text-[#1e6a7f] text-[16px] transition-all cursor-pointer disabled:pointer-events-none"
+              >
+                تأكيد وانتقل للدفع
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <LoginSheet open={loginSheetOpen} onOpenChange={setLoginSheetOpen} />
     </div>

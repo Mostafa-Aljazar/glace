@@ -16,6 +16,8 @@ interface ScheduleTimePickerProps {
   days: ScheduleDay[];
   value: { date: string; time: string } | null;
   onChange: (value: { date: string; time: string } | null) => void;
+  /** Hide the day select and schedule on the first available day only. */
+  hideDate?: boolean;
 }
 
 function format12Hour(hour: number): string {
@@ -47,6 +49,7 @@ export default function ScheduleTimePicker({
   days,
   value,
   onChange,
+  hideDate = false,
 }: ScheduleTimePickerProps) {
   const [selectedDate, setSelectedDate] = useState<string>(value?.date || days[0]?.date || "");
   const enabled = value !== null;
@@ -146,6 +149,7 @@ export default function ScheduleTimePicker({
       {enabled && (
       <div className="flex flex-col flex-1 gap-2.5 min-w-0">
         {/* Day select — full width row on its own */}
+        {!hideDate && (
         <Select value={selectedDate || ""} onValueChange={handleDateChange}>
           <SelectTrigger className="w-full min-w-0 bg-white/10 hover:bg-white/15 border-0 text-white rounded-[14px] py-5 text-[14px] font-bold focus:ring-0 focus:ring-offset-0 [&_svg]:size-4 [&_svg]:text-white/60 h-12">
             <SelectValue />
@@ -158,6 +162,7 @@ export default function ScheduleTimePicker({
             ))}
           </SelectContent>
         </Select>
+        )}
 
         {/* Hour + minute selects — second row */}
         <div className="flex gap-2.5">
