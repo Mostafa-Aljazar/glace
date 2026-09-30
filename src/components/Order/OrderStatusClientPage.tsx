@@ -304,9 +304,14 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
           </div>
         )}
 
-        {order.status === "في الطريق" && order.driver && (
+        {(order.status === "في الطريق" ||
+          order.status === "تم التسليم" ||
+          order.status === "تم الاستلام") &&
+          order.driver && (
           <div className="mb-6 bg-purple-500/20 border border-purple-500/40 rounded-[20px] p-4 text-white">
-            <p className="font-bold text-[15px] mb-3">السائق في الطريق</p>
+            <p className="font-bold text-[15px] mb-3">
+              {order.status === "في الطريق" ? "السائق في الطريق" : "بيانات السائق"}
+            </p>
             <div className="flex flex-col gap-2 text-[14px]">
               <div className="flex items-center gap-2">
                 <User size={16} className="text-purple-300" />
@@ -332,7 +337,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
                   </span>
                 </div>
               )}
-              {order.estimatedDeliveryTime && (
+              {order.status === "في الطريق" && order.estimatedDeliveryTime && (
                 <div className="flex items-center gap-2 text-[13px]">
                   <Clock size={14} className="text-purple-300" />
                   <span>

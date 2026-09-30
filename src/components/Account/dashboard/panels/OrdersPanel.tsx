@@ -392,6 +392,24 @@ export default function OrdersPanel() {
                             ? "من المحل"
                             : "تناول الآن"}
                       </span>
+                      {order.deliveryMethod === "delivery" && order.driver && (
+                        <span>
+                          السائق: {order.driver.name}
+                          {order.driver.phone && (
+                            <>
+                              {" · "}
+                              <a
+                                href={`tel:${order.driver.phone}`}
+                                dir="ltr"
+                                className="hover:text-white underline-offset-2 hover:underline"
+                              >
+                                {order.driver.phone}
+                              </a>
+                            </>
+                          )}
+                          {order.driver.company && ` · ${order.driver.company}`}
+                        </span>
+                      )}
                       {order.deliveryMethod !== "dine-in" && order.scheduledFor && (
                         <span>
                           {order.deliveryMethod === "delivery" ? "موعد التوصيل: " : "موعد الاستلام: "}
