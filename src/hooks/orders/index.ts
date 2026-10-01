@@ -5,6 +5,5 @@ export { useSendJawwalOrderCode } from "./useSendJawwalOrderCode";
 export { useCancelOrder } from "./useCancelOrder";
 export { useUpdateReceipt } from "./useUpdateReceipt";
 export { useMarkReceived } from "./useMarkReceived";
-export { useEmailOrderSummary } from "./useEmailOrderSummary";
 export { ORDERS_QUERY_KEY, fetchOrders } from "./fetchOrders";
 export { orderQueryKey, fetchOrderById } from "./fetchOrderById";

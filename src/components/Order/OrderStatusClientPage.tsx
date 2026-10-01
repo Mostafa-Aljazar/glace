@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Mail,
   Package,
-  Send,
   Receipt,
   CreditCard,
   Truck,
@@ -44,7 +42,6 @@ import {
   useUpdateReceipt,
   useCancelOrder,
   useMarkReceived,
-  useEmailOrderSummary,
 } from "@/hooks/orders";
 import {
   getGroupedFlavors,
@@ -53,7 +50,6 @@ import {
 } from "@/store/cartStore";
 import { getStatusSteps, PAYMENT_STATUS_DISPLAY } from "@/lib/orderStatusSteps";
 import { formatScheduledDateTime } from "@/lib/scheduling";
-import { getApiErrorMessage } from "@/lib/apiWithFallback";
 import { useAuthStore } from "@/store/authStore";
 import ReceiptUploadForm from "@/components/Payment/ReceiptUploadForm";
 
@@ -72,16 +68,12 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
   const updateReceiptMutation = useUpdateReceipt();
   const cancelOrderMutation = useCancelOrder();
   const markReceivedMutation = useMarkReceived();
-  const emailSummaryMutation = useEmailOrderSummary();
   const addItem = useCartStore((s) => s.addItem);
   const clearCart = useCartStore((s) => s.clearCart);
 
   const [reuploadOpen, setReuploadOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
-  const [emailInput, setEmailInput] = useState("");
-  const [emailSent, setEmailSent] = useState(false);
-  const [emailError, setEmailError] = useState<string | null>(null);
   const [receiptError, setReceiptError] = useState<string | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [receivedError, setReceivedError] = useState<string | null>(null);
@@ -178,29 +170,6 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
       onError: () =>
         setReceivedError("تعذر تأكيد الاستلام، الرجاء المحاولة مرة أخرى"),
     });
-  }
-
-  function handleSendEmailSummary() {
-    const email = emailInput.trim();
-    if (!email) return;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setEmailError("البريد الإلكتروني غير صالح");
-      return;
-    }
-    setEmailError(null);
-    emailSummaryMutation.mutate(
-      { id: order!.id, email },
-      {
-        onSuccess: () => setEmailSent(true),
-        onError: (error) =>
-          setEmailError(
-            getApiErrorMessage(
-              error,
-              "تعذر إرسال الملخص، الرجاء المحاولة مرة أخرى",
-            ),
-          ),
-      },
-    );
   }
 
   function handleReorder() {
@@ -348,42 +317,6 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
             </div>
           </div>
         )}
-
-        {/* Optional email summary */}
-        <div className="bg-white/[.17] backdrop-blur-[15px] mb-6 p-5 rounded-[24px] text-white">
-          <p className="flex items-center gap-2 mb-3 text-[15px] text-white/80">
-            <Mail size={16} className="text-glace-yellow" />
-            يوصلك ملخص الطلب على إيميلك؟{" "}
-            <span className="text-[12px] opacity-60">(اختياري)</span>
-          </p>
-          {emailSent ? (
-            <p className="text-[14px] text-green-300">
-              تم الإرسال إلى {emailInput}
-            </p>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                type="email"
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="name@example.com"
-                className="flex-1 bg-white/10 border border-white/25 focus:border-glace-yellow/50 rounded-[14px] px-3.5 py-2.5 text-white text-[15px] placeholder:text-white/40 outline-none transition-colors"
-              />
-              <button
-                type="button"
-                onClick={handleSendEmailSummary}
-                disabled={!emailInput.trim() || emailSummaryMutation.isPending}
-                className="flex items-center gap-1.5 bg-glace-yellow hover:brightness-105 disabled:opacity-40 px-4 py-2.5 rounded-[14px] font-bold text-[#1e6a7f] text-[14px] transition disabled:cursor-not-allowed cursor-pointer shrink-0"
-              >
-                <Send size={14} />
-                إرسال
-              </button>
-            </div>
-          )}
-          {emailError && (
-            <p className="form-error mt-2">{emailError}</p>
-          )}
-        </div>
 
         <div className="flex lg:flex-row flex-col gap-6 lg:gap-6">
           {/* Items */}

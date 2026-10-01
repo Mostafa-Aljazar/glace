@@ -678,36 +678,6 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /orders/{id}/email-summary:
-    parameters:
-      - $ref: "#/components/parameters/OrderId"
-    post:
-      tags: [Orders]
-      summary: Email the order summary to any address
-      description: "Called by `src/hooks/orders/useEmailOrderSummary.ts`. The address is typed by the customer and need not be the account email."
-      operationId: emailOrderSummary
-      security:
-        - TokenAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/EmailSummaryRequest"
-      responses:
-        "200":
-          description: Email sent
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SentResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-
   # ───────────────────────────── Payments ─────────────────────────────
   /payment-accounts:
     get:
@@ -2079,13 +2049,6 @@ components:
       properties:
         reason:
           type: string
-    EmailSummaryRequest:
-      type: object
-      required: [email]
-      properties:
-        email:
-          type: string
-          format: email
     JawwalSendCodeRequest:
       type: object
       required: [phone, amount]
