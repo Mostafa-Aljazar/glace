@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import type { UseFormReturn } from "react-hook-form";
 import {
   Form,
@@ -10,7 +9,6 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { popImgG } from "@/assets/images";
 import type { IContactRequest } from "@/types/contact.types";
 import { cn } from "@/lib/utils";
 
@@ -154,15 +152,37 @@ export default function ContactForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="relative mx-auto flex h-13.75 w-50 min-w-35 cursor-pointer items-center justify-center border-0 bg-transparent sm:mx-0 sm:h-17.5 sm:w-auto sm:min-w-37.5 disabled:cursor-not-allowed disabled:opacity-60"
+            className="group inline-flex relative justify-center items-center w-[190px] sm:w-[220px] lg:w-[250px] h-[66px] sm:h-[76px] lg:h-[84px] hover:scale-[1.04] active:scale-[0.97] disabled:opacity-60 disabled:hover:scale-100 transition-transform duration-200 cursor-pointer disabled:cursor-not-allowed"
           >
-            <Image
-              src={popImgG}
-              alt=""
-              fill
-              className="rotate-[-5deg] object-fill opacity-80"
-            />
-            <span className="relative text-3xl text-white sm:text-4xl">
+            {/* same wavy blob as the home hero's "اطلب الان" */}
+            <svg
+              viewBox="0 0 280 96"
+              className="absolute inset-0 drop-shadow-[0_10px_22px_rgba(0,0,0,0.22)] group-hover:brightness-110 w-full h-full transition-[filter] duration-200"
+              aria-hidden
+              preserveAspectRatio="none"
+            >
+              <path
+                d="M24 50
+                   C18 28 52 10 88 16
+                   C118 6 152 20 186 12
+                   C224 4 262 22 260 50
+                   C262 76 226 90 188 82
+                   C154 92 118 78 86 86
+                   C50 94 20 74 24 50 Z"
+                fill="#51c9f4"
+              />
+              <path
+                d="M30 50
+                   C26 32 56 16 90 20
+                   C120 12 152 24 184 16
+                   C218 10 250 26 248 50
+                   C250 72 218 84 184 78
+                   C152 86 120 74 90 80
+                   C56 88 28 70 30 50 Z"
+                fill="#1e6a7f"
+              />
+            </svg>
+            <span className="z-10 relative font-bold text-[22px] sm:text-[26px] lg:text-[30px] text-white leading-none -rotate-[2deg]">
               {isSubmitting ? "..." : "ارسال"}
             </span>
           </button>
