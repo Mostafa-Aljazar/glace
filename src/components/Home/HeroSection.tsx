@@ -175,7 +175,7 @@ export default function HeroSection({
                         alt=""
                         width={260}
                         height={200}
-                        className="flex w-full h-full object-bottom-left object-contain"
+                        className="flex w-full h-full object-bottom object-contain"
                       />
                     )}
                   </div>
