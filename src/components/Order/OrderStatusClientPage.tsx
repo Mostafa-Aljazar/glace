@@ -19,6 +19,8 @@ import {
   User,
   Clock,
   CheckCircle2,
+  Copy,
+  Check,
   IceCreamCone,
 } from "lucide-react";
 import EventsBackground from "@/components/Events/EventsBackground";
@@ -77,6 +79,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
   const [receiptError, setReceiptError] = useState<string | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [receivedError, setReceivedError] = useState<string | null>(null);
+  const [phoneCopied, setPhoneCopied] = useState(false);
 
   if (isLoading) {
     return (
@@ -172,6 +175,16 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
     });
   }
 
+  async function handleCopyDriverPhone(phone: string) {
+    try {
+      await navigator.clipboard.writeText(phone);
+      setPhoneCopied(true);
+      setTimeout(() => setPhoneCopied(false), 2000);
+    } catch {
+      // Clipboard can be blocked; the number stays tappable as a tel: link
+    }
+  }
+
   function handleReorder() {
     if (!order) return;
     clearCart();
@@ -265,10 +278,10 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
 
         {/* Status-specific messages */}
         {order.status === "جاري التحضير" && (
-          <div className="mb-6 bg-blue-500/20 border border-blue-500/40 rounded-[20px] px-4 py-3 text-[14px] text-blue-100">
+          <div className="mb-6 bg-[#1e6a7f]/75 border border-white/20 rounded-[20px] px-4 py-3.5 font-bold text-[15px] text-white shadow-md">
             <p className="flex items-center gap-2">
-              <Clock size={16} />
-              يستغرق تحضير الطلب من {order.preparationTime || 5}-{order.preparationTime || 30} دقيقة
+              <Clock size={18} className="text-glace-yellow shrink-0" />
+              يستغرق تحضير الطلب من 5-25 دقيقةً
             </p>
           </div>
         )}
@@ -288,9 +301,17 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
               </div>
               <div className="flex items-center gap-2">
                 <Phone size={16} className="text-purple-300" />
-                <a href={`tel:${order.driver.phone}`} className="text-purple-200 hover:text-purple-100">
+                <a href={`tel:${order.driver.phone}`} dir="ltr" className="text-purple-200 hover:text-purple-100">
                   {order.driver.phone}
                 </a>
+                <button
+                  type="button"
+                  onClick={() => handleCopyDriverPhone(order.driver!.phone)}
+                  className="flex items-center gap-1 bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-full text-[12px] text-white transition-colors cursor-pointer"
+                >
+                  {phoneCopied ? <Check size={13} /> : <Copy size={13} />}
+                  {phoneCopied ? "تم النسخ" : "انسخ الرقم"}
+                </button>
               </div>
               {order.driver.company && (
                 <div className="flex items-center gap-2">
@@ -306,11 +327,11 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
                   </span>
                 </div>
               )}
-              {order.status === "في الطريق" && order.estimatedDeliveryTime && (
+              {order.status === "في الطريق" && (
                 <div className="flex items-center gap-2 text-[13px]">
                   <Clock size={14} className="text-purple-300" />
                   <span>
-                    الوصول المتوقع: {order.estimatedDeliveryTime}-{order.estimatedDeliveryTime || 25} دقيقة
+                    الوصول المتوقع: من 10-30 دقيقةً
                   </span>
                 </div>
               )}

@@ -14,6 +14,7 @@ import {
   MapPinned,
   RotateCcw,
   TriangleAlert,
+  Clock,
 } from "lucide-react";
 import {
   ORDER_STATUS_COLORS,
@@ -408,6 +409,12 @@ export default function OrdersPanel() {
                             </>
                           )}
                           {order.driver.company && ` · ${order.driver.company}`}
+                        </span>
+                      )}
+                      {order.deliveryMethod === "delivery" && order.status === "في الطريق" && (
+                        <span className="flex items-center gap-1 font-bold text-glace-yellow">
+                          <Clock size={12} />
+                          الوصول المتوقع: من 10-30 دقيقةً
                         </span>
                       )}
                       {order.deliveryMethod !== "dine-in" && order.scheduledFor && (
