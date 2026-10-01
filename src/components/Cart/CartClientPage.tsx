@@ -10,7 +10,6 @@ import {
   ArrowRight,
   ChevronLeft,
   NotebookPen,
-  SlidersHorizontal,
   IceCreamCone,
   Sparkles,
   Clock,
@@ -25,10 +24,7 @@ import {
   DialogDescription,
   DialogClose,
 } from "@/components/ui/dialog";
-import CustomizeAdditionsDialog from "@/components/Cart/CustomizeAdditionsDialog";
-import { useMenuProducts, useMenuAddons } from "@/hooks/menu";
 import { useStoreStatus } from "@/hooks/store";
-import type { IAddonOption } from "@/types/menu.types";
 import {
   useCartStore,
   getLineItemTitle,
@@ -75,17 +71,13 @@ function QtyControl({
 function ItemCard({
   item,
   index,
-  addons,
 }: {
   item: CartItem;
   index: number;
-  addons?: IAddonOption[];
 }) {
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
-  const [customizeOpen, setCustomizeOpen] = useState(false);
   const productLine = getLineItemTotal(item);
-  const canCustomize = !!addons && addons.length > 0;
 
   return (
     <article
@@ -256,27 +248,8 @@ function ItemCard({
               </button>
             </div>
           </div>
-          {canCustomize && (
-            <button
-              type="button"
-              onClick={() => setCustomizeOpen(true)}
-              className="flex justify-center items-center sm:self-start gap-1.5 bg-glace-yellow hover:bg-yellow-300 shadow-[0_4px_14px_rgba(244,228,81,0.25)] px-3.5 py-2.5 rounded-full w-full sm:w-auto font-bold text-[#1e6a7f] text-[12px] transition cursor-pointer"
-            >
-              <SlidersHorizontal size={14} />
-              تخصيص الإضافات
-            </button>
-          )}
         </div>
       </div>
-
-      {canCustomize && (
-        <CustomizeAdditionsDialog
-          open={customizeOpen}
-          item={item}
-          addons={addons ?? []}
-          onClose={() => setCustomizeOpen(false)}
-        />
-      )}
     </article>
   );
 }
@@ -583,39 +556,6 @@ export default function CartClientPage() {
     return persistApi.onFinishHydration(() => setHydrated(true));
   }, []);
 
-  // Shared additions catalog from the backend (GET /menu/addons) — the options
-  // offered in the "تخصيص الإضافات" flow.
-  const { data: sharedAddons } = useMenuAddons();
-
-  // A product MAY still ship its own addons catalog (overrides the shared one).
-  const { data: products } = useMenuProducts();
-  const addonsByProductId = new Map<string, IAddonOption[]>(
-    (products ?? [])
-      .filter((p) => p.addons && p.addons.length > 0)
-      .map((p) => [p.id, p.addons as IAddonOption[]]),
-  );
-  const slugByProductId = new Map<string, string>(
-    (products ?? []).map((p) => [p.id, p.slug]),
-  );
-
-  // "تخصيص الإضافات" is offered for cup ice cream in a "كاسة"/"بسكوت"
-  // container, the family-size product, or any product that ships its own
-  // addons catalog (e.g. waffle/crepe/pancake/pizza's extra-ice-cream addons).
-  const CUP_CONTAINERS = ["كاسة", "بسكوت"];
-
-  function resolveAddons(item: CartItem): IAddonOption[] {
-    const productId = item.productId;
-    const isFamilyProduct = slugByProductId.get(productId) === "family";
-    const isCupContainer =
-      !!item.container && CUP_CONTAINERS.includes(item.container);
-    // A product's own catalog overrides the shared one; both come from the API.
-    const productSpecific = addonsByProductId.get(productId);
-    const hasProductAddons = !!productSpecific && productSpecific.length > 0;
-    if (!isFamilyProduct && !isCupContainer && !hasProductAddons) return [];
-    if (hasProductAddons) return productSpecific!;
-    return sharedAddons ?? [];
-  }
-
   return (
     <div className="relative bg-[radial-gradient(ellipse_at_top,#4eb4d4_0%,#388dab_45%,#2f7a96_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
@@ -672,7 +612,6 @@ export default function CartClientPage() {
                       key={item.id}
                       item={item}
                       index={index}
-                      addons={resolveAddons(item)}
                     />
                   ))}
                 </div>

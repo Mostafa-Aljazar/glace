@@ -143,11 +143,11 @@ interface IProductBase {
   sortOrder: number;
   available: boolean;
   /** Superseded by `addons` below — presence of a non-empty `addons` catalog
-   *  is what actually drives the per-unit additions UI on the cart page. */
+   *  is what actually drives the per-unit additions UI on the order builder. */
   hasAddons?: boolean;
   hasNotes?: boolean;
   /** Optional per-unit extras a customer can add to this product (toppings,
-   *  sauces...). Drives the "تخصيص الإضافات" flow on the cart page. */
+   *  sauces...). Offered per unit on the order builder page. */
   addons?: IAddonOption[];
   hasFavorites?: boolean;
   hasImageZoom?: boolean;

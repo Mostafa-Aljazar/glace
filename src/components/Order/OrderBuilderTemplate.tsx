@@ -26,8 +26,7 @@ import {
   type ISizeOption,
 } from "@/types/menu.types";
 
-/** Containers whose units can take per-unit additions — same rule the cart
- *  page's "تخصيص الإضافات" uses (`CartClientPage.resolveAddons`). */
+/** Containers whose units can take per-unit additions. */
 const CUP_CONTAINERS = ["كاسة", "بسكوت"];
 
 /** The single orderable option's id when there is exactly one — such a step
@@ -396,9 +395,8 @@ export default function OrderBuilderTemplate({
     }
   }
 
-  // Per-unit additions offered on this page — the same catalog and rules the
-  // cart's "تخصيص الإضافات" uses, minus the extra biscuit (a flat, whole-line
-  // extra with its own counter below).
+  // Per-unit additions offered on this page, minus the extra biscuit (a flat,
+  // whole-line extra with its own counter below).
   const selectedContainer = product.containerOptions?.find(
     (c) => c.id === containerId,
   );
