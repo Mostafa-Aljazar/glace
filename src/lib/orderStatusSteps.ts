@@ -41,6 +41,7 @@ export function getStatusSteps(deliveryMethod: DeliveryMethod): StatusStep[] {
   if (deliveryMethod === "dine-in") {
     return [
       { key: "قيد المراجعة", label: "قيد المراجعة", icon: Clock },
+      { key: "جاري التحضير", label: "جاري التحضير", icon: ChefHat },
       { key: "تم التسليم", label: "تم التسليم", icon: CheckCircle2 },
     ];
   }
