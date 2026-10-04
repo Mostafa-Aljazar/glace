@@ -78,13 +78,49 @@ export interface Driver {
  *  top-level item only has as display labels (`type`/`container`). Absent
  *  on orders placed before the backend added this field. */
 export interface OrderItemSelection {
-  type: "builder" | "flat" | "mix";
+  type: "builder" | "flat" | "item" | "mix";
   sizeId?: string;
   containerId?: string;
   itemId?: string;
+  /** Mix lines only — the order echoes the mix rule id here, not as a
+   *  top-level `mixId` (confirmed against a real order). */
+  mixId?: string;
 }
 
 export type OrderItem = CartItem & { selection?: OrderItemSelection };
+
+/** Turns a fetched order item back into a cart line for "إعادة الطلب".
+ *  Mix lines must keep `mixId`/`mixItemIds` — without them `POST /orders`
+ *  rejects the line as "هذا المكس غير موجود ضمن هذا المنتج". The backend
+ *  echoes mix picks with kind "mixItem", so they're normalized back to the
+ *  "mix" kind the frontend sends, and `mixItemIds` is rebuilt from them
+ *  when the order doesn't carry it. */
+export function toReorderCartItem(item: OrderItem): Omit<CartItem, "id"> {
+  const selections = (item.selections || []).map((s) =>
+    s.kind === "mixItem" ? { ...s, kind: "mix" as const } : s,
+  );
+  const mixPickIds = selections
+    .filter((s) => s.kind === "mix")
+    .flatMap((s) => Array<string>(s.qty).fill(s.id));
+  const mixItemIds = item.mixItemIds?.length ? item.mixItemIds : mixPickIds;
+  const mixId = item.selection?.mixId ?? item.mixId;
+  return {
+    productId: item.productId,
+    name: item.name,
+    image: item.image,
+    type: item.type,
+    container: item.container,
+    sizeId: item.selection?.sizeId ?? item.sizeId,
+    containerId: item.selection?.containerId ?? item.containerId,
+    itemId: item.selection?.itemId ?? item.itemId,
+    mixId,
+    mixItemIds: mixId && mixItemIds.length > 0 ? mixItemIds : undefined,
+    selections,
+    addonTotal: item.addonTotal,
+    unitPrice: item.unitPrice,
+    quantity: item.quantity,
+  };
+}
 
 export interface Order {
   id: string;

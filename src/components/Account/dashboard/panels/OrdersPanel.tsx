@@ -19,6 +19,7 @@ import {
 import {
   ORDER_STATUS_COLORS,
   PAYMENT_METHOD_LABELS,
+  toReorderCartItem,
   type Order,
 } from "@/store/orderStore";
 import { useOrders } from "@/hooks/orders";
@@ -86,20 +87,7 @@ export default function OrdersPanel() {
   function handleReorder(order: Order) {
     clearCart();
     order.items.forEach((item) => {
-      addItem({
-        productId: item.productId,
-        name: item.name,
-        image: item.image,
-        type: item.type,
-        container: item.container,
-        sizeId: item.selection?.sizeId ?? item.sizeId,
-        containerId: item.selection?.containerId ?? item.containerId,
-        itemId: item.selection?.itemId ?? item.itemId,
-        selections: item.selections || [],
-        addonTotal: item.addonTotal,
-        unitPrice: item.unitPrice,
-        quantity: item.quantity,
-      });
+      addItem(toReorderCartItem(item));
     });
     router.push("/checkout");
   }

@@ -38,6 +38,7 @@ import {
   PAYMENT_METHOD_LABELS,
   RECEIPT_METHODS,
   isOrderFinal,
+  toReorderCartItem,
 } from "@/store/orderStore";
 import {
   useOrder,
@@ -189,20 +190,7 @@ export default function OrderStatusClientPage({ id }: { id: string }) {
     if (!order) return;
     clearCart();
     order.items.forEach((item) => {
-      addItem({
-        productId: item.productId,
-        name: item.name,
-        image: item.image,
-        type: item.type,
-        container: item.container,
-        sizeId: item.selection?.sizeId ?? item.sizeId,
-        containerId: item.selection?.containerId ?? item.containerId,
-        itemId: item.selection?.itemId ?? item.itemId,
-        selections: item.selections || [],
-        addonTotal: item.addonTotal,
-        unitPrice: item.unitPrice,
-        quantity: item.quantity,
-      });
+      addItem(toReorderCartItem(item));
     });
     router.push("/checkout");
   }
