@@ -22,6 +22,13 @@ import {
   type IMixRule,
 } from "@/types/menu.types";
 
+/** Cart line name for a variant — skips the label when the product name
+ *  already says it (e.g. "جيلاتو دوم (جديد)" + "جيلاتو دوم"), so the name
+ *  isn't repeated. */
+function variantLineName(productName: string, label: string): string {
+  return productName.includes(label) ? productName : `${productName} — ${label}`;
+}
+
 export default function OrderFlatListTemplate({
   product,
 }: {
@@ -74,7 +81,7 @@ export default function OrderFlatListTemplate({
     if (!item) return;
     addItem({
       productId: product.id,
-      name: `${product.name} — ${item.label}`,
+      name: variantLineName(product.name, item.label),
       image: resolveMenuImageSrc(item.image ?? product.image),
       type: item.label,
       itemId: item.id,
@@ -95,7 +102,7 @@ export default function OrderFlatListTemplate({
     if (!item) return;
     addItem({
       productId: product.id,
-      name: `${product.name} — ${item.label}`,
+      name: variantLineName(product.name, item.label),
       image: resolveMenuImageSrc(item.image ?? product.image),
       type: item.label,
       itemId: item.id,

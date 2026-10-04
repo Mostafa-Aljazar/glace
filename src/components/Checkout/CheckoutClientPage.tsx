@@ -443,7 +443,7 @@ export default function CheckoutClientPage() {
               </DialogTitle>
               <DialogDescription className="text-white/90 text-base">
                 {deliveryBlockingItem?.reason === "category"
-                  ? `صنف "${deliveryBlockingItem.item.name}" (جيلاتو دوم) غير مناسب. الرجاء اختيار صنف آخر أو إزالته من السلة.`
+                  ? `صنف "${deliveryBlockingItem.item.name}" غير مناسب. الرجاء اختيار صنف آخر أو إزالته من السلة.`
                   : deliveryBlockingItem?.reason === "in-store-only"
                     ? `صنف "${deliveryBlockingItem.item.name}" متوفر داخل المحل فقط. الرجاء اختيار صنف آخر أو إزالته من السلة.`
                     : `صنف "${deliveryBlockingItem?.item.name}" بحجم ${deliveryBlockingItem?.item.size} غير مناسب. الرجاء اختيار حجم أكبر أو صنف آخر.`}
