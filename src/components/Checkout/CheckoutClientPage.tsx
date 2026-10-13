@@ -261,7 +261,7 @@ export default function CheckoutClientPage() {
 
   if (items.length === 0) {
     return (
-      <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
+      <div className="relative bg-[radial-gradient(circle,#28758e_0%,#24647d_100%)] min-h-screen overflow-x-hidden">
         <EventsBackground />
         <div className="z-90 relative flex flex-col justify-center items-center mx-auto px-4 pt-24 lg:pt-28 pb-12 max-w-300 min-h-screen">
           <div className="relative bg-white/12 backdrop-blur-xl px-6 py-16 sm:py-20 border border-white/15 rounded-[32px] w-full max-w-md overflow-hidden text-center">
@@ -293,7 +293,7 @@ export default function CheckoutClientPage() {
   }
 
   return (
-    <div className="relative bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] min-h-screen overflow-x-hidden">
+    <div className="relative bg-[radial-gradient(circle,#28758e_0%,#24647d_100%)] min-h-screen overflow-x-hidden">
       <EventsBackground />
 
       <div
@@ -308,7 +308,7 @@ export default function CheckoutClientPage() {
         <Dialog open={storeClosedOpen} onOpenChange={setStoreClosedOpen}>
           <DialogContent
             showCloseButton={false}
-            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
+            className="bg-[radial-gradient(circle,#28758e_0%,#24647d_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
           >
             <DialogHeader className="items-center gap-3">
               <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
@@ -345,7 +345,7 @@ export default function CheckoutClientPage() {
         <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
           <DialogContent
             showCloseButton={false}
-            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
+            className="bg-[radial-gradient(circle,#28758e_0%,#24647d_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
           >
             <DialogHeader className="items-center gap-3">
               <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
@@ -389,7 +389,7 @@ export default function CheckoutClientPage() {
         >
           <DialogContent
             showCloseButton={false}
-            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
+            className="bg-[radial-gradient(circle,#28758e_0%,#24647d_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
           >
             <DialogHeader className="items-center gap-3">
               <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
@@ -429,7 +429,7 @@ export default function CheckoutClientPage() {
         >
           <DialogContent
             showCloseButton={false}
-            className="bg-[radial-gradient(circle,#41a2c5_0%,#388dab_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
+            className="bg-[radial-gradient(circle,#28758e_0%,#24647d_100%)] p-6 sm:p-8 border-0 rounded-[30px] ring-0 text-white text-center"
           >
             <DialogHeader className="items-center gap-3">
               <div className="flex justify-center items-center bg-rose-500 rounded-full size-16">
@@ -474,11 +474,11 @@ export default function CheckoutClientPage() {
           {/* Left: form */}
           <div className="flex-1 order-2">
             <div className="bg-white/[.17] backdrop-blur-[15px] p-4 sm:p-6 rounded-[30px]">
-              <h2 className="mb-1 font-bold text-[22px] text-white">
+              <h2 className="mb-1 font-bold text-[22px] text-white text-center">
                 طريقة الاستلام
               </h2>
-              <p className="mb-4 text-[14px] text-white/55">
-                اختر الطريقة المناسبة لاستلام طلبك
+              <p className="mb-4 text-[14px] text-white/55 text-center">
+                كيف تحب تستلم طلبك؟
               </p>
 
               {(() => {
@@ -486,15 +486,20 @@ export default function CheckoutClientPage() {
                   [
                     "dine-in",
                     Utensils,
-                    "تناول الآن",
-                    "تجهيزه لتناول الطلب داخل المطعم",
+                    "تناول داخل المطعم",
+                    "نجهّز طلبك لتناول داخل المطعم",
                   ],
-                  ["delivery", Truck, "توصيل خارجي", "ديليفري من طرف المطعم"],
+                  [
+                    "delivery",
+                    Truck,
+                    "توصيل خارجي",
+                    "نجهّز طلبك ونوصّله ديليفري إلى عنوانك",
+                  ],
                   [
                     "pickup",
                     Store,
-                    "استلام من المطعم",
-                    "تجهيز الطلب تيك اواي وسأقوم أنا باستلامه",
+                    "استلام من المحل",
+                    "اطلب مسبقًا واستلم طلبك جاهز تيك اوي بنفسك",
                   ],
                 ] as const;
 
